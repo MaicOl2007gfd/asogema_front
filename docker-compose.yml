@@ -1,0 +1,9 @@
+services:
+  asogema-front:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: asogema-front
+    ports:
+      - "8080:80"
+    restart: unless-stopped
