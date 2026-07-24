@@ -1,5 +1,6 @@
 <script setup>
 import { useRegister } from '../composables/useRegister.js'
+import Grainient from './Grainient.vue'
 
 const emit = defineEmits(['navigate'])
 
@@ -48,17 +49,29 @@ const {
 
 <template>
   <div class="login-container">
-    <!-- Twinkling starfield background -->
-    <div class="starfield" aria-hidden="true"></div>
+    <!-- Animated Grainient Shader Background (fullscreen) -->
+    <Grainient
+      :time-speed="4"
+      :warp-strength="0.8"
+      :warp-frequency="5.5"
+      :warp-speed="1.2"
+      :warp-amplitude="70.0"
+      :blend-softness="0.1"
+      :rotation-amount="250.0"
+      :noise-scale="1.2"
+      :grain-amount="0.04"
+      :contrast="1.2"
+      :zoom="1.0"
+      color1="#2d5a2e"
+      color2="#133215"
+      color3="#0b1f0d"
+    />
 
-    <!-- Animated background shapes -->
-    <div class="bg-shapes">
-      <div class="shape shape-1"></div>
-      <div class="shape shape-2"></div>
-      <div class="shape shape-3"></div>
-      <div class="shape shape-4"></div>
-      <div class="shape shape-5"></div>
-    </div>
+    <!-- Premium Diagonal Crosshatch Pattern overlay -->
+    <div class="pattern-overlay" aria-hidden="true"></div>
+
+    <!-- Atmospheric light overlay -->
+    <div class="light-overlay" aria-hidden="true"></div>
 
     <!-- Bare tree branch - Left side -->
     <div class="branch-container branch-left" aria-hidden="true">

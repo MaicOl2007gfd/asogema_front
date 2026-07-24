@@ -1437,6 +1437,345 @@
 .reveal-delay-4 { transition-delay: 0.4s; }
 
 /* ----------------------------------------------------------
+   BIENVENIDA — Welcome Section
+   ---------------------------------------------------------- */
+.welcome-section {
+  background: var(--idx-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0, 206, 201, 0.03) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.welcome-container {
+  max-width: 860px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-divider {
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--idx-accent), var(--idx-primary));
+  border-radius: 3px;
+  margin: 0 auto 32px;
+}
+
+.welcome-content {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.welcome-text {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--idx-text-muted);
+  margin-bottom: 20px;
+  max-width: 780px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.welcome-text-highlight {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--idx-primary);
+  position: relative;
+  padding-top: 24px;
+}
+
+.welcome-text-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: var(--idx-accent);
+  border-radius: 2px;
+}
+
+/* Welcome cards row */
+.welcome-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.welcome-card {
+  background: var(--idx-white);
+  border-radius: var(--idx-radius);
+  padding: 36px 28px 32px;
+  text-align: center;
+  box-shadow: var(--idx-shadow);
+  border: 1px solid var(--idx-border-light);
+  transition: all var(--idx-transition);
+}
+
+.welcome-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--idx-shadow-hover);
+}
+
+.welcome-card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0, 206, 201, 0.1), rgba(19, 50, 21, 0.06));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  transition: all var(--idx-transition);
+}
+
+.welcome-card:hover .welcome-card-icon {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, rgba(0, 206, 201, 0.18), rgba(19, 50, 21, 0.1));
+}
+
+.welcome-card-icon svg {
+  width: 26px;
+  height: 26px;
+  color: var(--idx-accent);
+}
+
+.welcome-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--idx-primary);
+  margin-bottom: 10px;
+  letter-spacing: -0.3px;
+}
+
+.welcome-card p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--idx-text-muted);
+}
+
+/* ----------------------------------------------------------
+   NUESTRA HISTORIA — History Section
+   ---------------------------------------------------------- */
+.history-section {
+  background: var(--idx-primary-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+.history-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(243, 232, 211, 0.03) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.history-container {
+  max-width: 860px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.history-section .section-tag {
+  background: rgba(243, 232, 211, 0.06);
+  border-color: rgba(243, 232, 211, 0.1);
+  color: var(--idx-bg);
+}
+
+.history-section .section-title {
+  color: var(--idx-bg);
+}
+
+.history-divider {
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--idx-accent), rgba(243, 232, 211, 0.3));
+  border-radius: 3px;
+  margin: 0 auto 40px;
+}
+
+/* Timeline */
+.history-timeline {
+  position: relative;
+  margin-bottom: 56px;
+}
+
+.history-timeline::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--idx-accent), rgba(243, 232, 211, 0.1));
+  transform: translateX(-50%);
+}
+
+.history-milestone {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+  margin-bottom: 48px;
+  position: relative;
+}
+
+.history-milestone:nth-child(odd) {
+  flex-direction: row;
+}
+
+.history-milestone:nth-child(even) {
+  flex-direction: row-reverse;
+}
+
+.history-milestone-year {
+  flex-shrink: 0;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--idx-accent), #00b894);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--idx-primary-dark);
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 4px 20px rgba(0, 206, 201, 0.25);
+}
+
+.history-milestone-content {
+  flex: 1;
+  background: rgba(243, 232, 211, 0.04);
+  border: 1px solid rgba(243, 232, 211, 0.06);
+  border-radius: var(--idx-radius);
+  padding: 28px 32px;
+  backdrop-filter: blur(12px);
+  transition: all var(--idx-transition);
+}
+
+.history-milestone-content:hover {
+  background: rgba(243, 232, 211, 0.06);
+  border-color: rgba(243, 232, 211, 0.1);
+  transform: translateY(-2px);
+}
+
+.history-milestone-content p {
+  font-size: 15px;
+  line-height: 1.8;
+  color: rgba(243, 232, 211, 0.65);
+}
+
+.history-milestone-content strong {
+  color: var(--idx-accent);
+  font-weight: 600;
+}
+
+/* Services grid */
+.history-services {
+  margin-bottom: 48px;
+  text-align: center;
+}
+
+.history-services-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--idx-bg);
+  margin-bottom: 28px;
+  letter-spacing: -0.3px;
+}
+
+.history-services-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.history-service-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px;
+  background: rgba(243, 232, 211, 0.03);
+  border: 1px solid rgba(243, 232, 211, 0.06);
+  border-radius: var(--idx-radius-sm);
+  transition: all var(--idx-transition);
+}
+
+.history-service-item:hover {
+  background: rgba(243, 232, 211, 0.06);
+  border-color: rgba(243, 232, 211, 0.12);
+  transform: translateY(-3px);
+}
+
+.history-service-item svg {
+  width: 28px;
+  height: 28px;
+  color: var(--idx-accent);
+}
+
+.history-service-item span {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(243, 232, 211, 0.6);
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Closing quote */
+.history-closing {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 36px 32px;
+  background: rgba(243, 232, 211, 0.03);
+  border: 1px solid rgba(243, 232, 211, 0.06);
+  border-radius: var(--idx-radius);
+  position: relative;
+}
+
+.history-closing-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0, 206, 201, 0.12), rgba(0, 206, 201, 0.04));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.history-closing-icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--idx-accent);
+}
+
+.history-closing p {
+  font-size: 15px;
+  line-height: 1.8;
+  color: rgba(243, 232, 211, 0.55);
+  font-style: italic;
+}
+
+/* ----------------------------------------------------------
    RESPONSIVE — TABLET
    ---------------------------------------------------------- */
 @media (max-width: 1024px) {

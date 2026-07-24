@@ -2,6 +2,8 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { useIndex } from '../composables/useIndex.js'
+import MagicBento from './MagicBento.vue'
+import ClickSpark from './ClickSpark.vue'
 
 const emit = defineEmits(['navigate'])
 
@@ -72,9 +74,11 @@ onUnmounted(() => onUnmount())
           <strong class="nav-user-name">{{ user.name }}</strong>
         </li>
         <li><a href="#inicio" @click.prevent="scrollToSection('hero')">Inicio</a></li>
+        <li><a href="#bienvenida" @click.prevent="scrollToSection('bienvenida')">Club</a></li>
         <li><a href="#hotel" @click.prevent="scrollToSection('hotel')">Hotel</a></li>
         <li><a href="#restaurante" @click.prevent="scrollToSection('restaurante')">Restaurante</a></li>
         <li><a href="#eventos" @click.prevent="scrollToSection('eventos')">Eventos</a></li>
+        <li><a href="#historia" @click.prevent="scrollToSection('historia')">Historia</a></li>
         <li><a href="#contact" @click.prevent="scrollToSection('contact')">Contacto</a></li>
       </ul>
 
@@ -85,12 +89,18 @@ onUnmounted(() => onUnmount())
           <strong class="nav-user-name">{{ user.name }}</strong>
         </div>
         <div class="nav-user-avatar">{{ getUserInitials() }}</div>
-        <button class="nav-btn nav-btn-logout" @click="handleLogout">Cerrar Sesión</button>
+        <ClickSpark spark-color="#ffffff" :spark-size="10" :spark-radius="25" :spark-count="12" :duration="600" @spark-click="handleLogout">
+          <button class="nav-btn nav-btn-logout" type="button">Cerrar Sesión</button>
+        </ClickSpark>
       </div>
       <!-- Guest section -->
       <div v-else class="nav-actions" :class="{ open: mobileMenuOpen }">
-        <button class="nav-btn nav-btn-outline" @click="emit('navigate', 'login')">Iniciar Sesión</button>
-        <button class="nav-btn nav-btn-primary" @click="emit('navigate', 'register')">Registrarse</button>
+        <ClickSpark spark-color="#ffffff" :spark-size="10" :spark-radius="25" :spark-count="12" :duration="600" @spark-click="emit('navigate', 'login')">
+          <button class="nav-btn nav-btn-outline" type="button">Iniciar Sesión</button>
+        </ClickSpark>
+        <ClickSpark spark-color="#ffffff" :spark-size="10" :spark-radius="25" :spark-count="12" :duration="600" @spark-click="emit('navigate', 'register')">
+          <button class="nav-btn nav-btn-primary" type="button">Registrarse</button>
+        </ClickSpark>
       </div>
 
       <button
@@ -136,16 +146,20 @@ onUnmounted(() => onUnmount())
             <h1 class="slide-title" v-html="slide.title"></h1>
             <p class="slide-subtitle">{{ slide.subtitle }}</p>
             <div class="slide-actions">
-              <button class="slide-btn slide-btn-primary" @click="handleSlideAction(slide.primaryAction)">
-                {{ slide.primaryBtn }}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-              </button>
-              <button class="slide-btn slide-btn-secondary" @click="handleSlideAction(slide.secondaryAction)">
-                {{ slide.secondaryBtn }}
-              </button>
+              <ClickSpark spark-color="#ffffff" :spark-size="12" :spark-radius="30" :spark-count="14" :duration="600" @spark-click="handleSlideAction(slide.primaryAction)">
+                <button class="slide-btn slide-btn-primary" type="button">
+                  {{ slide.primaryBtn }}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+              </ClickSpark>
+              <ClickSpark spark-color="#ffffff" :spark-size="12" :spark-radius="30" :spark-count="14" :duration="600" @spark-click="handleSlideAction(slide.secondaryAction)">
+                <button class="slide-btn slide-btn-secondary" type="button">
+                  {{ slide.secondaryBtn }}
+                </button>
+              </ClickSpark>
             </div>
           </div>
         </div>
@@ -180,9 +194,75 @@ onUnmounted(() => onUnmount())
     </section>
 
     <!-- ======================================================
+         BIENVENIDA — Mensaje de bienvenida al club
+         ====================================================== -->
+    <section id="bienvenida" class="welcome-section section-padding">
+      <div class="welcome-container reveal">
+        <div class="section-header">
+          <span class="section-tag">Bienvenidos a ASOGEMA</span>
+          <h2 class="section-title">Un lugar donde la recreación, la naturaleza y la familia se encuentran</h2>
+          <div class="welcome-divider"></div>
+        </div>
+
+        <div class="welcome-content">
+          <p class="welcome-text">
+            Sean todos bienvenidos a la Asociación Recreacional Guillermo Eloy Mateus Rojas – ASOGEMA,
+            un espacio creado para compartir, descansar y fortalecer los lazos de amistad, solidaridad
+            y bienestar.
+          </p>
+          <p class="welcome-text">
+            Ubicada en la ciudad de Ibagué, Tolima, ASOGEMA abre sus puertas a asociados, familias
+            y visitantes para disfrutar de amplias zonas verdes, espacios deportivos, piscinas,
+            salones para eventos y un ambiente natural que invita al descanso y a la integración.
+          </p>
+          <p class="welcome-text">
+            Nuestro compromiso es ofrecer experiencias memorables, promoviendo la recreación,
+            el deporte, la cultura y el turismo en un entorno seguro, familiar y acogedor.
+          </p>
+          <p class="welcome-text welcome-text-highlight">
+            ¡Bienvenidos a su casa, donde cada visita se convierte en un momento inolvidable!
+          </p>
+        </div>
+
+        <div class="welcome-cards">
+          <div class="welcome-card reveal reveal-delay-1">
+            <div class="welcome-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <h3>Seguridad y Confianza</h3>
+            <p>Un entorno seguro y familiar donde cada visita es una experiencia tranquila.</p>
+          </div>
+          <div class="welcome-card reveal reveal-delay-2">
+            <div class="welcome-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            </div>
+            <h3>Naturaleza y Recreación</h3>
+            <p>Amplias zonas verdes, piscinas, canchas y espacios para el disfrute de toda la familia.</p>
+          </div>
+          <div class="welcome-card reveal reveal-delay-3">
+            <div class="welcome-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                <line x1="9" y1="9" x2="9.01" y2="9" />
+                <line x1="15" y1="9" x2="15.01" y2="9" />
+              </svg>
+            </div>
+            <h3>Integración Familiar</h3>
+            <p>Un espacio donde fortalecer lazos de amistad y crear recuerdos inolvidables.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
          HOTEL — Paralelogramo #133215 en la mitad derecha
          con imagen + información dentro
-         (Oculto cuando el usuario ha iniciado sesión)
          ====================================================== -->
     <section id="hotel" class="hotel-section">
       <!-- Paralelogramo de fondo en la mitad derecha -->
@@ -244,13 +324,22 @@ onUnmounted(() => onUnmount())
             </div>
           </div>
 
-          <button class="hotel-btn" @click="isLoggedIn ? emit('navigate', 'dashboard') : emit('navigate', 'hotel')">
-            Reservar Ahora
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          </button>
+          <ClickSpark
+            spark-color="#ffffff"
+            :spark-size="12"
+            :spark-radius="30"
+            :spark-count="14"
+            :duration="600"
+            @spark-click="isLoggedIn ? emit('navigate', 'dashboard') : emit('navigate', 'hotel')"
+          >
+            <button class="hotel-btn" type="button">
+              Reservar Ahora
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </ClickSpark>
         </div>
       </div>
     </section>
@@ -315,13 +404,15 @@ onUnmounted(() => onUnmount())
             </div>
           </div>
 
-          <button class="restaurante-btn" @click="emit('navigate', 'restaurant')">
-            Reservar Mesa
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          </button>
+          <ClickSpark spark-color="#ffffff" :spark-size="12" :spark-radius="30" :spark-count="14" :duration="600" @spark-click="emit('navigate', 'restaurant')">
+            <button class="restaurante-btn" type="button">
+              Reservar Mesa
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </ClickSpark>
         </div>
       </div>
     </section>
@@ -391,13 +482,86 @@ onUnmounted(() => onUnmount())
             </div>
           </div>
 
-          <button class="eventos-btn" @click="emit('navigate', 'events')">
-            Cotizar Evento
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
+          <ClickSpark spark-color="#ffffff" :spark-size="12" :spark-radius="30" :spark-count="14" :duration="600" @spark-click="emit('navigate', 'events')">
+            <button class="eventos-btn" type="button">
+              Cotizar Evento
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </ClickSpark>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         NUESTRA HISTORIA
+         ====================================================== -->
+    <section id="historia" class="history-section section-padding">
+      <div class="history-container reveal">
+        <div class="section-header">
+          <span class="section-tag">Nuestra Historia</span>
+          <h2 class="section-title">Más de cuatro décadas construyendo bienestar</h2>
+          <div class="history-divider"></div>
+        </div>
+
+        <div class="history-timeline">
+          <div class="history-milestone reveal reveal-delay-1">
+            <div class="history-milestone-year">1979</div>
+            <div class="history-milestone-content">
+              <p>
+                La historia de ASOGEMA comienza en <strong>1979</strong>, cuando la entonces Sede Social
+                fue adquirida por ATOLSURE. El predio, conocido como <strong>San Roque</strong>, contaba
+                con aproximadamente siete hectáreas de terreno, una casa principal y ocho cabañas,
+                convirtiéndose desde entonces en un espacio destinado al bienestar y la integración
+                de sus asociados.
+              </p>
+            </div>
+          </div>
+
+          <div class="history-milestone reveal reveal-delay-2">
+            <div class="history-milestone-year">2011</div>
+            <div class="history-milestone-content">
+              <p>
+                Posteriormente, el <strong>15 de octubre de 2011</strong>, durante la Asamblea General
+                de COOMUATOLSURE, nació oficialmente la
+                <strong>Asociación Recreacional Guillermo Eloy Mateus Rojas (ASOGEMA)</strong>,
+                siendo legalmente constituida el <strong>6 de enero de 2012</strong> como una entidad
+                sin ánimo de lucro dedicada a la recreación, el deporte, la cultura y el bienestar
+                de sus asociados y sus familias.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="history-services reveal reveal-delay-3">
+          <h3 class="history-services-title">Servicios que ofrecemos</h3>
+          <MagicBento
+            :text-auto-hide="true"
+            :enable-stars="true"
+            :enable-spotlight="true"
+            :enable-border-glow="true"
+            :enable-tilt="true"
+            :enable-magnetism="true"
+            :click-effect="true"
+            :spotlight-radius="300"
+            :particle-count="12"
+            glow-color="243, 232, 211"
+          />
+        </div>
+
+        <div class="history-closing reveal reveal-delay-4">
+          <div class="history-closing-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
-          </button>
+          </div>
+          <p>
+            Más que un club, ASOGEMA representa un lugar donde las familias se reúnen para compartir
+            momentos especiales, fortalecer la amistad y disfrutar de la naturaleza en un ambiente
+            de tranquilidad y respeto.
+          </p>
         </div>
       </div>
     </section>
@@ -426,7 +590,7 @@ onUnmounted(() => onUnmount())
         <div class="footer-col">
           <h4>Compañía</h4>
           <ul>
-            <li><a href="#">Nosotros</a></li>
+            <li><a href="#historia" @click.prevent="scrollToSection('historia')">Nosotros</a></li>
             <li><a href="#">Blog</a></li>
             <li><a href="#">Prensa</a></li>
             <li><a href="#">Carreras</a></li>
