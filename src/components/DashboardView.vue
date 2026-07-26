@@ -1,7 +1,14 @@
 <script setup>
+import { ref } from 'vue'
 import { useDashboard } from '../composables/useDashboard.js'
+import ReviewsView from './ReviewsView.vue'
 
 const emit = defineEmits(['navigate'])
+const mobileMenuOpen = ref(false)
+
+function toggleMobileMenu() {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
 
 const {
   user,
@@ -58,7 +65,14 @@ const {
         <span class="nav-brand-text">Asogema</span>
       </div>
 
-      <div class="nav-user">
+      <ul class="dashboard-nav-links" :class="{ open: mobileMenuOpen }">
+        <li><a href="#" @click.prevent="emit('navigate', 'index')">Inicio</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
+      </ul>
+
+      <div class="nav-user" :class="{ open: mobileMenuOpen }">
         <div class="nav-user-greeting" v-if="user">
           <small>Bienvenido</small>
           <strong>{{ user.name }}</strong>
@@ -66,6 +80,12 @@ const {
         <div class="nav-user-avatar">{{ getUserInitials() }}</div>
         <button class="nav-logout-btn" @click="handleLogout">Cerrar Sesión</button>
       </div>
+
+      <button class="dashboard-nav-toggle" :class="{ active: mobileMenuOpen }" @click="toggleMobileMenu" :aria-label="mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </nav>
 
     <!-- ======================================================
@@ -211,6 +231,9 @@ const {
         </div>
       </div>
     </section>
+
+    <!-- ── Reseñas de Habitaciones ── -->
+    <ReviewsView serviceType="hotel" theme="light" />
 
     <!-- ======================================================
          BOOKING PANEL — appears when a room is selected

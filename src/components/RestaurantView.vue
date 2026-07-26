@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { useRestaurant } from '../composables/useRestaurant.js'
+import ReviewsView from './ReviewsView.vue'
 
 const emit = defineEmits(['navigate'])
 
@@ -444,6 +445,9 @@ const {
         </div>
       </div>
     </Transition>
+
+    <!-- ── Reseñas ── -->
+    <ReviewsView serviceType="restaurant" theme="light" />
 
     <!-- ==========================================================
          FOOTER

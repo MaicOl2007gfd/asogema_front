@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { useEvents } from '../composables/useEvents.js'
+import ReviewsView from './ReviewsView.vue'
 
 const emit = defineEmits(['navigate'])
 
@@ -288,29 +289,6 @@ const {
         </button>
       </div>
 
-      <!-- ==========================================================
-           TESTIMONIALS
-           ========================================================== -->
-      <div class="events-testimonials">
-        <h2 class="events-testimonials-title">Lo Que Dicen Nuestros Clientes</h2>
-        <div v-for="t in testimonials" :key="t.id" class="events-testimonial-card" style="margin-bottom: 20px;">
-          <div class="events-testimonial-stars">
-            <svg v-for="n in t.rating" :key="n" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-            </svg>
-          </div>
-          <p class="events-testimonial-text">"{{ t.text }}"</p>
-          <div class="events-testimonial-author">
-            <div class="events-testimonial-avatar">
-              <img :src="t.image" :alt="t.name" />
-            </div>
-            <div class="events-testimonial-name">
-              <strong>{{ t.name }}</strong>
-              <span class="events-testimonial-event">{{ t.event }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- ==========================================================
@@ -474,6 +452,9 @@ const {
         </div>
       </div>
     </Transition>
+
+    <!-- ── Reseñas ── -->
+    <ReviewsView serviceType="events" theme="light" />
 
     <!-- ==========================================================
          FOOTER
