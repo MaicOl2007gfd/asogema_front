@@ -1,11 +1,7 @@
 import { ref, onMounted } from 'vue'
 import { login as authLogin } from './useAuth.js'
+import api from './useApi.js'
 
-/**
- * Composable que maneja toda la lógica del formulario de inicio de sesión.
- * @param {Function} emit - Función emit del componente para navegación
- * @returns {object} Estado reactivo y métodos del login
- */
 export function useLogin(emit) {
   const email = ref('')
   const password = ref('')
@@ -15,6 +11,7 @@ export function useLogin(emit) {
   const isVisible = ref(false)
   const emailError = ref('')
   const passwordError = ref('')
+  const errorMessage = ref('')
 
   const typingEmail = ref(false)
   const typingPassword = ref(false)
@@ -27,6 +24,7 @@ export function useLogin(emit) {
     let isValid = true
     emailError.value = ''
     passwordError.value = ''
+    errorMessage.value = ''
 
     if (!email.value) {
       emailError.value = 'El correo es obligatorio'
@@ -45,24 +43,29 @@ export function useLogin(emit) {
     if (!validateForm()) return
 
     isLoading.value = true
+    errorMessage.value = ''
 
-    // Simulación de inicio de sesión
-    await new Promise((resolve) => setTimeout(resolve, 1800))
+    try {
+      const { data } = await api.post('/auth/login', {
+        correo: email.value,
+        password: password.value,
+      })
 
-    // Extraer nombre del email para el saludo
-    const userName = email.value.split('@')[0] || 'Usuario'
+      authLogin(data.usuario, data.access_token)
 
-    // Guardar sesión
-    authLogin({
-      name: userName,
-      email: email.value,
-    })
-
-    isLoading.value = false
-
-    // Redirigir al Index (con sesión iniciada)
-    if (emit) {
-      emit('navigate', 'index')
+      if (emit) {
+        emit('navigate', 'index')
+      }
+    } catch (err) {
+      if (err.response?.status === 401) {
+        errorMessage.value = 'Correo o contraseña incorrectos'
+      } else if (err.response?.data?.message) {
+        errorMessage.value = err.response.data.message
+      } else {
+        errorMessage.value = 'Error de conexión. Intenta de nuevo.'
+      }
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -81,6 +84,7 @@ export function useLogin(emit) {
     isVisible,
     emailError,
     passwordError,
+    errorMessage,
     typingEmail,
     typingPassword,
     togglePasswordVisibility,
