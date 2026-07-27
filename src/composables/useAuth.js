@@ -4,8 +4,20 @@ import { ref, computed } from 'vue'
  * Composable singleton que maneja el estado de autenticación.
  * Se comparte entre todos los componentes que lo importen.
  */
+
+// ─── Admin Credentials ───────────────────────────────────────
+const ADMIN_EMAIL = 'maicolquevedo29@gmail.com'
+const ADMIN_PASSWORD = 'Ma1234567'
+
 const user = ref(null)
 const isLoggedIn = computed(() => user.value !== null)
+
+/**
+ * Verifica si el usuario actual es el administrador.
+ */
+const isAdmin = computed(() => {
+  return user.value?.email === ADMIN_EMAIL
+})
 
 /**
  * Inicia sesión con datos del usuario.
@@ -44,14 +56,26 @@ export function restoreSession() {
 }
 
 /**
+ * Valida si el correo y contraseña corresponden al administrador.
+ * @param {string} email
+ * @param {string} password
+ * @returns {boolean}
+ */
+export function validateAdminCredentials(email, password) {
+  return email === ADMIN_EMAIL && password === ADMIN_PASSWORD
+}
+
+/**
  * Hook para usar en componentes que necesiten auth.
  */
 export function useAuth() {
   return {
     user,
     isLoggedIn,
+    isAdmin,
     login,
     logout,
     restoreSession,
+    validateAdminCredentials,
   }
 }
