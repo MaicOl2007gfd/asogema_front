@@ -9,12 +9,18 @@ import RestaurantView from './components/RestaurantView.vue'
 import DashboardView from './components/DashboardView.vue'
 import EventsView from './components/EventsView.vue'
 import TableReservationView from './components/TableReservationView.vue'
+import AdminView from './components/AdminView.vue'
 
 const currentView = ref('index')
 
-const { isLoggedIn } = useAuth()
+const { isLoggedIn, isAdmin } = useAuth()
 
 function navigate(view) {
+  // Admin route guard: only allow if user is admin
+  if (view === 'admin' && !isAdmin.value) {
+    currentView.value = 'dashboard'
+    return
+  }
   currentView.value = view
 }
 
@@ -33,6 +39,7 @@ onMounted(() => {
     <EventsView v-else-if="currentView === 'events'" key="events" @navigate="navigate" />
     <TableReservationView v-else-if="currentView === 'table-reservation'" key="table-reservation" @navigate="navigate" />
     <DashboardView v-else-if="currentView === 'dashboard'" key="dashboard" @navigate="navigate" />
+    <AdminView v-else-if="currentView === 'admin'" key="admin" @navigate="navigate" />
   </Transition>
 </template>
 

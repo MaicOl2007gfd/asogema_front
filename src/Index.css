@@ -1,3 +1,4 @@
+
 /* ============================================================
    INDEX / LANDING PAGE — Asogema
    Background: #F3E8D3 (cream)
@@ -270,6 +271,59 @@
   background: var(--idx-primary-light);
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(19, 50, 21, 0.15);
+}
+
+/* Admin link button — only visible when admin is logged in */
+.nav-admin-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--idx-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  background: rgba(0, 206, 201, 0.1);
+  color: var(--idx-accent);
+  border: 1px solid rgba(0, 206, 201, 0.2);
+  transition: all var(--idx-transition);
+}
+
+.nav-admin-link-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.nav-admin-link-btn:hover {
+  background: var(--idx-accent);
+  color: #ffffff;
+  border-color: var(--idx-accent);
+  transform: translateY(-1px);
+}
+
+.index-nav.scrolled .nav-admin-link-btn {
+  background: rgba(0, 206, 201, 0.15);
+  border-color: rgba(0, 206, 201, 0.25);
+  color: var(--idx-accent);
+}
+
+.index-nav.scrolled .nav-admin-link-btn:hover {
+  background: var(--idx-accent);
+  color: #0b1f0d;
+  border-color: var(--idx-accent);
+}
+
+/* Mobile admin button */
+.nav-actions.open .nav-admin-link-btn {
+  font-size: 14px;
+  padding: 12px 24px;
+  background: rgba(0, 206, 201, 0.1);
+}
+
+.nav-actions.open .nav-admin-link-btn:hover {
+  background: var(--idx-accent);
+  color: #0b1f0d;
 }
 
 /* Logged-in user nav */

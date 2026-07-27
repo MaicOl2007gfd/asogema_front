@@ -1,5 +1,5 @@
 import { ref, onMounted } from 'vue'
-import { login as authLogin } from './useAuth.js'
+import { login as authLogin, validateAdminCredentials } from './useAuth.js'
 
 /**
  * Composable que maneja toda la lógica del formulario de inicio de sesión.
@@ -60,9 +60,15 @@ export function useLogin(emit) {
 
     isLoading.value = false
 
-    // Redirigir al Index (con sesión iniciada)
+    // Redirigir según si es admin o usuario normal
+    const isAdminUser = validateAdminCredentials(email.value, password.value)
+
     if (emit) {
-      emit('navigate', 'index')
+      if (isAdminUser) {
+        emit('navigate', 'admin')
+      } else {
+        emit('navigate', 'index')
+      }
     }
   }
 
