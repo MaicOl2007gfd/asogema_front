@@ -1,4 +1,5 @@
 import { ref, onMounted } from 'vue'
+import api from './useApi.js'
 
 const DOCUMENT_TYPES = [
   { value: 'CC', label: 'Cédula de Ciudadanía' },
@@ -8,6 +9,8 @@ const DOCUMENT_TYPES = [
   { value: 'NIT', label: 'NIT' },
   { value: 'CD', label: 'Carné Diplomático' },
 ]
+
+const DOC_TYPE_IDS = { CC: 1, CE: 2, PAS: 3, RC: 4, NIT: 5, CD: 6 }
 
 /**
  * Composable que maneja toda la lógica del formulario de registro.
@@ -42,6 +45,7 @@ export function useRegister(emit) {
   const passwordError = ref('')
   const confirmPasswordError = ref('')
   const termsError = ref('')
+  const errorMessage = ref('')
 
   const typingFirstName = ref(false)
   const typingSecondName = ref(false)
@@ -148,15 +152,36 @@ export function useRegister(emit) {
     if (!validateForm()) return
 
     isLoading.value = true
+    errorMessage.value = ''
 
-    // Simulación de registro
-    await new Promise((resolve) => setTimeout(resolve, 1800))
+    try {
+      await api.post('/auth/users', {
+        nombre: [firstName.value, secondName.value].filter(Boolean).join(' '),
+        apellido: [firstSurname.value, secondSurname.value].filter(Boolean).join(' '),
+        tipo_documento_id: DOC_TYPE_IDS[docType.value] ?? 1,
+        numero_documento: docNumber.value,
+        correo: email.value,
+        password: password.value,
+        telefono: phone.value || undefined,
+      })
 
-    isLoading.value = false
+      isLoading.value = false
 
-    // Redirigir al login después de registrarse
-    if (emit) {
-      emit('navigate', 'login')
+      if (emit) {
+        emit('navigate', 'login')
+      }
+    } catch (err) {
+      isLoading.value = false
+
+      if (err.response?.status === 409) {
+        errorMessage.value = 'Este correo ya está registrado'
+      } else if (err.response?.data?.message) {
+        errorMessage.value = Array.isArray(err.response.data.message)
+          ? err.response.data.message[0]
+          : err.response.data.message
+      } else {
+        errorMessage.value = 'Error de conexión. Intenta de nuevo.'
+      }
     }
   }
 
@@ -197,6 +222,7 @@ export function useRegister(emit) {
     passwordError,
     confirmPasswordError,
     termsError,
+    errorMessage,
     // Typing flags
     typingFirstName,
     typingSecondName,

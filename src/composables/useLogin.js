@@ -1,5 +1,6 @@
 import { ref, onMounted } from 'vue'
 import { login as authLogin, validateAdminCredentials } from './useAuth.js'
+import api from './useApi.js'
 
 /**
  * Composable que maneja toda la lógica del formulario de inicio de sesión.
@@ -46,28 +47,31 @@ export function useLogin(emit) {
 
     isLoading.value = true
 
-    // Simulación de inicio de sesión
-    await new Promise((resolve) => setTimeout(resolve, 1800))
+    try {
+      const { data } = await api.post('/auth/tokens', {
+        correo: email.value,
+        password: password.value,
+      })
 
-    // Extraer nombre del email para el saludo
-    const userName = email.value.split('@')[0] || 'Usuario'
+      authLogin(data.usuario, data.access_token)
+      isLoading.value = false
 
-    // Guardar sesión
-    authLogin({
-      name: userName,
-      email: email.value,
-    })
+      const isAdminUser = validateAdminCredentials(email.value, password.value)
 
-    isLoading.value = false
+      if (emit) {
+        emit('navigate', isAdminUser ? 'admin' : 'index')
+      }
+    } catch (err) {
+      isLoading.value = false
 
-    // Redirigir según si es admin o usuario normal
-    const isAdminUser = validateAdminCredentials(email.value, password.value)
-
-    if (emit) {
-      if (isAdminUser) {
-        emit('navigate', 'admin')
+      if (err.response?.status === 401) {
+        emailError.value = 'Correo o contraseña incorrectos'
+      } else if (err.response?.data?.message) {
+        emailError.value = Array.isArray(err.response.data.message)
+          ? err.response.data.message[0]
+          : err.response.data.message
       } else {
-        emit('navigate', 'index')
+        emailError.value = 'Error de conexión. Intenta de nuevo.'
       }
     }
   }
