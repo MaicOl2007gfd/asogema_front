@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { restoreSession, useAuth } from './composables/useAuth.js'
+import { restoreSession, logout, useAuth } from './composables/useAuth.js'
+import api from './composables/useApi.js'
 import IndexView from './components/IndexView.vue'
 import LoginView from './components/LoginView.vue'
 import RegisterView from './components/RegisterView.vue'
@@ -18,8 +19,21 @@ function navigate(view) {
   currentView.value = view
 }
 
-onMounted(() => {
+onMounted(async () => {
   restoreSession()
+
+  if (localStorage.getItem('asogema_token')) {
+    try {
+      const { data } = await api.get('/auth/perfil')
+      const stored = JSON.parse(localStorage.getItem('asogema_user') || '{}')
+      stored.nombre = data.nombre || stored.nombre
+      stored.apellido = data.apellido || stored.apellido
+      stored.correo = data.correo || stored.correo
+      localStorage.setItem('asogema_user', JSON.stringify(stored))
+    } catch {
+      logout()
+    }
+  }
 })
 </script>
 

@@ -12,6 +12,7 @@ const {
   isVisible,
   emailError,
   passwordError,
+  errorMessage,
   typingEmail,
   typingPassword,
   togglePasswordVisibility,
@@ -148,6 +149,16 @@ const {
             <span class="checkbox-label">Recordarme</span>
           </label>
           <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <!-- Error message -->
+        <div v-if="errorMessage" class="error-banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="error-icon">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+          <span>{{ errorMessage }}</span>
         </div>
 
         <!-- Submit Button -->
