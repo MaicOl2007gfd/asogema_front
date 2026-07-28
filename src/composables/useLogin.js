@@ -1,5 +1,5 @@
 import { ref, onMounted } from 'vue'
-import { login as authLogin, validateAdminCredentials } from './useAuth.js'
+import { login as authLogin } from './useAuth.js'
 import api from './useApi.js'
 
 /**
@@ -56,10 +56,8 @@ export function useLogin(emit) {
       authLogin(data.usuario, data.access_token)
       isLoading.value = false
 
-      const isAdminUser = validateAdminCredentials(email.value, password.value)
-
       if (emit) {
-        emit('navigate', isAdminUser ? 'admin' : 'index')
+        emit('navigate', data.usuario.rol_id === 1 ? 'admin' : 'index')
       }
     } catch (err) {
       isLoading.value = false
