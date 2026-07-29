@@ -46,26 +46,29 @@ export function useLogin(emit) {
     errorMessage.value = ''
 
     try {
-      const { data } = await api.post('/auth/login', {
+      const { data } = await api.post('/auth/tokens', {
         correo: email.value,
         password: password.value,
       })
 
       authLogin(data.usuario, data.access_token)
+      isLoading.value = false
 
       if (emit) {
-        emit('navigate', 'index')
+        emit('navigate', data.usuario.rol_id === 1 ? 'admin' : 'index')
       }
     } catch (err) {
-      if (err.response?.status === 401) {
-        errorMessage.value = 'Correo o contraseña incorrectos'
-      } else if (err.response?.data?.message) {
-        errorMessage.value = err.response.data.message
-      } else {
-        errorMessage.value = 'Error de conexión. Intenta de nuevo.'
-      }
-    } finally {
       isLoading.value = false
+
+      if (err.response?.status === 401) {
+        emailError.value = 'Correo o contraseña incorrectos'
+      } else if (err.response?.data?.message) {
+        emailError.value = Array.isArray(err.response.data.message)
+          ? err.response.data.message[0]
+          : err.response.data.message
+      } else {
+        emailError.value = 'Error de conexión. Intenta de nuevo.'
+      }
     }
   }
 

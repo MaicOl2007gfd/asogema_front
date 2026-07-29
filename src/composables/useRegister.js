@@ -155,7 +155,7 @@ export function useRegister(emit) {
     errorMessage.value = ''
 
     try {
-      await api.post('/auth/register', {
+      await api.post('/auth/users', {
         nombre: [firstName.value, secondName.value].filter(Boolean).join(' '),
         apellido: [firstSurname.value, secondSurname.value].filter(Boolean).join(' '),
         tipo_documento_id: DOC_TYPE_IDS[docType.value] ?? 1,
@@ -165,10 +165,13 @@ export function useRegister(emit) {
         telefono: phone.value || undefined,
       })
 
+      isLoading.value = false
+
       if (emit) {
         emit('navigate', 'login')
       }
     } catch (err) {
+      isLoading.value = false
       if (err.response?.status === 409) {
         errorMessage.value = 'Este correo ya está registrado'
       } else if (err.response?.data?.message) {
@@ -178,8 +181,7 @@ export function useRegister(emit) {
       } else {
         errorMessage.value = 'Error de conexión. Intenta de nuevo.'
       }
-    } finally {
-      isLoading.value = false
+
     }
   }
 

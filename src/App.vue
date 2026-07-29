@@ -10,10 +10,11 @@ import RestaurantView from './components/RestaurantView.vue'
 import DashboardView from './components/DashboardView.vue'
 import EventsView from './components/EventsView.vue'
 import TableReservationView from './components/TableReservationView.vue'
+import PanelAdmin from './components/PanelAdmin.vue'
 
 const currentView = ref('index')
 
-const { isLoggedIn } = useAuth()
+const { isLoggedIn, isAdmin } = useAuth()
 
 function navigate(view) {
   currentView.value = view
@@ -24,7 +25,7 @@ onMounted(async () => {
 
   if (localStorage.getItem('asogema_token')) {
     try {
-      const { data } = await api.get('/auth/perfil')
+      const { data } = await api.get('/auth/users/me')
       const stored = JSON.parse(localStorage.getItem('asogema_user') || '{}')
       stored.nombre = data.nombre || stored.nombre
       stored.apellido = data.apellido || stored.apellido
@@ -47,6 +48,7 @@ onMounted(async () => {
     <EventsView v-else-if="currentView === 'events'" key="events" @navigate="navigate" />
     <TableReservationView v-else-if="currentView === 'table-reservation'" key="table-reservation" @navigate="navigate" />
     <DashboardView v-else-if="currentView === 'dashboard'" key="dashboard" @navigate="navigate" />
+    <PanelAdmin v-else-if="currentView === 'admin'" key="admin" @navigate="navigate" />
   </Transition>
 </template>
 
