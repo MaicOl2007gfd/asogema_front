@@ -1,7 +1,9 @@
 <script setup>
-import { ref } from 'vue'
-import { useAuth } from '../composables/useAuth.js'
+import { ref, computed } from 'vue'
 import { useDashboard } from '../composables/useDashboard.js'
+import { useAuth } from '../composables/useAuth.js'
+import { useAdminDashboard } from '../composables/useAdminDashboard.js'
+import AdminPanel from './AdminPanel.vue'
 import ReviewsView from './ReviewsView.vue'
 
 const emit = defineEmits(['navigate'])
@@ -11,13 +13,9 @@ function toggleMobileMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
 
-const { isAdmin } = useAuth()
+const { user, getUserInitials, handleLogout, goBackToHome, isAdmin } = useAuth()
 
 const {
-  user,
-  getUserInitials,
-  handleLogout,
-  goBackToHome,
   ROOM_TYPES,
   checkIn,
   checkOut,
@@ -55,6 +53,8 @@ const {
   closeBookingPanel,
   scrollToGallery,
 } = useDashboard(emit)
+
+const admin = useAdminDashboard()
 </script>
 
 <template>
@@ -62,7 +62,7 @@ const {
     <!-- ======================================================
          NAVBAR
          ====================================================== -->
-    <nav class="dashboard-nav">
+    <nav class="dashboard-nav" :class="{ 'has-admin': isAdmin }">
       <div class="nav-brand" @click="scrollToGallery">
         <img src="/imagenes/Logo.png" alt="Asogema" class="nav-logo" />
         <span class="nav-brand-text">Asogema</span>
@@ -76,6 +76,13 @@ const {
       </ul>
 
       <div class="nav-user" :class="{ open: mobileMenuOpen }">
+        <div v-if="isAdmin" class="nav-admin-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0110 0v4" />
+          </svg>
+          <span>Admin</span>
+        </div>
         <div class="nav-user-greeting" v-if="user">
           <small>Bienvenido</small>
           <strong>{{ user.name }}</strong>
@@ -494,6 +501,13 @@ const {
         </p>
         <button class="btn-success" @click="closeSuccess">Cerrar</button>
       </div>
+    </div>
+
+    <!-- ======================================================
+         ADMIN PANEL — only visible for admin users
+         ====================================================== -->
+    <div v-if="isAdmin" class="admin-section-wrapper">
+      <AdminPanel :admin="admin" />
     </div>
   </div>
 </template>

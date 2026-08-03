@@ -2254,3 +2254,71 @@
     padding: 36px 24px 32px;
   }
 }
+
+/* ============================================================
+   ADMIN BADGE — Navbar
+   ============================================================ */
+.dashboard-nav.has-admin .nav-user {
+  gap: 12px;
+}
+
+.nav-admin-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: rgba(0, 206, 201, 0.1);
+  border: 1px solid rgba(0, 206, 201, 0.2);
+  color: #00cec9;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.nav-admin-badge svg {
+  width: 16px;
+  height: 16px;
+}
+
+.nav-admin-badge:hover {
+  background: rgba(0, 206, 201, 0.15);
+  border-color: rgba(0, 206, 201, 0.35);
+}
+
+/* ============================================================
+   ADMIN PANEL — Section background
+   ============================================================ */
+.admin-section-wrapper {
+  background: linear-gradient(180deg, #0b1f0d 0%, #133215 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-section-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(0, 206, 201, 0.15), transparent);
+}
+
+/* Subtle decorative dots pattern */
+.admin-section-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(0, 206, 201, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure admin panel content sits above the decorative layer */
+.admin-section-wrapper > * {
+  position: relative;
+  z-index: 1;
+}

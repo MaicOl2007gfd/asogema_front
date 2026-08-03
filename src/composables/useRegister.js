@@ -172,7 +172,6 @@ export function useRegister(emit) {
       }
     } catch (err) {
       isLoading.value = false
-
       if (err.response?.status === 409) {
         errorMessage.value = 'Este correo ya está registrado'
       } else if (err.response?.data?.message) {
@@ -182,6 +181,7 @@ export function useRegister(emit) {
       } else {
         errorMessage.value = 'Error de conexión. Intenta de nuevo.'
       }
+
     }
   }
 

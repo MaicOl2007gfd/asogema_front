@@ -2,15 +2,23 @@ import { ref, computed } from 'vue'
 
 const ADMIN_EMAIL = 'maicolquevedo29@gmail.com'
 const ADMIN_PASSWORD = 'Ma1234567'
-
 const user = ref(null)
 const token = ref(null)
 const isLoggedIn = computed(() => user.value !== null)
 
 const isAdmin = computed(() => {
-  return user.value?.email === ADMIN_EMAIL
+  if (!user.value) return false
+  return (
+    user.value.rol === 'admin' ||
+    user.value.rol === 'administrador' ||
+    user.value.role === 'admin' ||
+    user.value.role === 'administrator' ||
+    user.value.is_admin === true ||
+    user.value.tipo_usuario === 'admin' ||
+    user.value.rol_id === 1 ||
+    user.value.role_id === 1
+  )
 })
-
 export function login(userData, accessToken) {
   token.value = accessToken
   user.value = {
@@ -46,7 +54,6 @@ export function restoreSession() {
 export function validateAdminCredentials(email, password) {
   return email === ADMIN_EMAIL && password === ADMIN_PASSWORD
 }
-
 export function useAuth() {
   return {
     user,

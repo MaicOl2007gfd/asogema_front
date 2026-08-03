@@ -2,11 +2,6 @@ import { ref, onMounted } from 'vue'
 import { login as authLogin } from './useAuth.js'
 import api from './useApi.js'
 
-/**
- * Composable que maneja toda la lógica del formulario de inicio de sesión.
- * @param {Function} emit - Función emit del componente para navegación
- * @returns {object} Estado reactivo y métodos del login
- */
 export function useLogin(emit) {
   const email = ref('')
   const password = ref('')
@@ -16,6 +11,7 @@ export function useLogin(emit) {
   const isVisible = ref(false)
   const emailError = ref('')
   const passwordError = ref('')
+  const errorMessage = ref('')
 
   const typingEmail = ref(false)
   const typingPassword = ref(false)
@@ -28,6 +24,7 @@ export function useLogin(emit) {
     let isValid = true
     emailError.value = ''
     passwordError.value = ''
+    errorMessage.value = ''
 
     if (!email.value) {
       emailError.value = 'El correo es obligatorio'
@@ -46,6 +43,7 @@ export function useLogin(emit) {
     if (!validateForm()) return
 
     isLoading.value = true
+    errorMessage.value = ''
 
     try {
       const { data } = await api.post('/auth/tokens', {
@@ -89,6 +87,7 @@ export function useLogin(emit) {
     isVisible,
     emailError,
     passwordError,
+    errorMessage,
     typingEmail,
     typingPassword,
     togglePasswordVisibility,
