@@ -55,7 +55,8 @@ export function useLogin(emit) {
       isLoading.value = false
 
       if (emit) {
-        emit('navigate', data.usuario.rol_id === 1 ? 'admin' : 'index')
+        const isAdmin = data.usuario.rol_nombre === 'Administrador' || data.usuario.rol_id === 1
+        emit('navigate', isAdmin ? 'admin' : 'index')
       }
     } catch (err) {
       isLoading.value = false

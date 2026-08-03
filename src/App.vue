@@ -17,6 +17,10 @@ const currentView = ref('index')
 const { isLoggedIn, isAdmin } = useAuth()
 
 function navigate(view) {
+  if (view === 'admin' && !isAdmin.value) {
+    currentView.value = 'index'
+    return
+  }
   currentView.value = view
 }
 

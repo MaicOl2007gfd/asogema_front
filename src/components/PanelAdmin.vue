@@ -5,7 +5,7 @@ import { usePanelAdmin } from '../composables/usePanelAdmin.js'
 
 const emit = defineEmits(['navigate'])
 
-const { user, logout } = useAuth()
+const { user, isAdmin, logout } = useAuth()
 
 const {
   activeModule, activeSubTab, contextMessage,
@@ -62,7 +62,12 @@ function getFilterColor(cat) {
   return filterColors[cat] || '#00cec9'
 }
 
-onMounted(() => { window.scrollTo(0, 0) })
+onMounted(() => {
+  window.scrollTo(0, 0)
+  if (!isAdmin.value) {
+    emit('navigate', 'index')
+  }
+})
 </script>
 
 <template>
