@@ -1,5 +1,6 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useAuth } from './useAuth.js'
+import { useHotelApi } from './useHotelApi.js'
 
 /**
  * Composable que maneja la lógica del Dashboard (logged-in).
@@ -14,62 +15,14 @@ export function useDashboard(emit) {
      AUTH
      ---------------------------------------------------------- */
   const { user, logout } = useAuth()
+  const { fetchRooms, createBooking } = useHotelApi()
 
   /* ----------------------------------------------------------
-     ROOM DATA
+     ROOM DATA (from API)
      ---------------------------------------------------------- */
-  const ROOM_TYPES = [
-    {
-      value: 'standard',
-      label: 'Habitación Estándar',
-      price: 120,
-      capacity: 2,
-      desc: 'Cómoda habitación con cama queen, ideal para viajeros solitarios o parejas.',
-      fullDesc: 'Disfruta de una estancia acogedora en nuestra Habitación Estándar, equipada con una cama queen size de alta comodidad, escritorio de trabajo, TV de pantalla plana, aire acondicionado y baño privado con dador de agua caliente.',
-      image: 'https://picsum.photos/id/1043/600/400',
-      features: ['Cama Queen', 'WiFi Gratis', 'TV LED 32"', 'Aire Acondicionado', 'Baño Privado', 'Escritorio'],
-    },
-    {
-      value: 'double',
-      label: 'Habitación Doble',
-      price: 160,
-      capacity: 4,
-      desc: 'Dos camas dobles, ideal para familias o grupos pequeños.',
-      fullDesc: 'Nuestra Habitación Doble ofrece dos camas dobles cómodas y espaciosas, perfectas para familias con niños o grupos de amigos. Incluye TV por cable, WiFi de alta velocidad, minibar, cafetera eléctrica y baño completo.',
-      image: 'https://picsum.photos/id/1044/600/400',
-      features: ['2 Camas Dobles', 'WiFi Gratis', 'TV LED 40"', 'Minibar', 'Cafetera', 'Baño Completo'],
-    },
-    {
-      value: 'suite',
-      label: 'Suite Ejecutiva',
-      price: 250,
-      capacity: 3,
-      desc: 'Suite con sala de estar y vista panorámica al paisaje.',
-      fullDesc: 'La Suite Ejecutiva combina elegancia y funcionalidad con una sala de estar independiente, amplio dormitorio con cama king size y una impresionante vista panorámica de los alrededores.',
-      image: 'https://picsum.photos/id/1045/600/400',
-      features: ['Cama King', 'Sala de Estar', 'Vista Panorámica', 'WiFi Premium', 'TV LED 50"', 'Room Service'],
-    },
-    {
-      value: 'premium',
-      label: 'Suite Premium',
-      price: 380,
-      capacity: 4,
-      desc: 'Suite de lujo con jacuzzi y terraza privada.',
-      fullDesc: 'Sumérgete en el lujo de nuestra Suite Premium, que cuenta con un dormitorio principal con cama king size, jacuzzi privado de hidromasaje, terraza exclusiva con muebles de exterior, vestidor y baño de mármol.',
-      image: 'https://picsum.photos/id/1048/600/400',
-      features: ['Cama King', 'Jacuzzi Privado', 'Terraza Exclusiva', 'Vestidor', 'Baño de Mármol', 'Ducha tipo Lluvia'],
-    },
-    {
-      value: 'master',
-      label: 'Suite Master',
-      price: 520,
-      capacity: 6,
-      desc: 'La máxima experiencia, dos habitaciones y sala amplia.',
-      fullDesc: 'Nuestra Suite Master es el pináculo del alojamiento en Hotel Asogema: dos amplios dormitorios con camas king size, una sala de estar espaciosa con comedor, cocina equipada, dos baños completos y una terraza panorámica.',
-      image: 'https://picsum.photos/id/1049/600/400',
-      features: ['2 Camas King', '2 Baños', 'Sala + Comedor', 'Cocina Equipada', 'Terraza Panorámica', 'Mayordomo Privado'],
-    },
-  ]
+  const rooms = ref([])
+  const roomsLoading = ref(false)
+  const roomsError = ref(null)
 
   /* ----------------------------------------------------------
      SEARCH & FILTER STATE
@@ -80,8 +33,8 @@ export function useDashboard(emit) {
 
   const filteredRooms = computed(() => {
     const q = searchQuery.value.toLowerCase().trim()
-    if (!q) return ROOM_TYPES
-    return ROOM_TYPES.filter(room =>
+    if (!q) return rooms.value
+    return rooms.value.filter(room =>
       room.label.toLowerCase().includes(q) ||
       room.desc.toLowerCase().includes(q) ||
       room.fullDesc.toLowerCase().includes(q) ||
@@ -125,7 +78,7 @@ export function useDashboard(emit) {
      ---------------------------------------------------------- */
   const checkIn = ref('')
   const checkOut = ref('')
-  const roomType = ref('standard')
+  const roomType = ref('')
   const guests = ref(3)
   const fullName = ref('')
   const phone = ref('')
@@ -152,10 +105,10 @@ export function useDashboard(emit) {
   /* ----------------------------------------------------------
      COMPUTED
      ---------------------------------------------------------- */
-  const MIN_GUESTS = 3
+  const MIN_GUESTS = 1
 
   const selectedRoom = computed(() => {
-    return ROOM_TYPES.find(r => r.value === roomType.value) || ROOM_TYPES[0]
+    return rooms.value.find(r => r.value === roomType.value) || rooms.value[0] || null
   })
 
   const nights = computed(() => {
@@ -167,15 +120,15 @@ export function useDashboard(emit) {
   })
 
   const maxGuests = computed(() => {
-    return selectedRoom.value.capacity
+    return selectedRoom.value?.capacity || 0
   })
 
   const guestWarning = computed(() => {
     if (guests.value > maxGuests.value) {
-      return `Máximo ${maxGuests.value} huéspedes para ${selectedRoom.value.label.toLowerCase()}`
+      return `Máximo ${maxGuests.value} huéspedes para ${selectedRoom.value?.label?.toLowerCase() || 'esta habitación'}`
     }
     if (guests.value < MIN_GUESTS) {
-      return `Mínimo ${MIN_GUESTS} personas por habitación`
+      return `Mínimo ${MIN_GUESTS} persona(s) por habitación`
     }
     return ''
   })
@@ -188,12 +141,13 @@ export function useDashboard(emit) {
       fullName.value.trim() &&
       phone.value.trim() &&
       guests.value >= MIN_GUESTS &&
-      guests.value <= maxGuests.value
+      guests.value <= maxGuests.value &&
+      selectedRoom.value !== null
     )
   })
 
   const subtotal = computed(() => {
-    return selectedRoom.value.price * nights.value
+    return selectedRoom.value?.price * nights.value || 0
   })
 
   const tax = computed(() => {
@@ -293,12 +247,17 @@ export function useDashboard(emit) {
     }
 
     if (guests.value < MIN_GUESTS) {
-      newErrors.guests = `Mínimo ${MIN_GUESTS} personas`
+      newErrors.guests = `Mínimo ${MIN_GUESTS} persona(s)`
       isValid = false
     }
 
     if (guests.value > maxGuests.value) {
-      newErrors.guests = `Máximo ${maxGuests.value} personas`
+      newErrors.guests = `Máximo ${maxGuests.value} persona(s)`
+      isValid = false
+    }
+
+    if (!selectedRoom.value) {
+      newErrors.guests = 'Selecciona una habitación válida'
       isValid = false
     }
 
@@ -310,9 +269,35 @@ export function useDashboard(emit) {
     if (!validateForm()) return
 
     isSubmitting.value = true
-    await new Promise((resolve) => setTimeout(resolve, 1800))
-    isSubmitting.value = false
-    showSuccess.value = true
+
+    try {
+      const bookingData = {
+        habitacion_id: Number(selectedRoom.value.id),
+        fecha_entrada: checkIn.value,
+        fecha_salida: checkOut.value,
+        cantidad_huespedes: guests.value,
+        total: total.value,
+        observaciones: specialRequests.value || undefined,
+      }
+
+      await createBooking(bookingData)
+
+      isSubmitting.value = false
+      showSuccess.value = true
+      resetForm()
+    } catch (err) {
+      isSubmitting.value = false
+      if (err.response?.status === 409) {
+        errors.value.checkIn = 'La habitación no está disponible para esas fechas'
+      } else if (err.response?.data?.message) {
+        const msg = Array.isArray(err.response.data.message)
+          ? err.response.data.message[0]
+          : err.response.data.message
+        errors.value.checkIn = msg
+      } else {
+        errors.value.checkIn = 'Error al crear la reserva. Intenta de nuevo.'
+      }
+    }
   }
 
   function closeSuccess() {
@@ -322,7 +307,7 @@ export function useDashboard(emit) {
   function resetForm() {
     checkIn.value = ''
     checkOut.value = ''
-    roomType.value = 'standard'
+    roomType.value = rooms.value[0]?.value || ''
     guests.value = 3
     fullName.value = ''
     phone.value = ''
@@ -333,6 +318,58 @@ export function useDashboard(emit) {
       fullName: '',
       phone: '',
       guests: '',
+    }
+    showBookingPanel.value = false
+  }
+
+  /* ----------------------------------------------------------
+     API DATA TRANSFORMATION
+     ---------------------------------------------------------- */
+  function transformRoomData(apiRooms) {
+    return apiRooms.map((room, index) => {
+      const tipo = room.tipos_habitacion
+      return {
+        value: `room_${room.id}`,
+        id: room.id,
+        label: tipo?.nombre || `Habitación ${room.numero}`,
+        price: Number(tipo?.precio_noche || 0),
+        capacity: tipo?.capacidad || 1,
+        desc: tipo?.descripcion || room.descripcion || 'Habitación cómoda y acogedora.',
+        fullDesc: tipo?.descripcion || room.descripcion || 'Disfruta de una estancia acogedora en nuestras habitaciones.',
+        image: `https://picsum.photos/id/${1043 + index}/600/400`,
+        features: [
+          tipo?.nombre?.includes('Suite') ? 'Cama King' : 'Cama Queen',
+          'WiFi Gratis',
+          'TV LED',
+          'Aire Acondicionado',
+          'Baño Privado',
+          'Servicio a la Habitación',
+        ],
+      }
+    })
+  }
+
+  /* ----------------------------------------------------------
+     LOAD ROOMS FROM API
+     ---------------------------------------------------------- */
+  async function loadRooms() {
+    roomsLoading.value = true
+    roomsError.value = null
+    try {
+      const apiRooms = await fetchRooms({
+        fecha_entrada: checkIn.value || undefined,
+        fecha_salida: checkOut.value || undefined,
+      })
+      rooms.value = transformRoomData(apiRooms)
+      // Set default room type if not set
+      if (!roomType.value && rooms.value.length > 0) {
+        roomType.value = rooms.value[0].value
+      }
+    } catch (err) {
+      roomsError.value = 'No se pudieron cargar las habitaciones'
+      console.error('Error loading rooms:', err)
+    } finally {
+      roomsLoading.value = false
     }
   }
 
@@ -345,10 +382,17 @@ export function useDashboard(emit) {
     }
   })
 
+  // Reload rooms when dates change (to check availability)
+  watch([checkIn, checkOut], () => {
+    if (checkIn.value && checkOut.value) {
+      loadRooms()
+    }
+  })
+
   /* ----------------------------------------------------------
      LIFECYCLE
      ---------------------------------------------------------- */
-  onMounted(() => {
+  onMounted(async () => {
     // Pre-fill user data if available
     if (user.value) {
       fullName.value = user.value.name || ''
@@ -357,6 +401,8 @@ export function useDashboard(emit) {
     requestAnimationFrame(() => {
       isVisible.value = true
     })
+    // Load rooms from API
+    await loadRooms()
   })
 
   /* ----------------------------------------------------------
@@ -368,8 +414,10 @@ export function useDashboard(emit) {
     getUserInitials,
     handleLogout,
     goBackToHome,
-    // Room types
-    ROOM_TYPES,
+    // Room types (from API)
+    rooms,
+    roomsLoading,
+    roomsError,
     // Form state
     checkIn,
     checkOut,
@@ -413,5 +461,6 @@ export function useDashboard(emit) {
     closeRoomDetail,
     selectRoomFromCard,
     closeBookingPanel,
+    loadRooms,
   }
 }

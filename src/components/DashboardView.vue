@@ -13,10 +13,12 @@ function toggleMobileMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
 
-const { user, getUserInitials, handleLogout, goBackToHome, isAdmin } = useAuth()
+const { user, isAdmin } = useAuth()
 
 const {
-  ROOM_TYPES,
+  rooms,
+  roomsLoading,
+  roomsError,
   checkIn,
   checkOut,
   roomType,
@@ -52,6 +54,9 @@ const {
   selectRoomFromCard,
   closeBookingPanel,
   scrollToGallery,
+  getUserInitials,
+  handleLogout,
+  goBackToHome
 } = useDashboard(emit)
 
 const admin = useAdminDashboard()
@@ -180,12 +185,30 @@ const admin = useAdminDashboard()
       </div>
 
       <!-- Results count -->
-      <div class="room-results-info" v-if="searchQuery">
+      <div class="room-results-info" v-if="searchQuery && !roomsLoading">
         <span>{{ filteredRooms.length }} habitación(es) encontrada(s)</span>
       </div>
 
+      <!-- Loading skeleton -->
+      <div v-if="roomsLoading" class="room-loading" role="status" aria-live="polite">
+        <div class="room-loading-spinner" aria-hidden="true"></div>
+        <p>Cargando habitaciones…</p>
+      </div>
+
+      <!-- Error state -->
+      <div v-else-if="roomsError" class="room-cards-empty room-error-state" role="alert">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <h3>No pudimos cargar las habitaciones</h3>
+        <p>{{ roomsError }}</p>
+        <button @click="loadRooms" class="room-cards-empty-btn">Reintentar</button>
+      </div>
+
       <!-- Room Cards Grid -->
-      <div class="room-cards-grid">
+      <div v-else class="room-cards-grid">
         <article
           v-for="room in filteredRooms"
           :key="room.value"
