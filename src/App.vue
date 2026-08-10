@@ -16,12 +16,34 @@ const currentView = ref('index')
 
 const { isLoggedIn, isAdmin } = useAuth()
 
+// Secciones que requieren sesión iniciada
+const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'dashboard', 'admin']
+
+const showLoginAlert = ref(false)
+const pendingView = ref(null)
+
 function navigate(view) {
+  if (protectedViews.includes(view) && !isLoggedIn.value) {
+    pendingView.value = view
+    showLoginAlert.value = true
+    return
+  }
   if (view === 'admin' && !isAdmin.value) {
     currentView.value = 'index'
     return
   }
   currentView.value = view
+}
+
+function cancelLoginAlert() {
+  showLoginAlert.value = false
+  pendingView.value = null
+}
+
+function goToRegister() {
+  showLoginAlert.value = false
+  pendingView.value = null
+  currentView.value = 'register'
 }
 
 onMounted(async () => {
@@ -54,6 +76,26 @@ onMounted(async () => {
     <DashboardView v-else-if="currentView === 'dashboard'" key="dashboard" @navigate="navigate" />
     <PanelAdmin v-else-if="currentView === 'admin'" key="admin" @navigate="navigate" />
   </Transition>
+
+  <!-- Alerta de acceso restringido (no logueado) -->
+  <Transition name="modal-fade">
+    <div v-if="showLoginAlert" class="login-alert-overlay" @click.self="cancelLoginAlert">
+      <div class="login-alert-card" role="alertdialog" aria-modal="true" aria-labelledby="login-alert-title">
+        <div class="login-alert-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0110 0v4"></path>
+          </svg>
+        </div>
+        <h3 id="login-alert-title">Acceso restringido</h3>
+        <p>Para ingresar a esta sección necesitas una cuenta. Crea una cuenta para continuar.</p>
+        <div class="login-alert-actions">
+          <button type="button" class="login-alert-btn login-alert-btn-cancel" @click="cancelLoginAlert">Cancelar</button>
+          <button type="button" class="login-alert-btn login-alert-btn-register" @click="goToRegister">Registrarse</button>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <style>
@@ -70,5 +112,110 @@ onMounted(async () => {
 .view-fade-leave-to {
   opacity: 0;
   transform: scale(1.04);
+}
+
+/* ── Modal de acceso restringido ─────────────────────────── */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.login-alert-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(5, 5, 5, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.login-alert-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 32px 32px;
+  background: #F3E8D3;
+  border: 1px solid #133215;
+  border-radius: 16px;
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.login-alert-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #133215, #00cec9);
+  color: #F3E8D3;
+}
+
+.login-alert-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.login-alert-card h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #133215;
+  margin-bottom: 10px;
+}
+
+.login-alert-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #133215;
+  margin-bottom: 28px;
+}
+
+.login-alert-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.login-alert-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1.5px solid #133215;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-alert-btn-cancel {
+  background: transparent;
+  color: #133215;
+}
+
+.login-alert-btn-cancel:hover {
+  background: rgba(19, 50, 21, 0.08);
+}
+
+.login-alert-btn-register {
+  background: #133215;
+  color: #F3E8D3;
+}
+
+.login-alert-btn-register:hover {
+  background: #050505;
+  transform: translateY(-2px);
 }
 </style>

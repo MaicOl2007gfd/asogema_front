@@ -77,11 +77,26 @@ onMounted(() => {
          ══════════════════════════════════════════════════════ -->
     <header class="lux-header">
       <div class="lux-header-inner">
-        <!-- Brand / Logo -->
-        <div class="lux-brand" @click="emit('navigate', 'dashboard')">
-          <img src="/imagenes/Logo.png" alt="Asogema" class="lux-logo" />
-          <span class="lux-brand-text">Asogema</span>
-          <span class="lux-brand-club">Club Privado</span>
+        <!-- Left: Back arrow + Brand / Logo -->
+        <div class="lux-header-left">
+          <button
+            type="button"
+            class="lux-back-btn"
+            @click="emit('navigate', 'index')"
+            aria-label="Volver al inicio"
+            title="Volver al inicio"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+
+          <div class="lux-brand" @click="emit('navigate', 'dashboard')">
+            <img src="/imagenes/Logo.png" alt="Asogema" class="lux-logo" />
+            <span class="lux-brand-text">Asogema</span>
+            <span class="lux-brand-club">Club Privado</span>
+          </div>
         </div>
 
         <!-- Module Pills -->
