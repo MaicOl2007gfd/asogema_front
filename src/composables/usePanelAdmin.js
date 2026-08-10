@@ -1,156 +1,113 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import api from './useApi.js'
 
-// ─── Member/Socios Mock Data ─────────────────────────────
-const members = ref([
-  {
-    id: 1,
-    name: 'Carlos Martínez',
-    email: 'carlos.m@asogema.com',
-    membership: 'Premium',
-    membershipColor: '#fdcb6e',
-    initials: 'CM',
-    joinDate: '2023-11-07',
-    avatar: null,
-    reservations: [
-      { id: 101, service: 'Restaurante', date: '2026-08-05', time: '19:30', guests: 4, status: 'confirmada' },
-      { id: 102, service: 'Hotel', date: '2026-08-12', time: '14:00', guests: 2, status: 'confirmada' },
-      { id: 103, service: 'Cancha de Golf', date: '2026-08-18', time: '08:00', guests: 1, status: 'pendiente' },
-    ],
-    payments: { balance: 2_450_000, lastPayment: 850_000, lastPaymentDate: '2026-07-15', status: 'al día' },
-    guests: [
-      { name: 'Ana Martínez', relationship: 'Cónyuge', status: 'activo' },
-      { name: 'Pedro Martínez', relationship: 'Hijo', status: 'activo' },
-    ],
-    events: [
-      { id: 201, name: 'Cena de Gala Anual', date: '2026-09-18', time: '19:00', location: 'Salón Principal', rsvp: 'confirmado' },
-      { id: 202, name: 'Torneo de Golf', date: '2026-08-25', time: '07:00', location: 'Campo de Golf', rsvp: 'pendiente' },
-    ],
-    history: [
-      { date: '2026-07-20', action: 'Reserva de restaurante', amount: 320000 },
-      { date: '2026-07-15', action: 'Pago de membresía', amount: 850000 },
-      { date: '2026-07-10', action: 'Estadía en hotel', amount: 1200000 },
-      { date: '2026-07-05', action: 'Torneo de Tenis', amount: 150000 },
-      { date: '2026-06-28', action: 'Cena privada', amount: 580000 },
-    ],
-    benefits: [
-      { name: 'Acceso ilimitado al spa', active: true },
-      { name: 'Descuento 20% en restaurante', active: true },
-      { name: 'Invitado adicional gratis', active: true },
-      { name: 'Estacionamiento VIP', active: true },
-      { name: 'Acceso a eventos exclusivos', active: false },
-      { name: 'Clase de golf gratuita / mes', active: true },
-    ],
-    news: [
-      { date: '2026-07-28', title: 'Nuevo chef ejecutivo en Asogema', excerpt: 'El reconocido chef internacional Juan Pablo Mercado se une a nuestro equipo.' },
-      { date: '2026-07-25', title: 'Renovación de la piscina olímpica', excerpt: 'La piscina estará cerrada del 5 al 12 de agosto por mantenimiento.' },
-      { date: '2026-07-20', title: 'Torneo de Bridge Anual', excerpt: 'Inscripciones abiertas para el torneo anual de bridge del club.' },
-    ],
-  },
-  {
-    id: 2,
-    name: 'María López',
-    email: 'maria.l@asogema.com',
-    membership: 'Ejecutiva',
-    membershipColor: '#00cec9',
-    initials: 'ML',
-    joinDate: '2024-03-22',
-    avatar: null,
-    reservations: [
-      { id: 104, service: 'Restaurante', date: '2026-08-03', time: '20:00', guests: 6, status: 'confirmada' },
-      { id: 105, service: 'Evento', date: '2026-08-15', time: '10:00', guests: 80, status: 'confirmada' },
-    ],
-    payments: { balance: 980000, lastPayment: 520000, lastPaymentDate: '2026-07-10', status: 'al día' },
-    guests: [{ name: 'Roberto López', relationship: 'Cónyuge', status: 'activo' }],
-    events: [
-      { id: 203, name: 'Seminario de Marketing', date: '2026-09-05', time: '10:00', location: 'Sala de Conferencias', rsvp: 'confirmado' },
-    ],
-    history: [
-      { date: '2026-07-10', action: 'Pago de membresía', amount: 520000 },
-      { date: '2026-07-08', action: 'Evento corporativo', amount: 2100000 },
-      { date: '2026-06-30', action: 'Reserva de restaurante', amount: 450000 },
-    ],
-    benefits: [
-      { name: 'Descuento 15% en restaurante', active: true },
-      { name: 'Acceso a eventos corporativos', active: true },
-      { name: 'Estacionamiento preferencial', active: true },
-      { name: 'Invitado gratis los fines de semana', active: false },
-    ],
-    news: [
-      { date: '2026-07-28', title: 'Nuevo chef ejecutivo en Asogema', excerpt: 'El reconocido chef internacional Juan Pablo Mercado se une a nuestro equipo.' },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Juan Pérez',
-    email: 'juan.p@asogema.com',
-    membership: 'VIP',
-    membershipColor: '#e17055',
-    initials: 'JP',
-    joinDate: '2023-09-30',
-    avatar: null,
-    reservations: [
-      { id: 106, service: 'Hotel', date: '2026-08-20', time: '15:00', guests: 2, status: 'pendiente' },
-    ],
-    payments: { balance: 5200000, lastPayment: 1500000, lastPaymentDate: '2026-06-30', status: 'pendiente' },
-    guests: [
-      { name: 'Laura Pérez', relationship: 'Cónyuge', status: 'activo' },
-      { name: 'Sofía Pérez', relationship: 'Hija', status: 'activo' },
-      { name: 'Mateo Pérez', relationship: 'Hijo', status: 'activo' },
-    ],
-    events: [
-      { id: 204, name: 'Cena de Gala Anual', date: '2026-09-18', time: '19:00', location: 'Salón Principal', rsvp: 'confirmado' },
-      { id: 205, name: 'Torneo de Tenis', date: '2026-08-10', time: '09:00', location: 'Canchas de Tenis', rsvp: 'confirmado' },
-      { id: 206, name: 'Clase de Cocina Italiana', date: '2026-08-28', time: '11:00', location: 'Cocina Central', rsvp: 'pendiente' },
-    ],
-    history: [
-      { date: '2026-06-30', action: 'Pago de membresía', amount: 1500000 },
-      { date: '2026-06-25', action: 'Reserva de hotel (3 noches)', amount: 3600000 },
-      { date: '2026-06-18', action: 'Torneo de Golf', amount: 200000 },
-      { date: '2026-06-10', action: 'Cena familiar', amount: 680000 },
-    ],
-    benefits: [
-      { name: 'Acceso ilimitado al spa', active: true },
-      { name: 'Descuento 30% en restaurante', active: true },
-      { name: 'Hasta 3 invitados gratis', active: true },
-      { name: 'Estacionamiento VIP', active: true },
-      { name: 'Acceso a eventos exclusivos', active: true },
-      { name: 'Clase de golf gratuita / mes', active: true },
-      { name: 'Servicio de conserje 24/7', active: true },
-      { name: 'Acceso a sala VIP en eventos', active: true },
-    ],
-    news: [
-      { date: '2026-07-28', title: 'Nuevo chef ejecutivo en Asogema', excerpt: 'El reconocido chef internacional Juan Pablo Mercado se une a nuestro equipo.' },
-      { date: '2026-07-25', title: 'Renovación de la piscina olímpica', excerpt: 'La piscina estará cerrada del 5 al 12 de agosto por mantenimiento.' },
-    ],
-  },
-])
+// ─── Loading & Error ────────────────────────────────────────
+const loading = ref(false)
+const error = ref(null)
 
-const selectedMemberId = ref(1)
-const selectedMember = computed(() => members.value.find(m => m.id === selectedMemberId.value) || members.value[0])
+// ─── Members / Socios ───────────────────────────────────────
+const members = ref([])
+const selectedMemberId = ref(null)
+const selectedMember = computed(
+  () => members.value.find(m => m.id === selectedMemberId.value) || members.value[0] || null,
+)
 
-// ─── Calendar Events ──────────────────────────────────────
-const calendarEvents = ref([
-  { id: 1, title: 'Torneo de Golf', date: '2026-08-03', time: '07:00', location: 'Campo de Golf', category: 'torneos', color: '#00cec9' },
-  { id: 2, title: 'Torneo de Tenis', date: '2026-08-10', time: '09:00', location: 'Canchas de Tenis', category: 'torneos', color: '#00cec9' },
-  { id: 3, title: 'Torneo de Bridge', date: '2026-08-17', time: '14:00', location: 'Sala de Juegos', category: 'torneos', color: '#00cec9' },
-  { id: 4, title: 'Campeonato de Natación', date: '2026-08-24', time: '08:00', location: 'Piscina Olímpica', category: 'torneos', color: '#00cec9' },
-  { id: 5, title: 'Cena de Gala Anual', date: '2026-09-18', time: '19:00', location: 'Salón Principal', category: 'eventos', color: '#6c5ce7' },
-  { id: 6, title: 'Seminario de Marketing', date: '2026-09-05', time: '10:00', location: 'Sala de Conferencias', category: 'eventos', color: '#6c5ce7' },
-  { id: 7, title: 'Clase de Cocina Italiana', date: '2026-08-28', time: '11:00', location: 'Cocina Central', category: 'eventos', color: '#6c5ce7' },
-  { id: 8, title: 'Noche de Jazz', date: '2026-08-15', time: '20:00', location: 'Terrazas', category: 'eventos', color: '#6c5ce7' },
-  { id: 9, title: 'Reserva: Carlos M. - Rest.', date: '2026-08-05', time: '19:30', location: 'Restaurante Principal', category: 'reservas', color: '#fdcb6e' },
-  { id: 10, title: 'Reserva: María L. - Evento', date: '2026-08-15', time: '10:00', location: 'Salón de Eventos', category: 'reservas', color: '#fdcb6e' },
-  { id: 11, title: 'Reserva: Juan P. - Hotel', date: '2026-08-20', time: '15:00', location: 'Suite 301', category: 'reservas', color: '#fdcb6e' },
-  { id: 12, title: 'Reserva: Ana R. - Rest.', date: '2026-08-07', time: '20:00', location: 'Restaurante Principal', category: 'reservas', color: '#fdcb6e' },
-  { id: 13, title: 'Mantenimiento Piscina', date: '2026-08-05', time: '06:00', location: 'Piscina Olímpica', category: 'mantenimiento', color: '#e17055' },
-  { id: 14, title: 'Revisión Eléctrica', date: '2026-08-12', time: '08:00', location: 'Edificio Central', category: 'mantenimiento', color: '#e17055' },
-  { id: 15, title: 'Mantenimiento Ascensores', date: '2026-08-19', time: '09:00', location: 'Torre Norte', category: 'mantenimiento', color: '#e17055' },
-  { id: 16, title: 'Fumigación Jardines', date: '2026-08-26', time: '05:00', location: 'Jardines Exteriores', category: 'mantenimiento', color: '#e17055' },
-  { id: 17, title: 'Horario Extendido Spa', date: '2026-08-06', time: '07:00-22:00', location: 'Spa', category: 'horarios', color: '#00b894' },
-  { id: 18, title: 'Restaurante Cerrado', date: '2026-08-13', time: 'Todo el día', location: 'Restaurante Principal', category: 'horarios', color: '#00b894' },
-  { id: 19, title: 'Gimnasio 24h', date: '2026-08-20', time: '00:00-23:59', location: 'Gimnasio', category: 'horarios', color: '#00b894' },
-  { id: 20, title: 'Horario Reducido Canchas', date: '2026-08-27', time: '10:00-16:00', location: 'Canchas Deportivas', category: 'horarios', color: '#00b894' },
-])
+const memberColors = ['#fdcb6e', '#00cec9', '#e17055', '#6c5ce7', '#00b894', '#0984e3', '#d63031', '#e84393']
+
+function getInitials(name) {
+  return (name || '?')
+    .split(' ')
+    .map(w => w[0])
+    .filter(Boolean)
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || '?'
+}
+
+async function fetchMembers() {
+  const { data } = await api.get('/admin/members')
+  members.value = (data || []).map((m, i) => ({
+    id: m.id,
+    name: m.nombre,
+    email: m.correo,
+    telefono: m.telefono,
+    membership: 'Cliente',
+    membershipColor: memberColors[i % memberColors.length],
+    initials: getInitials(m.nombre),
+    reservations: [],
+    payments: { balance: null, lastPayment: null, lastPaymentDate: null, status: '—' },
+    guests: [],
+    events: [],
+    history: [],
+    benefits: [],
+    news: [],
+  }))
+  if (members.value.length && selectedMemberId.value == null) {
+    selectedMemberId.value = members.value[0].id
+  }
+}
+
+async function loadMemberDetail(id) {
+  try {
+    const { data } = await api.get(`/admin/members/${id}`)
+    const m = members.value.find(x => x.id === id)
+    if (!m || !data) return
+
+    const reservations = []
+    ;(data.reservas_hotel || []).forEach(r => reservations.push({
+      id: `hotel-${r.id}`,
+      service: 'Hotel',
+      date: dateOf(r.entrada),
+      time: '—',
+      guests: r.personas,
+      status: normalizeStatus(r.estado),
+    }))
+    ;(data.reservas_restaurante || []).forEach(r => reservations.push({
+      id: `rest-${r.id}`,
+      service: 'Restaurante',
+      date: dateOf(r.fecha),
+      time: timeOf(r.hora),
+      guests: r.personas,
+      status: normalizeStatus(r.estado),
+    }))
+    ;(data.reservas_evento || []).forEach(r => reservations.push({
+      id: `evento-${r.id}`,
+      service: 'Evento',
+      date: dateOf(r.fecha),
+      time: '—',
+      guests: r.personas,
+      status: normalizeStatus(r.estado),
+    }))
+
+    m.reservations = reservations
+    m.events = (data.reservas_evento || []).map(r => ({
+      id: `evento-${r.id}`,
+      name: r.tipo,
+      date: dateOf(r.fecha),
+      time: '—',
+      location: r.salon,
+      rsvp: normalizeStatus(r.estado),
+    }))
+    m.history = (data.facturas || []).map(f => ({
+      date: dateOf(f.fecha),
+      action: `Factura Nº ${f.id}`,
+      amount: f.total,
+    }))
+    m.payments = {
+      ...m.payments,
+      lastPaymentDate: m.history[0]?.date ?? null,
+    }
+  } catch {
+    // Detalle no disponible; se conservan los datos base.
+  }
+}
+
+watch(selectedMemberId, (id) => {
+  if (id != null) loadMemberDetail(id)
+})
+
+// ─── Calendar Events ────────────────────────────────────────
+const calendarEvents = ref([])
 
 const calendarFilters = ref({
   torneos: true,
@@ -166,141 +123,257 @@ const filteredCalendarEvents = computed(() => {
 
 const categoryLabels = { torneos: 'Torneos', eventos: 'Eventos', reservas: 'Reservas', mantenimiento: 'Mantenimiento', horarios: 'Especiales' }
 
-// ─── Today's Reservations ─────────────────────────────────
-const todayReservations = ref([
-  { id: 1, client: 'Carlos Martínez', service: 'Restaurante', time: '12:30', guests: 4, status: 'confirmada', phone: '+57 300 111 2233', notes: 'Mesa cerca de la ventana' },
-  { id: 2, client: 'María López', service: 'Hotel', time: '14:00', guests: 2, status: 'check-in', phone: '+57 310 444 5566', notes: 'Habitación doble, piso alto' },
-  { id: 3, client: 'Juan Pérez', service: 'Evento', time: '16:00', guests: 50, status: 'pendiente', phone: '+57 320 777 8899', notes: 'Salón de conferencias' },
-  { id: 4, client: 'Ana Rodríguez', service: 'Restaurante', time: '19:00', guests: 6, status: 'confirmada', phone: '+57 301 222 3344', notes: 'Celebración familiar' },
-  { id: 5, client: 'Pedro Sánchez', service: 'Hotel', time: '11:00', guests: 3, status: 'check-out', phone: '+57 315 555 6677', notes: '' },
-  { id: 6, client: 'Laura García', service: 'Restaurante', time: '20:30', guests: 2, status: 'confirmada', phone: '+57 305 888 9900', notes: 'Aniversario' },
-  { id: 7, client: 'Diego Ramírez', service: 'Spa', time: '15:00', guests: 1, status: 'pendiente', phone: '+57 318 123 4567', notes: 'Masaje relajante' },
-  { id: 8, client: 'Sofía Torres', service: 'Golf', time: '07:00', guests: 4, status: 'confirmada', phone: '+57 311 987 6543', notes: '4 personas, 18 hoyos' },
-])
+async function fetchCalendarEvents() {
+  const { data } = await api.get('/admin/calendar/events')
+  calendarEvents.value = (data || []).map(e => ({
+    id: String(e.id),
+    title: e.title,
+    date: e.date,
+    time: e.time,
+    location: e.location,
+    category: e.category,
+    color: e.color,
+  }))
+}
 
-// ─── Income Data ──────────────────────────────────────────
-const incomePeriods = ref({
-  daily: 4_250_000,
-  weekly: 28_900_000,
-  monthly: 61_900_000,
-  dailyChange: 8.2,
-  weeklyChange: 3.5,
-  monthlyChange: 12.1,
-})
+// ─── Today's Reservations ───────────────────────────────────
+const todayReservations = ref([])
+
+async function fetchTodayReservations() {
+  const { data } = await api.get('/admin/reservations/today')
+  const rows = []
+  ;(data.hotel || []).forEach(r => rows.push({
+    id: `hotel-${r.id}`,
+    client: r.cliente,
+    service: 'Hotel',
+    time: '—',
+    guests: r.personas,
+    phone: r.telefono ?? '—',
+    notes: r.habitacion ? `Hab ${r.habitacion}` : '—',
+    status: normalizeStatus(r.estado),
+  }))
+  ;(data.restaurante || []).forEach(r => rows.push({
+    id: `rest-${r.id}`,
+    client: r.cliente,
+    service: 'Restaurante',
+    time: timeOf(r.hora),
+    guests: r.personas,
+    phone: r.telefono ?? '—',
+    notes: r.mesa ? `Mesa ${r.mesa}` : '—',
+    status: normalizeStatus(r.estado),
+  }))
+  ;(data.eventos || []).forEach(r => rows.push({
+    id: `evento-${r.id}`,
+    client: r.cliente,
+    service: 'Evento',
+    time: timeOf(r.hora_inicio),
+    guests: r.personas,
+    phone: r.telefono ?? '—',
+    notes: r.salon || '—',
+    status: normalizeStatus(r.estado),
+  }))
+  rows.sort((a, b) => a.time.localeCompare(b.time))
+  todayReservations.value = rows
+}
+
+const todayReservationCount = computed(() => todayReservations.value.length)
+const todayConfirmedCount = computed(() => todayReservations.value.filter(r => r.status === 'confirmada' || r.status === 'check-in').length)
+const todayPendingCount = computed(() => todayReservations.value.filter(r => r.status === 'pendiente').length)
+
+// ─── Income Data ────────────────────────────────────────────
+const summary = ref(null)
+const incomeSeries = ref({ diario: null, semanal: null, mensual: null })
 
 const incomePeriodSelector = ref('mensual')
 
 const incomeChartData = computed(() => {
-  const data = {
-    diario: {
-      labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-      current: [3.2, 4.1, 3.8, 4.5, 5.2, 6.8, 4.2],
-      previous: [2.8, 3.6, 3.4, 4.0, 4.8, 6.1, 3.9],
-    },
-    semanal: {
-      labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
-      current: [14.2, 15.8, 16.5, 18.1],
-      previous: [12.5, 14.1, 14.8, 16.2],
-    },
-    mensual: {
-      labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-      current: [18.2, 16.8, 19.4, 21.1, 20.3, 22.6, 24.1, 23.5, 22.8, 25.2, 24.6, 26.1],
-      previous: [15.1, 14.3, 16.2, 18.4, 17.6, 19.2, 20.8, 19.5, 20.1, 22.3, 21.7, 23.0],
-    },
-  }
-  return data[incomePeriodSelector.value]
+  const s = incomeSeries.value[incomePeriodSelector.value]
+  if (!s || !s.labels || !s.labels.length) return { labels: [], current: [], previous: [] }
+  const vals = s.values || []
+  const previous = vals.map((_, i) => (i === 0 ? 0 : vals[i - 1]))
+  return { labels: s.labels, current: vals, previous }
 })
 
-// ─── Services Ranking ─────────────────────────────────────
-const topServices = ref([
-  { name: 'Restaurante', bookings: 1240, percentage: 58, icon: 'restaurant', revenue: 158_750_000, change: '+12.5%' },
-  { name: 'Hotel', bookings: 680, percentage: 32, icon: 'hotel', revenue: 342_600_000, change: '+8.3%' },
-  { name: 'Eventos', bookings: 185, percentage: 10, icon: 'events', revenue: 96_800_000, change: '+21.7%' },
-  { name: 'Spa', bookings: 420, percentage: 22, icon: 'spa', revenue: 52_000_000, change: '+15.2%' },
-  { name: 'Golf', bookings: 310, percentage: 16, icon: 'golf', revenue: 78_500_000, change: '+6.8%' },
-])
+const incomePeriods = computed(() => {
+  const last = arr => (arr && arr.length ? arr[arr.length - 1] : 0)
+  const pct = (a, b) => (b > 0 ? Math.round(((a - b) / b) * 1000) / 10 : 0)
+  const dVals = incomeSeries.value.diario?.values || []
+  const sVals = incomeSeries.value.semanal?.values || []
+  const mVals = incomeSeries.value.mensual?.values || []
+  return {
+    daily: summary.value?.ingresos_hoy ?? last(dVals),
+    weekly: last(sVals),
+    monthly: last(mVals),
+    dailyChange: dVals.length > 1 ? pct(dVals[dVals.length - 1], dVals[dVals.length - 2]) : 0,
+    weeklyChange: sVals.length > 1 ? pct(sVals[sVals.length - 1], sVals[sVals.length - 2]) : 0,
+    monthlyChange: mVals.length > 1 ? pct(mVals[mVals.length - 1], mVals[mVals.length - 2]) : 0,
+  }
+})
 
-// ─── Peak Hours ───────────────────────────────────────────
-const peakHours = ref([
-  { hour: '08:00', label: '08', customers: 12 },
-  { hour: '09:00', label: '09', customers: 18 },
-  { hour: '10:00', label: '10', customers: 8 },
-  { hour: '11:00', label: '11', customers: 22 },
-  { hour: '12:00', label: '12', customers: 48 },
-  { hour: '13:00', label: '13', customers: 52 },
-  { hour: '14:00', label: '14', customers: 35 },
-  { hour: '15:00', label: '15', customers: 14 },
-  { hour: '16:00', label: '16', customers: 10 },
-  { hour: '17:00', label: '17', customers: 16 },
-  { hour: '18:00', label: '18', customers: 38 },
-  { hour: '19:00', label: '19', customers: 56 },
-  { hour: '20:00', label: '20', customers: 62 },
-  { hour: '21:00', label: '21', customers: 44 },
-  { hour: '22:00', label: '22', customers: 20 },
-])
+async function fetchSummary() {
+  const { data } = await api.get('/admin/summary')
+  summary.value = data
+}
 
-const maxPeakCustomers = computed(() => Math.max(...peakHours.value.map(p => p.customers)))
+async function fetchIncome() {
+  const [diario, semanal, mensual] = await Promise.all([
+    api.get('/admin/income', { params: { period: 'diario' } }),
+    api.get('/admin/income', { params: { period: 'semanal' } }),
+    api.get('/admin/income', { params: { period: 'mensual' } }),
+  ])
+  incomeSeries.value = {
+    diario: diario.data,
+    semanal: semanal.data,
+    mensual: mensual.data,
+  }
+}
 
-// ─── Top Rooms ────────────────────────────────────────────
-const topRooms = ref([
-  { name: 'Suite Presidencial', code: 'SP-01', reservations: 48, revenue: 96_000_000, occupancy: 92, type: 'Suite' },
-  { name: 'Habitación Deluxe', code: 'HD-12', reservations: 42, revenue: 50_400_000, occupancy: 88, type: 'Deluxe' },
-  { name: 'Habitación Doble', code: 'HD-08', reservations: 38, revenue: 34_200_000, occupancy: 85, type: 'Doble' },
-  { name: 'Habitación Individual', code: 'HI-05', reservations: 35, revenue: 21_000_000, occupancy: 78, type: 'Individual' },
-  { name: 'Suite Junior', code: 'SJ-03', reservations: 30, revenue: 45_000_000, occupancy: 82, type: 'Suite' },
-])
+// ─── Services Ranking ───────────────────────────────────────
+const topServices = ref([])
 
-const maxRoomReservations = computed(() => Math.max(...topRooms.value.map(r => r.reservations)))
+async function fetchTopServices() {
+  const { data } = await api.get('/admin/services/top')
+  const icons = { Hotel: 'hotel', Restaurante: 'restaurant', Eventos: 'events' }
+  topServices.value = (data || []).map(s => ({
+    name: s.name,
+    bookings: s.bookings,
+    percentage: s.percentage,
+    icon: icons[s.name] || 'bars',
+    revenue: null,
+    change: '',
+  }))
+}
 
-// ─── Upcoming Events ──────────────────────────────────────
-const upcomingEvents = ref([
-  { id: 1, name: 'Conferencia de Tecnología', date: '2026-08-15', time: '09:00', attendees: 120, organizer: 'TechCorp', type: 'conferencia', location: 'Salón Principal' },
-  { id: 2, name: 'Boda García-Mendoza', date: '2026-08-22', time: '16:00', attendees: 200, organizer: 'Familia García', type: 'boda', location: 'Jardines' },
-  { id: 3, name: 'Seminario de Marketing', date: '2026-09-05', time: '10:00', attendees: 80, organizer: 'MKT Academy', type: 'seminario', location: 'Sala de Conferencias' },
-  { id: 4, name: 'Cena de Gala Anual', date: '2026-09-18', time: '19:00', attendees: 150, organizer: 'Asogema', type: 'gala', location: 'Salón Principal' },
-  { id: 5, name: 'Taller de Cocina', date: '2026-09-25', time: '11:00', attendees: 25, organizer: 'Chef Ana', type: 'taller', location: 'Cocina Central' },
-  { id: 6, name: 'Noche de Jazz', date: '2026-08-15', time: '20:00', attendees: 60, organizer: 'Club Musical', type: 'concierto', location: 'Terrazas' },
-])
+// ─── Peak Hours ─────────────────────────────────────────────
+const peakHours = ref([])
+
+const maxPeakCustomers = computed(() => Math.max(...peakHours.value.map(p => p.customers), 0))
+
+async function fetchPeakHours() {
+  const { data } = await api.get('/admin/restaurant/peak-hours')
+  peakHours.value = (data.labels || []).map((h, i) => ({
+    hour: h,
+    label: h.slice(0, 2),
+    customers: data.values?.[i] ?? 0,
+  }))
+}
+
+// ─── Top Rooms ──────────────────────────────────────────────
+const topRooms = ref([])
+
+const maxRoomReservations = computed(() => Math.max(...topRooms.value.map(r => r.reservations), 0))
+
+async function fetchTopRooms() {
+  const { data } = await api.get('/admin/rooms/top')
+  topRooms.value = (data || []).map(r => ({
+    name: r.nombre,
+    code: r.nombre,
+    reservations: r.reservas,
+    revenue: r.ingresos,
+    occupancy: r.ocupacion_porcentaje,
+    type: r.tipo || '—',
+  }))
+}
+
+// ─── Upcoming Events ────────────────────────────────────────
+const upcomingEvents = ref([])
 
 const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
-// ─── Hotel Occupancy ──────────────────────────────────────
+async function fetchUpcomingEvents() {
+  const { data } = await api.get('/admin/events/upcoming')
+  upcomingEvents.value = (data || []).map(e => ({
+    id: e.id,
+    name: e.nombre,
+    date: dateOf(e.fecha),
+    time: timeOf(e.hora_inicio),
+    attendees: e.asistentes,
+    location: e.salon,
+    organizer: e.cliente,
+    type: normalizeStatus(e.estado),
+  }))
+}
+
+// ─── Hotel Occupancy ────────────────────────────────────────
 const hotelOccupancy = ref({
-  current: 78,
-  available: 22,
-  totalRooms: 45,
-  occupiedRooms: 35,
-  changeFromLastWeek: 5.2,
-  historical: [72, 75, 74, 78, 80, 76, 78, 82, 79, 81, 78, 76, 74, 78],
+  current: 0,
+  available: 0,
+  totalRooms: 0,
+  occupiedRooms: 0,
+  changeFromLastWeek: 0,
+  historical: [],
 })
 
-// ─── Comparative Data ─────────────────────────────────────
+async function fetchOccupancy() {
+  const { data } = await api.get('/admin/hotel/occupancy')
+  const hist = data.historico_14_dias || []
+  let change = 0
+  if (hist.length >= 2 && hist[0] > 0) {
+    change = Math.round(((hist[hist.length - 1] - hist[0]) / hist[0]) * 1000) / 10
+  }
+  hotelOccupancy.value = {
+    current: data.actual,
+    occupiedRooms: data.ocupadas,
+    totalRooms: data.totales,
+    available: data.disponibles,
+    changeFromLastWeek: change,
+    historical: hist,
+  }
+}
+
+// ─── Comparative Data ───────────────────────────────────────
 const comparativeIncome = ref({
-  currentYear: [18.2, 16.8, 19.4, 21.1, 20.3, 22.6, 24.1, 23.5, 22.8, 25.2, 24.6, 26.1],
-  previousYear: [15.1, 14.3, 16.2, 18.4, 17.6, 19.2, 20.8, 19.5, 20.1, 22.3, 21.7, 23.0],
-  labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-})
-
-const comparativeReservations = ref({
-  restaurant: [180, 195, 210, 198, 220, 205, 230],
-  hotel: [85, 92, 78, 95, 88, 102, 96],
-  events: [12, 8, 15, 10, 18, 14, 20],
-  labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+  currentYear: [],
+  previousYear: [],
+  labels: [],
 })
 
 const maxComparIncome = computed(() => {
   const all = [...comparativeIncome.value.currentYear, ...comparativeIncome.value.previousYear]
-  return Math.max(...all)
+  return Math.max(...all, 0)
 })
 
-const maxComparReserv = computed(() => {
-  const r = comparativeReservations.value
-  const all = [...r.restaurant, ...r.hotel, ...r.events]
-  return Math.max(...all)
-})
+async function fetchComparativeIncome() {
+  const { data } = await api.get('/admin/comparative/income')
+  comparativeIncome.value = {
+    labels: data.labels || [],
+    currentYear: data.year_actual || [],
+    previousYear: data.year_anterior || [],
+  }
+}
 
-// ─── Helpers ──────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────
+function normalizeStatus(s) {
+  if (!s) return '—'
+  const map = {
+    CONFIRMADA: 'confirmada',
+    CONFIRMED: 'confirmada',
+    CHECK_IN: 'check-in',
+    CHECKIN: 'check-in',
+    CHECK_OUT: 'check-out',
+    CHECKOUT: 'check-out',
+    PENDIENTE: 'pendiente',
+    CANCELADA: 'cancelada',
+    COMPLETADA: 'completada',
+  }
+  return map[s] || String(s).toLowerCase()
+}
+
+function dateOf(v) {
+  if (!v) return '—'
+  const s = String(v)
+  return s.length >= 10 ? s.slice(0, 10) : s
+}
+
+function timeOf(v) {
+  if (!v) return '—'
+  const s = String(v)
+  if (s.length === 8 && s[2] === ':') return s.slice(0, 5)
+  return s.length >= 16 ? s.slice(11, 16) : s
+}
+
 function formatCurrency(value) {
+  if (value == null) return '—'
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
@@ -332,7 +405,16 @@ function eventTypeBadgeClass(type) {
   return map[type] || ''
 }
 
-// ─── Calendar helpers ─────────────────────────────────────
+function getBarHeight(val, max) {
+  if (!max) return 0
+  return (val / max) * 100
+}
+
+function getComparBarHeight(val, max) {
+  return (val / max) * 100
+}
+
+// ─── Calendar helpers ───────────────────────────────────────
 const calendarMonth = ref(new Date().getMonth())
 const calendarYear = ref(new Date().getFullYear())
 
@@ -381,7 +463,7 @@ const selectedCalendarEvent = ref(null)
 function openCalendarEvent(ev) { selectedCalendarEvent.value = ev }
 function closeCalendarEvent() { selectedCalendarEvent.value = null }
 
-// ─── Module tab state ─────────────────────────────────────
+// ─── Module tab state ───────────────────────────────────────
 const activeModule = ref('panel')
 const activeSubTab = ref('resumen')
 
@@ -393,25 +475,39 @@ const moduleContextMessages = {
 
 const contextMessage = computed(() => moduleContextMessages[activeModule.value])
 
-const todayReservationCount = computed(() => todayReservations.value.length)
-const todayConfirmedCount = computed(() => todayReservations.value.filter(r => r.status === 'confirmada' || r.status === 'check-in').length)
-const todayPendingCount = computed(() => todayReservations.value.filter(r => r.status === 'pendiente').length)
-
-function getBarHeight(val, max) {
-  if (!max) return 0
-  return (val / max) * 100
+// ─── Data loading ───────────────────────────────────────────
+async function loadAll() {
+  loading.value = true
+  error.value = null
+  const results = await Promise.allSettled([
+    fetchSummary(),
+    fetchTodayReservations(),
+    fetchIncome(),
+    fetchTopServices(),
+    fetchPeakHours(),
+    fetchTopRooms(),
+    fetchUpcomingEvents(),
+    fetchOccupancy(),
+    fetchComparativeIncome(),
+    fetchCalendarEvents(),
+    fetchMembers(),
+  ])
+  if (results.some(r => r.status === 'rejected')) {
+    error.value = 'No se pudieron cargar algunos datos del panel. Revisa tu conexión e inténtalo de nuevo.'
+  }
+  loading.value = false
 }
 
-function getComparBarHeight(val, max) {
-  return (val / max) * 100
+function retry() {
+  loadAll()
 }
 
 export function usePanelAdmin() {
   return {
     activeModule, activeSubTab, contextMessage,
+    loading, error, retry,
     members, selectedMemberId, selectedMember,
-    calendarEvents, calendarFilters, filteredCalendarEvents, categoryLabels,
-    calendarMonth, calendarYear, calendarGrid, calendarTitle,
+    calendarFilters, categoryLabels, calendarGrid, calendarTitle,
     prevMonth, nextMonth, selectedCalendarEvent, openCalendarEvent, closeCalendarEvent,
     todayReservations, todayReservationCount, todayConfirmedCount, todayPendingCount,
     incomePeriods, incomePeriodSelector, incomeChartData,
@@ -419,7 +515,7 @@ export function usePanelAdmin() {
     topRooms, maxRoomReservations,
     upcomingEvents, monthNames,
     hotelOccupancy,
-    comparativeIncome, comparativeReservations, maxComparIncome, maxComparReserv,
+    comparativeIncome, maxComparIncome,
     formatCurrency, statusBadgeClass, eventTypeBadgeClass,
     getBarHeight, getComparBarHeight,
   }

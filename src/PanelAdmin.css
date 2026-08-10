@@ -2069,3 +2069,63 @@
   .lux-occupancy-ring { width: 120px; height: 120px; }
   .lux-ring-pct { font-size: 30px; }
 }
+
+/* ── Loading / Error / Empty states ─────────────────────── */
+.lux-panel-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 96px 24px;
+  text-align: center;
+  color: var(--lux-text-muted);
+  font-weight: 600;
+}
+
+.lux-panel-state p {
+  margin: 0;
+}
+
+.lux-panel-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(0, 206, 201, 0.25);
+  border-top-color: var(--lux-accent);
+  border-radius: 50%;
+  animation: lux-panel-spin 0.8s linear infinite;
+}
+
+@keyframes lux-panel-spin {
+  to { transform: rotate(360deg); }
+}
+
+.lux-panel-error svg {
+  width: 40px;
+  height: 40px;
+  color: #e17055;
+}
+
+.lux-panel-error p {
+  max-width: 480px;
+  color: var(--lux-text-muted);
+  font-weight: 500;
+}
+
+.lux-panel-retry {
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--lux-radius-sm);
+  background: var(--lux-primary);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--lux-transition), transform 0.2s ease;
+}
+
+.lux-panel-retry:hover {
+  background: var(--lux-primary-light);
+  transform: translateY(-1px);
+}
