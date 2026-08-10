@@ -324,6 +324,42 @@ body {
   transform: translateY(0) scale(1);
 }
 
+/* Back Arrow — go back to the index */
+.back-arrow {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1.5px solid #133215;
+  border-radius: 50%;
+  background: rgba(255, 248, 240, 0.9);
+  color: #133215;
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    color var(--transition),
+    border-color var(--transition),
+    transform var(--transition);
+}
+
+.back-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+.back-arrow:hover {
+  background: #133215;
+  border-color: #133215;
+  color: #F3E8D3;
+  transform: translateX(-2px);
+}
+
 /* Brand */
 .brand {
   text-align: center;

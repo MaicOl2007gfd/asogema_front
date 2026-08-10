@@ -19,9 +19,16 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      const isLoginRequest = error.config?.url?.includes('/auth/tokens')
+      const hadToken = localStorage.getItem('asogema_token')
       localStorage.removeItem('asogema_token')
       localStorage.removeItem('asogema_user')
-      window.location.reload()
+      // No redirigir ni recargar cuando no hay sesión activa o cuando
+      // falla el inicio de sesión: el error debe mostrarse en pantalla.
+      // Solo recargamos si una sesión existente expiró.
+      if (hadToken && !isLoginRequest) {
+        window.location.reload()
+      }
     }
     return Promise.reject(error)
   },
