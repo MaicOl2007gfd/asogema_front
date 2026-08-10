@@ -31,9 +31,6 @@ const {
   RESERVATION_DATA,
   timeSlots,
   isVisible,
-  fullName,
-  email,
-  phone,
   date,
   time,
   guests,
@@ -43,8 +40,14 @@ const {
   showSuccess,
   errors,
   today,
+  currentUserName,
   isFormValid,
   totalGuests,
+  tables,
+  tablesLoading,
+  tablesError,
+  selectedTable,
+  selectTable,
   incrementGuests,
   decrementGuests,
   handleSubmit,
@@ -171,6 +174,13 @@ const {
               </svg>
               <span>{{ guests }} {{ guests === 1 ? 'persona' : 'personas' }}</span>
             </div>
+            <div v-if="selectedTable">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="7"></circle>
+                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+              </svg>
+              <span>{{ selectedTable.label }} · {{ selectedTable.capacidad }} puestos</span>
+            </div>
           </div>
           <div class="trsv-success-actions">
             <button class="trsv-btn trsv-btn-primary" @click="goBackToRestaurant">
@@ -189,54 +199,16 @@ const {
 
       <!-- Form -->
       <div v-else class="trsv-form-card">
-        <h2 class="trsv-form-title">Completa tus Datos</h2>
+        <h2 class="trsv-form-title">Completa tu Reserva</h2>
 
-        <div class="trsv-form-row">
-          <div class="trsv-form-group">
-            <label>Nombre Completo</label>
-            <input
-              v-model="fullName"
-              type="text"
-              placeholder="Tu nombre"
-              :class="{ error: errors.fullName }"
-            />
-            <span v-if="errors.fullName" class="error-msg">{{ errors.fullName }}</span>
+        <div class="trsv-logged-in">
+          <div class="trsv-logged-in-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
           </div>
-          <div class="trsv-form-group">
-            <label>Correo Electrónico</label>
-            <input
-              v-model="email"
-              type="email"
-              placeholder="correo@ejemplo.com"
-              :class="{ error: errors.email }"
-            />
-            <span v-if="errors.email" class="error-msg">{{ errors.email }}</span>
-          </div>
-        </div>
-
-        <div class="trsv-form-row">
-          <div class="trsv-form-group">
-            <label>Teléfono</label>
-            <input
-              v-model="phone"
-              type="tel"
-              placeholder="+57 300 000 0000"
-              :class="{ error: errors.phone }"
-            />
-            <span v-if="errors.phone" class="error-msg">{{ errors.phone }}</span>
-          </div>
-          <div class="trsv-form-group">
-            <label>Ocasión (opcional)</label>
-            <select v-model="occasion">
-              <option value="">Seleccionar (opcional)</option>
-              <option value="Cumpleaños">Cumpleaños</option>
-              <option value="Aniversario">Aniversario</option>
-              <option value="Cena de Negocios">Cena de Negocios</option>
-              <option value="Cita Romántica">Cita Romántica</option>
-              <option value="Reunión Familiar">Reunión Familiar</option>
-              <option value="Otro">Otro</option>
-            </select>
-          </div>
+          <span>Reservando como <strong>{{ currentUserName }}</strong></span>
         </div>
 
         <div class="trsv-form-row">
@@ -279,11 +251,61 @@ const {
             </div>
           </div>
           <div class="trsv-form-group">
-            <label>&nbsp;</label>
-            <div style="font-size:13px;color:var(--trsv-text-muted);padding-top:8px;">
-              Capacidad máxima: 20 personas
-            </div>
+            <label>Ocasión (opcional)</label>
+            <select v-model="occasion">
+              <option value="">Seleccionar (opcional)</option>
+              <option value="Cumpleaños">Cumpleaños</option>
+              <option value="Aniversario">Aniversario</option>
+              <option value="Cena de Negocios">Cena de Negocios</option>
+              <option value="Cita Romántica">Cita Romántica</option>
+              <option value="Reunión Familiar">Reunión Familiar</option>
+              <option value="Otro">Otro</option>
+            </select>
           </div>
+        </div>
+
+        <div class="trsv-form-group full-width">
+          <label>Selecciona tu Mesa</label>
+
+          <div v-if="tablesLoading" class="trsv-tables-loading">
+            <span class="trsv-spinner"></span>
+            Buscando mesas disponibles...
+          </div>
+
+          <div v-else-if="tablesError" class="trsv-tables-error">
+            {{ tablesError }}
+          </div>
+
+          <div v-else-if="!date || !time" class="trsv-tables-hint">
+            Selecciona fecha y hora para ver las mesas disponibles
+          </div>
+
+          <div v-else-if="tables.length === 0" class="trsv-tables-error">
+            No hay mesas disponibles para la fecha, hora y número de invitados seleccionados
+          </div>
+
+          <div v-else class="trsv-tables-grid">
+            <button
+              v-for="table in tables"
+              :key="table.id"
+              type="button"
+              class="trsv-table-card"
+              :class="{ active: selectedTable && selectedTable.id === table.id }"
+              @click="selectTable(table)"
+            >
+              <span class="trsv-table-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="7"></circle>
+                  <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                </svg>
+              </span>
+              <span class="trsv-table-card-name">{{ table.label }}</span>
+              <span class="trsv-table-card-capacity">{{ table.capacidad }} puestos</span>
+              <span v-if="table.ubicacion" class="trsv-table-card-loc">{{ table.ubicacion }}</span>
+            </button>
+          </div>
+
+          <span v-if="errors.mesa" class="error-msg">{{ errors.mesa }}</span>
         </div>
 
         <div class="trsv-form-group full-width">

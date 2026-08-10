@@ -534,6 +534,22 @@
   font-size: 15px;
 }
 
+.restaurant-loader {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 16px;
+  border: 3px solid rgba(243, 232, 211, 0.2);
+  border-top-color: #d4a95c;
+  border-radius: 50%;
+  animation: restaurant-spin 0.9s linear infinite;
+}
+
+@keyframes restaurant-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ----------------------------------------------------------
    ACTIONS
    ---------------------------------------------------------- */

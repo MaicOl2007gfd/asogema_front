@@ -443,6 +443,134 @@
   text-align: center;
 }
 
+/* --- Logged-in User Box --- */
+.trsv-logged-in {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  border-radius: var(--trsv-radius-sm);
+  background: rgba(0, 206, 201, 0.08);
+  border: 1.5px dashed var(--trsv-accent);
+  color: var(--trsv-text-muted);
+  font-size: 13px;
+}
+
+.trsv-logged-in-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--trsv-accent);
+  color: #fff;
+}
+
+.trsv-logged-in-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.trsv-logged-in strong {
+  color: var(--trsv-primary);
+}
+
+/* --- Table Selector --- */
+.trsv-tables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.trsv-table-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 10px;
+  border-radius: var(--trsv-radius-sm);
+  border: 1.5px solid var(--trsv-border);
+  background: var(--trsv-bg-light);
+  color: var(--trsv-text);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.trsv-table-card:hover {
+  border-color: var(--trsv-accent);
+  transform: translateY(-2px);
+}
+
+.trsv-table-card.active {
+  border-color: var(--trsv-primary);
+  background: var(--trsv-primary);
+  color: #F3E8D3;
+  box-shadow: 0 4px 16px rgba(19, 50, 21, 0.25);
+}
+
+.trsv-table-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0, 206, 201, 0.12);
+  color: var(--trsv-accent);
+  margin-bottom: 2px;
+}
+
+.trsv-table-card.active .trsv-table-card-icon {
+  background: rgba(243, 232, 211, 0.18);
+  color: #F3E8D3;
+}
+
+.trsv-table-card-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.trsv-table-card-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.trsv-table-card-capacity {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.trsv-table-card-loc {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.trsv-tables-loading,
+.trsv-tables-error,
+.trsv-tables-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: var(--trsv-radius-sm);
+  font-size: 13px;
+  color: var(--trsv-text-muted);
+  background: var(--trsv-bg-light);
+  border: 1.5px dashed var(--trsv-border);
+}
+
+.trsv-tables-error {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.4);
+}
+
+.trsv-tables-hint {
+  color: var(--trsv-text-light);
+}
+
 /* --- Submit Button --- */
 .trsv-submit {
   width: 100%;
