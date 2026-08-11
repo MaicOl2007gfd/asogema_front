@@ -2,8 +2,6 @@
 import { ref, computed } from 'vue'
 import { useDashboard } from '../composables/useDashboard.js'
 import { useAuth } from '../composables/useAuth.js'
-import { useAdminDashboard } from '../composables/useAdminDashboard.js'
-import AdminPanel from './AdminPanel.vue'
 import ReviewsView from './ReviewsView.vue'
 
 const emit = defineEmits(['navigate'])
@@ -58,8 +56,6 @@ const {
   handleLogout,
   goBackToHome
 } = useDashboard(emit)
-
-const admin = useAdminDashboard()
 </script>
 
 <template>
@@ -524,13 +520,6 @@ const admin = useAdminDashboard()
         </p>
         <button class="btn-success" @click="closeSuccess">Cerrar</button>
       </div>
-    </div>
-
-    <!-- ======================================================
-         ADMIN PANEL — only visible for admin users
-         ====================================================== -->
-    <div v-if="isAdmin" class="admin-section-wrapper">
-      <AdminPanel :admin="admin" />
     </div>
   </div>
 </template>

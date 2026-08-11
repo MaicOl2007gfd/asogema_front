@@ -9,6 +9,7 @@ const { user, isAdmin, logout } = useAuth()
 
 const {
   activeModule, activeSubTab, contextMessage,
+  loading, error, retry,
   members, selectedMemberId, selectedMember,
   calendarFilters, categoryLabels, calendarGrid, calendarTitle,
   prevMonth, nextMonth, selectedCalendarEvent, openCalendarEvent, closeCalendarEvent,
@@ -18,7 +19,7 @@ const {
   topRooms, maxRoomReservations,
   upcomingEvents, monthNames,
   hotelOccupancy,
-  comparativeIncome, comparativeReservations, maxComparIncome, maxComparReserv,
+  comparativeIncome, maxComparIncome,
   formatCurrency, statusBadgeClass, eventTypeBadgeClass,
   getBarHeight, getComparBarHeight,
 } = usePanelAdmin()
@@ -67,6 +68,7 @@ onMounted(() => {
   if (!isAdmin.value) {
     emit('navigate', 'index')
   }
+  retry()
 })
 </script>
 
@@ -173,6 +175,24 @@ onMounted(() => {
          ══════════════════════════════════════════════════════ -->
     <main class="lux-main">
 
+      <!-- Loading state -->
+      <div v-if="loading" class="lux-panel-state">
+        <div class="lux-panel-spinner" aria-hidden="true"></div>
+        <p>Cargando panel…</p>
+      </div>
+
+      <!-- Error state -->
+      <div v-else-if="error" class="lux-panel-state lux-panel-error" role="alert">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <p>{{ error }}</p>
+        <button type="button" @click="retry" class="lux-panel-retry">Reintentar</button>
+      </div>
+
+      <template v-else>
       <!-- ===================================================
            MODULE 1: PANEL GENERAL
            =================================================== -->
@@ -392,14 +412,14 @@ onMounted(() => {
                   <div class="lux-service-rank">{{ topServices.indexOf(s) + 1 }}</div>
                   <div class="lux-service-info">
                     <strong>{{ s.name }}</strong>
-                    <span>{{ s.bookings }} reservas · {{ formatCurrency(s.revenue) }}</span>
+                    <span>{{ s.bookings }} reservas</span>
                   </div>
                 </div>
                 <div class="lux-service-bar-track">
                   <div class="lux-service-bar-fill" :style="{ width: Math.min(s.percentage, 100) + '%' }"></div>
                   <span class="lux-service-pct">{{ s.percentage }}%</span>
                 </div>
-                <span class="lux-service-change" :class="s.change.startsWith('+') ? 'positive' : ''">{{ s.change }}</span>
+                <span class="lux-service-change" :class="(s.change || '').startsWith('+') ? 'positive' : ''">{{ s.change || '—' }}</span>
               </div>
             </div>
           </div>
@@ -556,26 +576,6 @@ onMounted(() => {
                 </div>
               </div>
             </div>
-            <div class="lux-card">
-              <div class="lux-card-header"><h3>Reservas por Área</h3><span class="lux-badge">Semanal</span></div>
-              <div class="lux-compar-chart">
-                <div class="lux-compar-legend">
-                  <span class="lux-legend-item"><span class="lux-legend-dot rest"></span> Restaurante</span>
-                  <span class="lux-legend-item"><span class="lux-legend-dot hotel-legend"></span> Hotel</span>
-                  <span class="lux-legend-item"><span class="lux-legend-dot events-legend"></span> Eventos</span>
-                </div>
-                <div class="lux-compar-bars">
-                  <div v-for="(label, idx) in comparativeReservations.labels" :key="label" class="lux-compar-col">
-                    <div class="lux-compar-bars-group lux-compar-stacked">
-                      <div class="lux-compar-bar stacked-rest" :style="{ height: getComparBarHeight(comparativeReservations.restaurant[idx], maxComparReserv) + '%' }"></div>
-                      <div class="lux-compar-bar stacked-hotel" :style="{ height: getComparBarHeight(comparativeReservations.hotel[idx], maxComparReserv) + '%' }"></div>
-                      <div class="lux-compar-bar stacked-events" :style="{ height: getComparBarHeight(comparativeReservations.events[idx], maxComparReserv) + '%' }"></div>
-                    </div>
-                    <span class="lux-compar-label">{{ label }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
       </template>
@@ -673,7 +673,7 @@ onMounted(() => {
       <!-- ===================================================
            MODULE 3: PANEL DEL SOCIO
            =================================================== -->
-      <template v-if="activeModule === 'socio'">
+      <template v-if="activeModule === 'socio' && selectedMember">
         <div class="lux-socio-page">
           <!-- Member selector -->
           <div class="lux-socio-selector">
@@ -810,6 +810,12 @@ onMounted(() => {
             </div>
           </div>
         </div>
+      </template>
+
+      <!-- Empty members state -->
+      <div v-else-if="activeModule === 'socio'" class="lux-panel-state">
+        <p>No hay socios registrados para mostrar.</p>
+      </div>
       </template>
     </main>
   </div>
