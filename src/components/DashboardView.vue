@@ -21,8 +21,6 @@ const {
   checkOut,
   roomType,
   guests,
-  fullName,
-  phone,
   specialRequests,
   errors,
   isSubmitting,
@@ -304,32 +302,6 @@ const {
         <div class="booking-panel-form-wrap">
           <form @submit.prevent="handleSubmit" novalidate>
             <div class="booking-panel-grid">
-              <!-- Full Name -->
-              <div class="booking-field">
-                <label for="book-name">Nombre completo <span class="required">*</span></label>
-                <input
-                  id="book-name"
-                  v-model="fullName"
-                  type="text"
-                  placeholder="Ej: Juan Pérez"
-                  :class="{ error: errors.fullName }"
-                />
-                <span v-if="errors.fullName" class="error-message">{{ errors.fullName }}</span>
-              </div>
-
-              <!-- Phone -->
-              <div class="booking-field">
-                <label for="book-phone">Teléfono <span class="required">*</span></label>
-                <input
-                  id="book-phone"
-                  v-model="phone"
-                  type="tel"
-                  placeholder="+57 300 123 4567"
-                  :class="{ error: errors.phone }"
-                />
-                <span v-if="errors.phone" class="error-message">{{ errors.phone }}</span>
-              </div>
-
               <!-- Check-in -->
               <div class="booking-field">
                 <label for="book-checkin">Fecha de entrada <span class="required">*</span></label>

@@ -1,8 +1,5 @@
 import { ref, computed } from 'vue'
 
-const ADMIN_EMAIL = 'maicolquevedo29@gmail.com'
-const ADMIN_PASSWORD = 'Ma1234567'
-
 const TOKEN_KEY = 'asogema_token'
 const REFRESH_KEY = 'asogema_refresh'
 const USER_KEY = 'asogema_user'
@@ -15,17 +12,7 @@ const isLoggedIn = computed(() => user.value !== null)
 
 const isAdmin = computed(() => {
   if (!user.value) return false
-  return (
-    user.value.rol_nombre === 'Administrador' ||
-    user.value.rol_id === 1 ||
-    user.value.rol === 'admin' ||
-    user.value.rol === 'administrador' ||
-    user.value.role === 'admin' ||
-    user.value.role === 'administrator' ||
-    user.value.is_admin === true ||
-    user.value.tipo_usuario === 'admin' ||
-    user.value.role_id === 1
-  )
+  return user.value.rol_nombre === 'Administrador' || user.value.rol_id === 1
 })
 
 function storeTokens(accessToken, refreshTokenValue) {
@@ -84,10 +71,6 @@ export function restoreSession() {
   }
 }
 
-export function validateAdminCredentials(email, password) {
-  return email === ADMIN_EMAIL && password === ADMIN_PASSWORD
-}
-
 export function useAuth() {
   return {
     user,
@@ -98,6 +81,5 @@ export function useAuth() {
     logout,
     setTokens,
     restoreSession,
-    validateAdminCredentials,
   }
 }
