@@ -14,7 +14,7 @@ import PanelAdmin from './components/PanelAdmin.vue'
 
 const currentView = ref('index')
 
-const { isLoggedIn, isAdmin } = useAuth()
+const { isLoggedIn, isAdmin, user } = useAuth()
 
 // Secciones que requieren sesión iniciada
 const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'dashboard', 'admin']
@@ -56,6 +56,8 @@ onMounted(async () => {
       stored.nombre = data.nombre || stored.nombre
       stored.apellido = data.apellido || stored.apellido
       stored.correo = data.correo || stored.correo
+      stored.name = `${stored.nombre || ''} ${stored.apellido || ''}`.trim() || stored.name || 'Usuario'
+      user.value = stored
       localStorage.setItem('asogema_user', JSON.stringify(stored))
     } catch {
       logout()

@@ -80,8 +80,6 @@ export function useDashboard(emit) {
   const checkOut = ref('')
   const roomType = ref('')
   const guests = ref(3)
-  const fullName = ref('')
-  const phone = ref('')
   const specialRequests = ref('')
 
   /* ----------------------------------------------------------
@@ -90,8 +88,6 @@ export function useDashboard(emit) {
   const errors = ref({
     checkIn: '',
     checkOut: '',
-    fullName: '',
-    phone: '',
     guests: '',
   })
 
@@ -138,8 +134,6 @@ export function useDashboard(emit) {
       checkIn.value &&
       checkOut.value &&
       nights.value > 0 &&
-      fullName.value.trim() &&
-      phone.value.trim() &&
       guests.value >= MIN_GUESTS &&
       guests.value <= maxGuests.value &&
       selectedRoom.value !== null
@@ -207,8 +201,6 @@ export function useDashboard(emit) {
     const newErrors = {
       checkIn: '',
       checkOut: '',
-      fullName: '',
-      phone: '',
       guests: '',
     }
     let isValid = true
@@ -230,19 +222,6 @@ export function useDashboard(emit) {
       isValid = false
     } else if (checkIn.value && new Date(checkOut.value) <= new Date(checkIn.value)) {
       newErrors.checkOut = 'La salida debe ser después de la entrada'
-      isValid = false
-    }
-
-    if (!fullName.value.trim()) {
-      newErrors.fullName = 'El nombre es obligatorio'
-      isValid = false
-    }
-
-    if (!phone.value.trim()) {
-      newErrors.phone = 'El teléfono es obligatorio'
-      isValid = false
-    } else if (!/^\+?\d{7,15}$/.test(phone.value.replace(/[\s-]/g, ''))) {
-      newErrors.phone = 'Teléfono inválido'
       isValid = false
     }
 
@@ -309,14 +288,10 @@ export function useDashboard(emit) {
     checkOut.value = ''
     roomType.value = rooms.value[0]?.value || ''
     guests.value = 3
-    fullName.value = ''
-    phone.value = ''
     specialRequests.value = ''
     errors.value = {
       checkIn: '',
       checkOut: '',
-      fullName: '',
-      phone: '',
       guests: '',
     }
     showBookingPanel.value = false
@@ -393,11 +368,6 @@ export function useDashboard(emit) {
      LIFECYCLE
      ---------------------------------------------------------- */
   onMounted(async () => {
-    // Pre-fill user data if available
-    if (user.value) {
-      fullName.value = user.value.name || ''
-      phone.value = user.value.phone || ''
-    }
     requestAnimationFrame(() => {
       isVisible.value = true
     })
@@ -423,8 +393,6 @@ export function useDashboard(emit) {
     checkOut,
     roomType,
     guests,
-    fullName,
-    phone,
     specialRequests,
     // Errors
     errors,
