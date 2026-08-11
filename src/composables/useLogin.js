@@ -51,7 +51,7 @@ export function useLogin(emit) {
         password: password.value,
       })
 
-      authLogin(data.usuario, data.access_token)
+      authLogin(data.usuario, data.access_token, data.refresh_token)
       isLoading.value = false
 
       if (emit) {

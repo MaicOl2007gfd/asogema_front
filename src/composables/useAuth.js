@@ -3,8 +3,14 @@ import { ref, computed } from 'vue'
 const ADMIN_EMAIL = 'maicolquevedo29@gmail.com'
 const ADMIN_PASSWORD = 'Ma1234567'
 
+const TOKEN_KEY = 'asogema_token'
+const REFRESH_KEY = 'asogema_refresh'
+const USER_KEY = 'asogema_user'
+
 const user = ref(null)
 const token = ref(null)
+const refreshToken = ref(null)
+
 const isLoggedIn = computed(() => user.value !== null)
 
 const isAdmin = computed(() => {
@@ -22,35 +28,59 @@ const isAdmin = computed(() => {
   )
 })
 
-export function login(userData, accessToken) {
+function storeTokens(accessToken, refreshTokenValue) {
   token.value = accessToken
+  refreshToken.value = refreshTokenValue || null
+  localStorage.setItem(TOKEN_KEY, accessToken || '')
+  if (refreshTokenValue) {
+    localStorage.setItem(REFRESH_KEY, refreshTokenValue)
+  } else {
+    localStorage.removeItem(REFRESH_KEY)
+  }
+}
+
+export function login(userData, accessToken, refreshTokenValue) {
+  storeTokens(accessToken, refreshTokenValue)
   user.value = {
     name: `${userData.nombre || ''} ${userData.apellido || ''}`.trim() || userData.name || 'Usuario',
     email: userData.correo || userData.email || '',
     ...userData,
   }
-  localStorage.setItem('asogema_token', accessToken || '')
-  localStorage.setItem('asogema_user', JSON.stringify(user.value))
+  localStorage.setItem(USER_KEY, JSON.stringify(user.value))
 }
 
-export function logout() {
+export function setTokens(accessToken, refreshTokenValue) {
+  storeTokens(accessToken, refreshTokenValue)
+}
+
+export async function logout() {
+  const refresh = refreshToken.value || localStorage.getItem(REFRESH_KEY)
+  if (refresh) {
+    const { default: api } = await import('./useApi.js')
+    api.post('/auth/logout', { refresh_token: refresh }).catch(() => {})
+  }
   user.value = null
   token.value = null
-  localStorage.removeItem('asogema_token')
-  localStorage.removeItem('asogema_user')
+  refreshToken.value = null
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(REFRESH_KEY)
+  localStorage.removeItem(USER_KEY)
 }
 
 export function restoreSession() {
   try {
-    const storedToken = localStorage.getItem('asogema_token')
-    const storedUser = localStorage.getItem('asogema_user')
+    const storedToken = localStorage.getItem(TOKEN_KEY)
+    const storedRefresh = localStorage.getItem(REFRESH_KEY)
+    const storedUser = localStorage.getItem(USER_KEY)
     if (storedToken && storedUser) {
       token.value = storedToken
+      refreshToken.value = storedRefresh || null
       user.value = JSON.parse(storedUser)
     }
   } catch {
-    localStorage.removeItem('asogema_token')
-    localStorage.removeItem('asogema_user')
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(REFRESH_KEY)
+    localStorage.removeItem(USER_KEY)
   }
 }
 
@@ -66,6 +96,7 @@ export function useAuth() {
     isAdmin,
     login,
     logout,
+    setTokens,
     restoreSession,
     validateAdminCredentials,
   }
