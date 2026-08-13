@@ -40,10 +40,10 @@ function cancelLoginAlert() {
   pendingView.value = null
 }
 
-function goToRegister() {
+function goToLogin() {
   showLoginAlert.value = false
   pendingView.value = null
-  currentView.value = 'register'
+  currentView.value = 'login'
 }
 
 onMounted(async () => {
@@ -89,11 +89,11 @@ onMounted(async () => {
             <path d="M7 11V7a5 5 0 0110 0v4"></path>
           </svg>
         </div>
-        <h3 id="login-alert-title">Acceso restringido</h3>
-        <p>Para ingresar a esta sección necesitas una cuenta. Crea una cuenta para continuar.</p>
+        <h3 id="login-alert-title">Acceso Denegado</h3>
+        <p>Para ingresar a esta sección necesitas iniciar sesión.</p>
         <div class="login-alert-actions">
+          <button type="button" class="login-alert-btn login-alert-btn-primary" @click="goToLogin">Iniciar Sesión</button>
           <button type="button" class="login-alert-btn login-alert-btn-cancel" @click="cancelLoginAlert">Cancelar</button>
-          <button type="button" class="login-alert-btn login-alert-btn-register" @click="goToRegister">Registrarse</button>
         </div>
       </div>
     </div>
@@ -185,6 +185,7 @@ onMounted(async () => {
 .login-alert-actions {
   display: flex;
   gap: 12px;
+  margin-bottom: 12px;
 }
 
 .login-alert-btn {
@@ -202,6 +203,16 @@ onMounted(async () => {
     transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.login-alert-btn-primary {
+  background: #133215;
+  color: #F3E8D3;
+}
+
+.login-alert-btn-primary:hover {
+  background: #050505;
+  transform: translateY(-2px);
+}
+
 .login-alert-btn-cancel {
   background: transparent;
   color: #133215;
@@ -209,15 +220,5 @@ onMounted(async () => {
 
 .login-alert-btn-cancel:hover {
   background: rgba(19, 50, 21, 0.08);
-}
-
-.login-alert-btn-register {
-  background: #133215;
-  color: #F3E8D3;
-}
-
-.login-alert-btn-register:hover {
-  background: #050505;
-  transform: translateY(-2px);
 }
 </style>
