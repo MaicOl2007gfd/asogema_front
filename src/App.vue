@@ -5,6 +5,8 @@ import api from './composables/useApi.js'
 import IndexView from './components/IndexView.vue'
 import LoginView from './components/LoginView.vue'
 import RegisterView from './components/RegisterView.vue'
+import ProfileView from './components/ProfileView.vue'
+import ForgotPasswordView from './components/ForgotPasswordView.vue'
 import HotelView from './components/HotelView.vue'
 import RestaurantView from './components/RestaurantView.vue'
 import DashboardView from './components/DashboardView.vue'
@@ -17,7 +19,7 @@ const currentView = ref('index')
 const { isLoggedIn, isAdmin, user } = useAuth()
 
 // Secciones que requieren sesión iniciada
-const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'dashboard', 'admin']
+const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'dashboard', 'admin', 'profile']
 
 const showLoginAlert = ref(false)
 const pendingView = ref(null)
@@ -71,6 +73,8 @@ onMounted(async () => {
     <IndexView v-if="currentView === 'index'" key="index" @navigate="navigate" />
     <LoginView v-else-if="currentView === 'login'" key="login" @navigate="navigate" />
     <RegisterView v-else-if="currentView === 'register'" key="register" @navigate="navigate" />
+    <ForgotPasswordView v-else-if="currentView === 'forgot-password'" key="forgot-password" @navigate="navigate" />
+    <ProfileView v-else-if="currentView === 'profile'" key="profile" @navigate="navigate" />
     <HotelView v-else-if="currentView === 'hotel'" key="hotel" @navigate="navigate" />
     <RestaurantView v-else-if="currentView === 'restaurant'" key="restaurant" @navigate="navigate" />
     <EventsView v-else-if="currentView === 'events'" key="events" @navigate="navigate" />
