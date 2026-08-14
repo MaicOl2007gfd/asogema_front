@@ -283,6 +283,35 @@
   box-shadow: 0 2px 10px rgba(0, 206, 201, 0.25);
 }
 
+.dashboard-nav .nav-profile-btn {
+  padding: 8px 16px;
+  border-radius: var(--dash-radius-xs);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  background: rgba(243, 232, 211, 0.06);
+  color: rgba(243, 232, 211, 0.75);
+  border: 1px solid rgba(243, 232, 211, 0.18);
+  transition: all var(--dash-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dashboard-nav .nav-profile-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.dashboard-nav .nav-profile-btn:hover {
+  background: var(--dash-accent);
+  color: var(--dash-primary-dark);
+  border-color: var(--dash-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 10px rgba(0, 206, 201, 0.25);
+}
+
 /* ----------------------------------------------------------
    HERO / WELCOME SECTION
    ---------------------------------------------------------- */
@@ -2320,3 +2349,4 @@
   background: rgba(0, 206, 201, 0.15);
   border-color: rgba(0, 206, 201, 0.35);
 }
+
