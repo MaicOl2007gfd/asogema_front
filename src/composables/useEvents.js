@@ -1,299 +1,25 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useAuth } from './useAuth.js'
+import { useEventsApi } from './useEventsApi.js'
 
 /**
  * Composable que maneja toda la lógica de la vista del Salón de Eventos.
  * MVC: este archivo actúa como el Controlador/Modelo.
  *
  * @param {Function} emit - Función emit del componente para navegación
- * @param {import('vue').ComputedRef<boolean>} isLoggedIn - Estado reactivo de autenticación
  * @returns {object} Estado reactivo y métodos del Salón de Eventos
  */
-export function useEvents(emit, isLoggedIn) {
-  /* ----------------------------------------------------------
-     CATEGORÍAS DE EVENTOS
-     ---------------------------------------------------------- */
-  const categories = [
-    { id: 'all', label: 'Todos', icon: 'grid' },
-    { id: 'bodas', label: 'Bodas', icon: 'heart' },
-    { id: 'quince', label: '15 Años', icon: 'star' },
-    { id: 'cumpleanos', label: 'Cumpleaños', icon: 'cake' },
-    { id: 'corporativo', label: 'Corporativos', icon: 'briefcase' },
-    { id: 'personalizado', label: 'Personalizado', icon: 'sparkles' },
-  ]
+export function useEvents(emit) {
+  const { user, isLoggedIn } = useAuth()
+  const { fetchEvents, createBooking } = useEventsApi()
 
   /* ----------------------------------------------------------
-     PAQUETES DE EVENTOS (Modelo)
+     SALONES Y TIPOS DE EVENTO (Modelo) — cargados desde la API
      ---------------------------------------------------------- */
-  const eventPackages = [
-    // --- BODAS ---
-    {
-      id: 1,
-      name: 'Boda Esencial',
-      description: 'Ceremonia íntima con salón decorado, banquete para 50 invitados, pastel de bodas de 3 pisos y sesión de fotos básica. Incluye coordinador de evento.',
-      price: '$8.500.000',
-      category: 'bodas',
-      image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop',
-      badge: 'Popular',
-      includes: [
-        'Salón decorado hasta 50 px.',
-        'Banquete 3 tiempos',
-        'Pastel de bodas 3 pisos',
-        'Sesión fotográfica 4h',
-        'Coordinador dedicado',
-        'Montaje floral básico',
-      ],
-    },
-    {
-      id: 2,
-      name: 'Boda Premium',
-      description: 'Celebración inolvidable para 100 invitados con decoración temática, banquete gourmet, barra libre, fotografía y video profesional, y show musical en vivo.',
-      price: '$15.000.000',
-      category: 'bodas',
-      image: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=600&h=400&fit=crop',
-      badge: 'Premium',
-      includes: [
-        'Salón decorado hasta 100 px.',
-        'Banquete gourmet 4 tiempos',
-        'Barra libre (6h)',
-        'Foto y video profesional',
-        'Show musical en vivo',
-        'Pastel de bodas 5 pisos',
-        'Montaje floral completo',
-        'Alfombra roja y photobooth',
-      ],
-    },
-    {
-      id: 3,
-      name: 'Boda Diamante',
-      description: 'La experiencia más exclusiva. Hasta 200 invitados, decoración de lujo, menú degustación firmado por chef estrella, espectáculo de fuegos artificiales y luna de miel sorpresa.',
-      price: '$32.000.000',
-      category: 'bodas',
-      image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&h=400&fit=crop',
-      badge: 'Diamante',
-      includes: [
-        'Salón principal + jardines',
-        'Menú degustación 7 tiempos',
-        'Barra premium ilimitada',
-        'Foto, video y drone',
-        'Espectáculo de fuegos artificiales',
-        'Pastel de bodas 7 pisos',
-        'Montaje floral premium',
-        'Transporte para invitados',
-        'Luna de miel sorpresa',
-        'Wedding planner exclusivo',
-      ],
-    },
-
-    // --- 15 AÑOS ---
-    {
-      id: 4,
-      name: '15 Años Clásico',
-      description: 'Fiesta tradicional con salón decorado, banquete para 60 invitados, vals con coreografía, pastel decorado y sesión de fotos.',
-      price: '$6.500.000',
-      category: 'quince',
-      image: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&h=400&fit=crop',
-      badge: 'Tradicional',
-      includes: [
-        'Salón decorado hasta 60 px.',
-        'Banquete 3 tiempos',
-        'Coreografía de vals',
-        'Pastel decorado 3 pisos',
-        'Sesión fotográfica 3h',
-        'Coordinador de evento',
-      ],
-    },
-    {
-      id: 5,
-      name: '15 Años Soñado',
-      description: 'Fiesta de ensueño para 120 invitados con temática personalizada, banquete gourmet, animador, DJ en vivo, cabina de fotos y vestido de fiesta.',
-      price: '$12.000.000',
-      category: 'quince',
-      image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&h=400&fit=crop',
-      badge: 'Soñado',
-      includes: [
-        'Salón decorado hasta 120 px.',
-        'Banquete gourmet 4 tiempos',
-        'DJ en vivo + animador',
-        'Cabina de fotos 360',
-        'Pastel decorado 4 pisos',
-        'Sesión foto y video',
-        'Vestido de fiesta incluido',
-        'Coreografía personalizada',
-      ],
-    },
-    {
-      id: 6,
-      name: '15 Años Reina',
-      description: 'La celebración más espectacular. Hasta 250 invitados, show de luces, artista sorpresa, vestido diseñador, maquillaje profesional y recuerdos de lujo.',
-      price: '$25.000.000',
-      category: 'quince',
-      image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&h=400&fit=crop',
-      badge: 'Reina',
-      includes: [
-        'Salón principal + terraza',
-        'Menú degustación 5 tiempos',
-        'Show de luces LED',
-        'Artista sorpresa',
-        'Vestido de diseñador',
-        'Maquillaje y peinado prof.',
-        'Foto, video y drone',
-        'Recuerdos de lujo',
-        'Transporte limusina',
-        'Animador exclusivo',
-      ],
-    },
-
-    // --- CUMPLEAÑOS ---
-    {
-      id: 7,
-      name: 'Cumpleaños Dorado',
-      description: 'Celebración elegante para 40 invitados con salón privado, banquete ejecutivo, pastel personalizado y decoración con globos y flores.',
-      price: '$3.500.000',
-      category: 'cumpleanos',
-      image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop',
-      badge: 'Dorado',
-      includes: [
-        'Salón privado hasta 40 px.',
-        'Banquete ejecutivo 2 tiempos',
-        'Pastel personalizado',
-        'Decoración globos y flores',
-        'Música ambiental',
-        'Coordinador básico',
-      ],
-    },
-    {
-      id: 8,
-      name: 'Cumpleaños Platinum',
-      description: 'Fiesta inolvidable para 80 invitados con buffet gourmet, DJ, photobooth, barra de cocteles y pastel de diseño exclusivo.',
-      price: '$7.500.000',
-      category: 'cumpleanos',
-      image: 'https://images.unsplash.com/photo-1558636508-e0db3814bd1d?w=600&h=400&fit=crop',
-      badge: 'Platinum',
-      includes: [
-        'Salón hasta 80 invitados',
-        'Buffet gourmet 3 tiempos',
-        'DJ y equipo de sonido',
-        'Cabina de fotos',
-        'Barra de cocteles (4h)',
-        'Pastel de diseño',
-        'Decoración temática',
-        'Fotografía 4h',
-      ],
-    },
-    {
-      id: 9,
-      name: 'Cumpleaños VIP',
-      description: 'Experiencia exclusiva para 150 invitados con show en vivo, barra premium, comida de autor, decoración de lujo y recuerdos personalizados.',
-      price: '$14.000.000',
-      category: 'cumpleanos',
-      image: 'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=600&h=400&fit=crop',
-      badge: 'VIP',
-      includes: [
-        'Salón principal hasta 150 px.',
-        'Comida de autor 4 tiempos',
-        'Show en vivo (banda)',
-        'Barra premium ilimitada',
-        'Decoración de lujo',
-        'Foto y video profesional',
-        'Recuerdos personalizados',
-        'Animador y juegos',
-        'Coordinador exclusivo',
-      ],
-    },
-
-    // --- CORPORATIVOS ---
-    {
-      id: 10,
-      name: 'Corporativo Ejecutivo',
-      description: 'Sala de conferencias equipada con tecnología audiovisual, coffee break premium, almuerzo ejecutivo y material corporativo.',
-      price: '$4.500.000',
-      category: 'corporativo',
-      image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=400&fit=crop',
-      badge: 'Ejecutivo',
-      includes: [
-        'Sala ejecutiva hasta 40 px.',
-        'Equipo AV completo',
-        'Coffee break premium',
-        'Almuerzo ejecutivo',
-        'Material corporativo',
-        'Asistente técnico',
-      ],
-    },
-    {
-      id: 11,
-      name: 'Corporativo Gold',
-      description: 'Convención empresarial para 100 personas con salón principal, catering completo, equipo de traducción y organización logística integral.',
-      price: '$9.000.000',
-      category: 'corporativo',
-      image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=600&h=400&fit=crop',
-      badge: 'Gold',
-      includes: [
-        'Salón principal hasta 100 px.',
-        'Catering completo',
-        'Equipo de sonido y video',
-        'Servicio de traducción',
-        'Material promocional',
-        'Organización logística',
-        'Coordinador de evento',
-      ],
-    },
-    {
-      id: 12,
-      name: 'Corporativo Platinum',
-      description: 'Evento corporativo de alto nivel para 200 invitados. Salones múltiples, producción audiovisual profesional, catering gourmet y entretenimiento.',
-      price: '$18.000.000',
-      category: 'corporativo',
-      image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&h=400&fit=crop',
-      badge: 'Platinum',
-      includes: [
-        'Salones múltiples 200 px.',
-        'Producción AV profesional',
-        'Catering gourmet',
-        'Barra ejecutiva',
-        'Entretenimiento corporativo',
-        'Foto y video institucional',
-        'Transporte ejecutivo',
-        'Equipo de producción',
-      ],
-    },
-
-    // --- PERSONALIZADO ---
-    {
-      id: 13,
-      name: 'Paquete Básico',
-      description: 'Ideal para eventos pequeños y reuniones familiares. Incluye salón, decoración sencilla y refrigerio básico. Tú eliges el tema.',
-      price: '$2.500.000',
-      category: 'personalizado',
-      image: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&h=400&fit=crop',
-      badge: 'Flexible',
-      includes: [
-        'Salón hasta 30 invitados',
-        'Decoración básica',
-        'Refrigerio',
-        'Mesa principal',
-        '2h de coordinación',
-      ],
-    },
-    {
-      id: 14,
-      name: 'Paquete Personalizado',
-      description: 'Diseñamos tu evento a tu medida. Eliges colores, menú, música y cada detalle. Nuestro equipo crea una experiencia única para ti.',
-      price: 'A Cotizar',
-      category: 'personalizado',
-      image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&h=400&fit=crop',
-      badge: 'A tu medida',
-      includes: [
-        'Asesoría personalizada',
-        'Diseño de evento único',
-        'Menú a elección',
-        'Selección musical',
-        'Decoración customizada',
-        'Coordinador dedicado 24/7',
-        'Proveedores seleccionados',
-        'Presupuesto transparente',
-      ],
-    },
-  ]
+  const salons = ref([])
+  const tiposEvento = ref([])
+  const eventsLoading = ref(false)
+  const eventsError = ref(null)
 
   /* ----------------------------------------------------------
      CAROUSEL DATA
@@ -365,24 +91,26 @@ export function useEvents(emit, isLoggedIn) {
      STATE
      ---------------------------------------------------------- */
   const isVisible = ref(false)
-  const activeCategory = ref('all')
-  const selectedPackage = ref(null)
-  const showQuoteForm = ref(false)
-  const quoteInquiry = ref({
-    name: '',
-    email: '',
-    phone: '',
-    eventType: '',
-    guestCount: '',
-    eventDate: '',
-    packageId: null,
-    message: '',
-  })
-  const quoteSubmitted = ref(false)
+  const selectedSalon = ref(null)
+  const showBookingForm = ref(false)
+  const isSubmitting = ref(false)
+  const showSuccess = ref(false)
+  const bookingResult = ref(null)
+  const errors = ref({})
   const currentSlide = ref(0)
   const currentTestimonial = ref(0)
   let carouselTimer = null
   let testimonialTimer = null
+
+  /* ----------------------------------------------------------
+     RESERVATION FORM STATE
+     ---------------------------------------------------------- */
+  const fecha = ref('')
+  const horaInicio = ref('')
+  const horaFin = ref('')
+  const personas = ref(2)
+  const tipoEventoId = ref('')
+  const observaciones = ref('')
 
   /* ----------------------------------------------------------
      COMPUTED
@@ -390,75 +118,230 @@ export function useEvents(emit, isLoggedIn) {
   const totalSlides = computed(() => carouselSlides.length)
   const totalTestimonials = computed(() => testimonials.length)
 
-  const filteredPackages = computed(() => {
-    if (activeCategory.value === 'all') {
-      return eventPackages
+  const today = computed(() => {
+    const d = new Date()
+    return d.toISOString().split('T')[0]
+  })
+
+  const currentUserName = computed(() => {
+    return user.value?.name || ''
+  })
+
+  const timeSlots = computed(() => {
+    const slots = []
+    for (let hour = 8; hour <= 23; hour++) {
+      const padded = String(hour).padStart(2, '0')
+      slots.push(`${padded}:00`)
+      if (hour !== 23) {
+        slots.push(`${padded}:30`)
+      }
     }
-    return eventPackages.filter(pkg => pkg.category === activeCategory.value)
+    return slots
+  })
+
+  const validEndSlots = computed(() => {
+    if (!horaInicio.value) return timeSlots.value
+    return timeSlots.value.filter((slot) => slot > horaInicio.value)
+  })
+
+  const selectedSalonObj = computed(() => {
+    if (!selectedSalon.value) return null
+    return salons.value.find((s) => s.id === selectedSalon.value.id) || null
+  })
+
+  const selectedTipoNombre = computed(() => {
+    const tipo = tiposEvento.value.find((t) => t.id === Number(tipoEventoId.value))
+    return tipo ? tipo.name : ''
+  })
+
+  const anticipoEstimado = computed(() => {
+    const salon = selectedSalonObj.value
+    if (!salon) return 0
+    return Math.round(salon.basePrice * 0.3)
+  })
+
+  const anticipoMostrado = computed(() => {
+    if (bookingResult.value && bookingResult.value.anticipo != null) {
+      return Math.round(Number(bookingResult.value.anticipo) || 0)
+    }
+    return anticipoEstimado.value
+  })
+
+  const maxPersonas = computed(() => {
+    const salon = selectedSalonObj.value
+    return salon ? salon.capacity : 1
   })
 
   /* ----------------------------------------------------------
-     METHODS — Quote / Inquiry
+     UTILITY — helpers de transformación de la API
      ---------------------------------------------------------- */
-  function selectPackage(pkg) {
-    selectedPackage.value = pkg
-    quoteInquiry.value.packageId = pkg.id
+  function slugify(text) {
+    return String(text || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
   }
 
-  function closePackageDetail() {
-    selectedPackage.value = null
+  function formatPrice(num) {
+    return '$' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
   }
 
-  function openQuoteForm(pkg) {
-    if (pkg) {
-      selectPackage(pkg)
+  function transformSalons(apiSalons) {
+    return (apiSalons || []).map((salon) => ({
+      id: salon.id,
+      name: salon.nombre,
+      description: salon.descripcion || 'Salón ideal para tu evento especial.',
+      capacity: salon.capacidad,
+      ubicacion: salon.ubicacion || '',
+      basePrice: Number(salon.precio_base) || 0,
+      price: formatPrice(Math.round(Number(salon.precio_base) || 0)),
+      badge: `${salon.capacidad} puestos`,
+      image: `https://picsum.photos/seed/${slugify(salon.nombre)}/600/400`,
+    }))
+  }
+
+  function transformTipos(apiTipos) {
+    return (apiTipos || []).map((tipo) => ({
+      id: tipo.id,
+      name: tipo.nombre,
+    }))
+  }
+
+  async function loadEvents() {
+    eventsLoading.value = true
+    eventsError.value = null
+    try {
+      const data = await fetchEvents()
+      salons.value = transformSalons(data.salones)
+      tiposEvento.value = transformTipos(data.tipos_evento)
+    } catch (err) {
+      eventsError.value = 'No se pudieron cargar los salones de eventos'
+      console.error('Error loading events:', err)
+    } finally {
+      eventsLoading.value = false
     }
-    quoteInquiry.value.eventType = pkg ? pkg.name : ''
-    showQuoteForm.value = true
   }
 
-  function closeQuoteForm() {
-    showQuoteForm.value = false
-    quoteSubmitted.value = false
-    if (!selectedPackage.value) {
-      quoteInquiry.value = {
-        name: '',
-        email: '',
-        phone: '',
-        eventType: '',
-        guestCount: '',
-        eventDate: '',
-        packageId: null,
-        message: '',
+  /* ----------------------------------------------------------
+     METHODS — Salon selection / Booking
+     ---------------------------------------------------------- */
+  function showSalonDetail(salon) {
+    selectedSalon.value = salon
+  }
+
+  function closeSalonDetail() {
+    selectedSalon.value = null
+  }
+
+  function openBookingForm(salon) {
+    selectedSalon.value = salon
+    fecha.value = ''
+    horaInicio.value = ''
+    horaFin.value = ''
+    personas.value = 2
+    tipoEventoId.value = ''
+    observaciones.value = ''
+    errors.value = {}
+    showBookingForm.value = true
+  }
+
+  function closeBookingForm() {
+    showBookingForm.value = false
+    errors.value = {}
+  }
+
+  function incrementPersonas() {
+    if (personas.value < maxPersonas.value) personas.value++
+  }
+
+  function decrementPersonas() {
+    if (personas.value > 1) personas.value--
+  }
+
+  function validate() {
+    const errs = {}
+    if (!tipoEventoId.value) errs.tipoEvento = 'Selecciona el tipo de evento'
+    if (!fecha.value) {
+      errs.fecha = 'La fecha es obligatoria'
+    } else if (fecha.value < today.value) {
+      errs.fecha = 'La fecha no puede ser anterior a hoy'
+    }
+    if (!horaInicio.value) errs.horaInicio = 'La hora de inicio es obligatoria'
+    if (!horaFin.value) {
+      errs.horaFin = 'La hora de fin es obligatoria'
+    } else if (horaInicio.value && horaFin.value <= horaInicio.value) {
+      errs.horaFin = 'La hora de fin debe ser posterior a la de inicio'
+    }
+    if (!personas.value || personas.value < 1) errs.personas = 'Indica el número de personas'
+    if (personas.value > maxPersonas.value) {
+      errs.personas = `Máximo ${maxPersonas.value} personas para este salón`
+    }
+    errors.value = errs
+    return Object.keys(errs).length === 0
+  }
+
+  async function handleSubmit() {
+    if (!validate()) return
+
+    // Gate de login: la reserva requiere sesión iniciada
+    if (!isLoggedIn.value) {
+      if (emit) emit('navigate', 'login')
+      return
+    }
+
+    isSubmitting.value = true
+
+    try {
+      const bookingData = {
+        salon_id: Number(selectedSalon.value.id),
+        tipo_evento_id: Number(tipoEventoId.value),
+        fecha: fecha.value,
+        hora_inicio: `${fecha.value}T${horaInicio.value}:00`,
+        hora_fin: `${fecha.value}T${horaFin.value}:00`,
+        cantidad_personas: personas.value,
+        observaciones: observaciones.value || undefined,
+      }
+
+      const result = await createBooking(bookingData)
+      bookingResult.value = result
+
+      isSubmitting.value = false
+      showBookingForm.value = false
+      showSuccess.value = true
+    } catch (err) {
+      isSubmitting.value = false
+      if (err.response?.status === 409) {
+        errors.value.general = err.response?.data?.message || 'El salón no está disponible en ese horario'
+      } else if (err.response?.status === 404) {
+        errors.value.general = err.response?.data?.message || 'El salón no fue encontrado'
+      } else if (err.response?.data?.message) {
+        const msg = Array.isArray(err.response.data.message)
+          ? err.response.data.message[0]
+          : err.response.data.message
+        errors.value.general = msg
+      } else {
+        errors.value.general = 'Error al crear la reserva. Intenta de nuevo.'
       }
     }
   }
 
-  function submitQuote() {
-    // Simulate inquiry submission
-    quoteSubmitted.value = true
-
-    // In a real app, you'd send this to an API
-    const inquiryData = {
-      ...quoteInquiry.value,
-      packageName: selectedPackage.value ? selectedPackage.value.name : quoteInquiry.value.eventType,
-      packagePrice: selectedPackage.value ? selectedPackage.value.price : 'A Cotizar',
-    }
-
-    console.log('Cotización enviada:', inquiryData)
-
-    // Auto-close after showing success
-    setTimeout(() => {
-      closeQuoteForm()
-      selectedPackage.value = null
-    }, 3000)
+  function resetForm() {
+    fecha.value = ''
+    horaInicio.value = ''
+    horaFin.value = ''
+    personas.value = 2
+    tipoEventoId.value = ''
+    observaciones.value = ''
+    errors.value = {}
+    selectedSalon.value = null
+    bookingResult.value = null
+    showSuccess.value = false
   }
 
-  function requestCustomQuote() {
-    showQuoteForm.value = true
-    quoteInquiry.value.eventType = 'Personalizado'
-    quoteInquiry.value.packageId = null
-    selectedPackage.value = null
+  function closeSuccess() {
+    resetForm()
   }
 
   /* ----------------------------------------------------------
@@ -496,10 +379,6 @@ export function useEvents(emit, isLoggedIn) {
   /* ----------------------------------------------------------
      METHODS — Navigation
      ---------------------------------------------------------- */
-  function setCategory(categoryId) {
-    activeCategory.value = categoryId
-  }
-
   function goBackToHome() {
     if (emit) {
       emit('navigate', 'index')
@@ -510,39 +389,6 @@ export function useEvents(emit, isLoggedIn) {
     if (emit) {
       emit('navigate', 'login')
     }
-  }
-
-  function goToReservation() {
-    if (emit) {
-      emit('navigate', 'dashboard')
-    }
-  }
-
-  function handleQuoteClick() {
-    if (isLoggedIn && isLoggedIn.value) {
-      // Open the first package or show all
-      if (eventPackages.length > 0) {
-        selectPackage(eventPackages[0])
-      }
-      openQuoteForm(null)
-    } else {
-      goToLogin()
-    }
-  }
-
-  /* ----------------------------------------------------------
-     UTILITY
-     ---------------------------------------------------------- */
-  function getCategoryIcon(type) {
-    const iconMap = {
-      grid: 'grid',
-      heart: 'heart',
-      star: 'star',
-      cake: 'cake',
-      briefcase: 'briefcase',
-      sparkles: 'sparkles',
-    }
-    return iconMap[type] || 'grid'
   }
 
   function nextTestimonial() {
@@ -557,6 +403,7 @@ export function useEvents(emit, isLoggedIn) {
       isVisible.value = true
     })
     startCarousel()
+    loadEvents()
   })
 
   onUnmounted(() => {
@@ -571,42 +418,59 @@ export function useEvents(emit, isLoggedIn) {
      ---------------------------------------------------------- */
   return {
     // Data
-    categories,
-    eventPackages,
+    salons,
+    tiposEvento,
+    eventsLoading,
+    eventsError,
     carouselSlides,
     testimonials,
     // State
     isVisible,
-    activeCategory,
-    selectedPackage,
-    showQuoteForm,
-    quoteInquiry,
-    quoteSubmitted,
+    selectedSalon,
+    showBookingForm,
+    isSubmitting,
+    showSuccess,
+    bookingResult,
+    errors,
+    fecha,
+    horaInicio,
+    horaFin,
+    personas,
+    tipoEventoId,
+    observaciones,
     currentSlide,
     currentTestimonial,
     // Computed
-    filteredPackages,
     totalSlides,
     totalTestimonials,
-    // Methods - Quote
-    selectPackage,
-    closePackageDetail,
-    openQuoteForm,
-    closeQuoteForm,
-    submitQuote,
-    requestCustomQuote,
+    today,
+    currentUserName,
+    timeSlots,
+    validEndSlots,
+    selectedSalonObj,
+    selectedTipoNombre,
+    anticipoEstimado,
+    anticipoMostrado,
+    maxPersonas,
+    formatPrice,
+    // Methods - Salon / Booking
+    showSalonDetail,
+    closeSalonDetail,
+    openBookingForm,
+    closeBookingForm,
+    incrementPersonas,
+    decrementPersonas,
+    handleSubmit,
+    resetForm,
+    closeSuccess,
     // Methods - Carousel
     goToSlide,
     nextSlide,
     prevSlide,
     // Methods - Navigation
-    setCategory,
-    handleQuoteClick,
     goBackToHome,
     goToLogin,
-    goToReservation,
-    // Utility
-    getCategoryIcon,
     nextTestimonial,
+    loadEvents,
   }
 }

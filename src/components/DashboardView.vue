@@ -1,20 +1,26 @@
 <script setup>
+import { ref, computed } from 'vue'
 import { useDashboard } from '../composables/useDashboard.js'
+import { useAuth } from '../composables/useAuth.js'
+import ReviewsView from './ReviewsView.vue'
 
 const emit = defineEmits(['navigate'])
+const mobileMenuOpen = ref(false)
+
+function toggleMobileMenu() {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+const { user, isAdmin } = useAuth()
 
 const {
-  user,
-  getUserInitials,
-  handleLogout,
-  goBackToHome,
-  ROOM_TYPES,
+  rooms,
+  roomsLoading,
+  roomsError,
   checkIn,
   checkOut,
   roomType,
   guests,
-  fullName,
-  phone,
   specialRequests,
   errors,
   isSubmitting,
@@ -44,6 +50,9 @@ const {
   selectRoomFromCard,
   closeBookingPanel,
   scrollToGallery,
+  getUserInitials,
+  handleLogout,
+  goBackToHome
 } = useDashboard(emit)
 </script>
 
@@ -52,20 +61,54 @@ const {
     <!-- ======================================================
          NAVBAR
          ====================================================== -->
-    <nav class="dashboard-nav">
+    <nav class="dashboard-nav" :class="{ 'has-admin': isAdmin }">
       <div class="nav-brand" @click="scrollToGallery">
         <img src="/imagenes/Logo.png" alt="Asogema" class="nav-logo" />
         <span class="nav-brand-text">Asogema</span>
       </div>
 
-      <div class="nav-user">
+      <ul class="dashboard-nav-links" :class="{ open: mobileMenuOpen }">
+        <li><a href="#" @click.prevent="emit('navigate', 'index')">Inicio</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
+      </ul>
+
+      <div class="nav-user" :class="{ open: mobileMenuOpen }">
+        <div v-if="isAdmin" class="nav-admin-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0110 0v4" />
+          </svg>
+          <span>Admin</span>
+        </div>
         <div class="nav-user-greeting" v-if="user">
           <small>Bienvenido</small>
           <strong>{{ user.name }}</strong>
         </div>
         <div class="nav-user-avatar">{{ getUserInitials() }}</div>
+        <button class="nav-profile-btn" @click="emit('navigate', 'profile')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          Mi Perfil
+        </button>
+        <button v-if="isAdmin" class="nav-admin-btn" @click="emit('navigate', 'admin')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path>
+          </svg>
+          Admin
+        </button>
         <button class="nav-logout-btn" @click="handleLogout">Cerrar Sesión</button>
       </div>
+
+      <button class="dashboard-nav-toggle" :class="{ active: mobileMenuOpen }" @click="toggleMobileMenu" :aria-label="mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </nav>
 
     <!-- ======================================================
@@ -143,12 +186,30 @@ const {
       </div>
 
       <!-- Results count -->
-      <div class="room-results-info" v-if="searchQuery">
+      <div class="room-results-info" v-if="searchQuery && !roomsLoading">
         <span>{{ filteredRooms.length }} habitación(es) encontrada(s)</span>
       </div>
 
+      <!-- Loading skeleton -->
+      <div v-if="roomsLoading" class="room-loading" role="status" aria-live="polite">
+        <div class="room-loading-spinner" aria-hidden="true"></div>
+        <p>Cargando habitaciones…</p>
+      </div>
+
+      <!-- Error state -->
+      <div v-else-if="roomsError" class="room-cards-empty room-error-state" role="alert">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <h3>No pudimos cargar las habitaciones</h3>
+        <p>{{ roomsError }}</p>
+        <button @click="loadRooms" class="room-cards-empty-btn">Reintentar</button>
+      </div>
+
       <!-- Room Cards Grid -->
-      <div class="room-cards-grid">
+      <div v-else class="room-cards-grid">
         <article
           v-for="room in filteredRooms"
           :key="room.value"
@@ -212,6 +273,9 @@ const {
       </div>
     </section>
 
+    <!-- ── Reseñas de Habitaciones ── -->
+    <ReviewsView serviceType="hotel" theme="light" />
+
     <!-- ======================================================
          BOOKING PANEL — appears when a room is selected
          ====================================================== -->
@@ -245,32 +309,6 @@ const {
         <div class="booking-panel-form-wrap">
           <form @submit.prevent="handleSubmit" novalidate>
             <div class="booking-panel-grid">
-              <!-- Full Name -->
-              <div class="booking-field">
-                <label for="book-name">Nombre completo <span class="required">*</span></label>
-                <input
-                  id="book-name"
-                  v-model="fullName"
-                  type="text"
-                  placeholder="Ej: Juan Pérez"
-                  :class="{ error: errors.fullName }"
-                />
-                <span v-if="errors.fullName" class="error-message">{{ errors.fullName }}</span>
-              </div>
-
-              <!-- Phone -->
-              <div class="booking-field">
-                <label for="book-phone">Teléfono <span class="required">*</span></label>
-                <input
-                  id="book-phone"
-                  v-model="phone"
-                  type="tel"
-                  placeholder="+57 300 123 4567"
-                  :class="{ error: errors.phone }"
-                />
-                <span v-if="errors.phone" class="error-message">{{ errors.phone }}</span>
-              </div>
-
               <!-- Check-in -->
               <div class="booking-field">
                 <label for="book-checkin">Fecha de entrada <span class="required">*</span></label>

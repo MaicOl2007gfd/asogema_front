@@ -1,8 +1,9 @@
 import { ref, onMounted } from 'vue'
-import { login as authLogin } from './useAuth.js'
+import { useAuth } from './useAuth.js'
 import api from './useApi.js'
 
 export function useLogin(emit) {
+  const { login: authLogin, isAdmin } = useAuth()
   const email = ref('')
   const password = ref('')
   const remember = ref(false)
@@ -46,26 +47,29 @@ export function useLogin(emit) {
     errorMessage.value = ''
 
     try {
-      const { data } = await api.post('/auth/login', {
+      const { data } = await api.post('/auth/tokens', {
         correo: email.value,
         password: password.value,
       })
 
-      authLogin(data.usuario, data.access_token)
+      authLogin(data.usuario, data.access_token, data.refresh_token)
+      isLoading.value = false
 
       if (emit) {
-        emit('navigate', 'index')
+        emit('navigate', isAdmin.value ? 'admin' : 'index')
       }
     } catch (err) {
-      if (err.response?.status === 401) {
-        errorMessage.value = 'Correo o contraseña incorrectos'
-      } else if (err.response?.data?.message) {
-        errorMessage.value = err.response.data.message
-      } else {
-        errorMessage.value = 'Error de conexión. Intenta de nuevo.'
-      }
-    } finally {
       isLoading.value = false
+
+      if (err.response?.status === 401) {
+        emailError.value = 'Correo o contraseña incorrectos'
+      } else if (err.response?.data?.message) {
+        emailError.value = Array.isArray(err.response.data.message)
+          ? err.response.data.message[0]
+          : err.response.data.message
+      } else {
+        emailError.value = 'Error de conexión. Intenta de nuevo.'
+      }
     }
   }
 

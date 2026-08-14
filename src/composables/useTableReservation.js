@@ -1,9 +1,14 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useAuth } from './useAuth.js'
+import { useRestaurantApi } from './useRestaurantApi.js'
 
 /**
  * Composable para la reserva de mesas del Restaurante.
  */
 export function useTableReservation(emit) {
+  const { user, isLoggedIn } = useAuth()
+  const { fetchTables, createReservation } = useRestaurantApi()
+
   /* ----------------------------------------------------------
      DATA
      ---------------------------------------------------------- */
@@ -25,9 +30,6 @@ export function useTableReservation(emit) {
      STATE
      ---------------------------------------------------------- */
   const isVisible = ref(false)
-  const fullName = ref('')
-  const email = ref('')
-  const phone = ref('')
   const date = ref('')
   const time = ref('')
   const guests = ref(2)
@@ -38,6 +40,14 @@ export function useTableReservation(emit) {
   const errors = ref({})
 
   /* ----------------------------------------------------------
+     TABLES STATE (from API)
+     ---------------------------------------------------------- */
+  const tables = ref([])
+  const tablesLoading = ref(false)
+  const tablesError = ref(null)
+  const selectedTable = ref(null)
+
+  /* ----------------------------------------------------------
      COMPUTED
      ---------------------------------------------------------- */
   const today = computed(() => {
@@ -45,8 +55,12 @@ export function useTableReservation(emit) {
     return d.toISOString().split('T')[0]
   })
 
+  const currentUserName = computed(() => {
+    return user.value?.name || ''
+  })
+
   const isFormValid = computed(() => {
-    return fullName.value && email.value && phone.value && date.value && time.value
+    return date.value && time.value && selectedTable.value && guests.value >= 1
   })
 
   const totalGuests = computed(() => guests.value)
@@ -62,50 +76,71 @@ export function useTableReservation(emit) {
     if (guests.value > 1) guests.value--
   }
 
+  function selectTable(table) {
+    selectedTable.value = table
+    errors.value.mesa = ''
+  }
+
   function validate() {
     const errs = {}
-    if (!fullName.value.trim()) errs.fullName = 'El nombre es obligatorio'
-    if (!email.value.trim()) errs.email = 'El correo es obligatorio'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) errs.email = 'Correo inválido'
-    if (!phone.value.trim()) errs.phone = 'El teléfono es obligatorio'
     if (!date.value) errs.date = 'La fecha es obligatoria'
     if (!time.value) errs.time = 'La hora es obligatoria'
+    if (!selectedTable.value) errs.mesa = 'Selecciona una mesa'
     errors.value = errs
     return Object.keys(errs).length === 0
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!validate()) return
+
+    // Gate de login: la reserva requiere sesión iniciada
+    if (!isLoggedIn.value) {
+      if (emit) emit('navigate', 'login')
+      return
+    }
 
     isSubmitting.value = true
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const reservationData = {
+        mesa_id: Number(selectedTable.value.id),
+        fecha: date.value,
+        hora: `${date.value}T${time.value}:00`,
+        cantidad_personas: guests.value,
+        motivo: occasion.value || undefined,
+        observaciones: specialRequests.value || undefined,
+      }
+
+      await createReservation(reservationData)
+
       isSubmitting.value = false
       showSuccess.value = true
-
-      console.log('Reserva de mesa:', {
-        nombre: fullName.value,
-        email: email.value,
-        telefono: phone.value,
-        fecha: date.value,
-        hora: time.value,
-        invitados: guests.value,
-        ocasion: occasion.value,
-        notas: specialRequests.value,
-      })
-    }, 1500)
+    } catch (err) {
+      isSubmitting.value = false
+      if (err.response?.status === 409) {
+        errors.value.mesa = err.response?.data?.message || 'La mesa no está disponible en esa fecha y hora'
+      } else if (err.response?.status === 404) {
+        errors.value.mesa = err.response?.data?.message || 'La mesa no fue encontrada'
+      } else if (err.response?.data?.message) {
+        const msg = Array.isArray(err.response.data.message)
+          ? err.response.data.message[0]
+          : err.response.data.message
+        errors.value.mesa = msg
+      } else {
+        errors.value.mesa = 'Error al crear la reserva. Intenta de nuevo.'
+      }
+    }
   }
 
   function resetForm() {
-    fullName.value = ''
-    email.value = ''
-    phone.value = ''
     date.value = ''
     time.value = ''
     guests.value = 2
     occasion.value = ''
     specialRequests.value = ''
+    selectedTable.value = null
+    tables.value = []
+    tablesError.value = null
     errors.value = {}
     showSuccess.value = false
   }
@@ -121,6 +156,59 @@ export function useTableReservation(emit) {
   function goBackToRestaurant() {
     if (emit) emit('navigate', 'restaurant')
   }
+
+  /* ----------------------------------------------------------
+     API DATA TRANSFORMATION
+     ---------------------------------------------------------- */
+  function transformTables(apiTables) {
+    return apiTables.map((table) => ({
+      id: table.id,
+      label: `Mesa ${table.numero}`,
+      capacidad: table.capacidad,
+      ubicacion: table.ubicacion || '',
+    }))
+  }
+
+  async function loadTables() {
+    if (!date.value || !time.value) {
+      tables.value = []
+      selectedTable.value = null
+      return
+    }
+
+    tablesLoading.value = true
+    tablesError.value = null
+
+    try {
+      const apiTables = await fetchTables({
+        fecha: date.value,
+        hora: `${date.value}T${time.value}:00`,
+        capacidad_min: guests.value,
+      })
+      tables.value = transformTables(apiTables)
+      // Reiniciar la selección si la mesa ya no está disponible
+      if (selectedTable.value && !tables.value.some(t => t.id === selectedTable.value.id)) {
+        selectedTable.value = null
+      }
+    } catch (err) {
+      tablesError.value = 'No se pudieron cargar las mesas disponibles'
+      tables.value = []
+      selectedTable.value = null
+      console.error('Error loading tables:', err)
+    } finally {
+      tablesLoading.value = false
+    }
+  }
+
+  /* ----------------------------------------------------------
+     WATCH — Reload available tables when date/time/guests change
+     ---------------------------------------------------------- */
+  watch([date, time, guests], () => {
+    if (selectedTable.value && !isFormValid.value) {
+      selectedTable.value = null
+    }
+    loadTables()
+  })
 
   /* ----------------------------------------------------------
      LIFECYCLE
@@ -142,9 +230,6 @@ export function useTableReservation(emit) {
     RESERVATION_DATA,
     timeSlots,
     isVisible,
-    fullName,
-    email,
-    phone,
     date,
     time,
     guests,
@@ -154,8 +239,16 @@ export function useTableReservation(emit) {
     showSuccess,
     errors,
     today,
+    currentUserName,
     isFormValid,
     totalGuests,
+    // Tables
+    tables,
+    tablesLoading,
+    tablesError,
+    selectedTable,
+    selectTable,
+    // Methods
     incrementGuests,
     decrementGuests,
     handleSubmit,
@@ -163,5 +256,6 @@ export function useTableReservation(emit) {
     closeSuccess,
     goBackToHome,
     goBackToRestaurant,
+    loadTables,
   }
 }

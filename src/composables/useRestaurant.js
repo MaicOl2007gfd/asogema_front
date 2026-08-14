@@ -1,4 +1,5 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRestaurantApi } from './useRestaurantApi.js'
 
 /**
  * Composable que maneja toda la lógica de la vista del Restaurante.
@@ -9,221 +10,84 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
  * @returns {object} Estado reactivo y métodos del Restaurante
  */
 export function useRestaurant(emit, isLoggedIn) {
+  const { fetchMenu } = useRestaurantApi()
+
   /* ----------------------------------------------------------
      CATEGORÍAS DE COMIDA
      ---------------------------------------------------------- */
-  const categories = [
+  const categories = ref([
     { id: 'all', label: 'Todas', icon: 'grid' },
-    { id: 'desayunos', label: 'Desayunos', icon: 'sun' },
-    { id: 'almuerzos', label: 'Almuerzos', icon: 'sunset' },
-    { id: 'cenas', label: 'Cenas', icon: 'moon' },
-    { id: 'ensaladas', label: 'Ensaladas', icon: 'leaf' },
-    { id: 'bebidas', label: 'Bebidas', icon: 'coffee' },
-  ]
+  ])
 
   /* ----------------------------------------------------------
-     MENU DATA (Modelo)
+     MENU DATA (Modelo) — cargado desde la API
      ---------------------------------------------------------- */
-  const menuItems = [
-    // --- DESAYUNOS ---
-    {
-      id: 1,
-      name: 'Desayuno Continental Asogema',
-      description: 'Selección de panes artesanales, frutas frescas de temporada, huevos benedictinos con salsa holandesa casera y café gourmet de altura.',
-      price: '$18.000',
-      category: 'desayunos',
-      image: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&h=300&fit=crop',
-      badge: 'Chef Choice',
-    },
-    {
-      id: 2,
-      name: 'Arepa Supreme Asogema',
-      description: 'Arepa de chócolo rellena de queso costeño, aguacate, huevo perico y carne desmechada, acompañada de mantequilla de hierbas.',
-      price: '$15.000',
-      category: 'desayunos',
-      image: 'https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=400&h=300&fit=crop',
-      badge: 'Especialidad',
-    },
-    {
-      id: 3,
-      name: 'French Toast Caramelizado',
-      description: 'Pan brioche artesanal bañado en crema de vainilla, caramelizado a la perfección, servido con frutos rojos y jarabe de arce natural.',
-      price: '$16.500',
-      category: 'desayunos',
-      image: 'https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400&h=300&fit=crop',
-      badge: 'Popular',
-    },
-    {
-      id: 4,
-      name: 'Smoothie Bowl Tropical',
-      description: 'Base de banano y mango con toppings de granola artesanal, coco tostado, semillas de chía y miel de abeja orgánica.',
-      price: '$14.000',
-      category: 'desayunos',
-      image: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400&h=300&fit=crop',
-      badge: 'Saludable',
-    },
+  const menuItems = ref([])
+  const menuLoading = ref(false)
+  const menuError = ref(null)
 
-    // --- ALMUERZOS ---
-    {
-      id: 5,
-      name: 'Filete Mignon al Vino Tinto',
-      description: 'Corte angus premium sellado a la perfección, bañado en demi-glace de vino tinto, puré de papas trufado y espárragos salteados.',
-      price: '$42.000',
-      category: 'almuerzos',
-      image: 'https://images.unsplash.com/photo-1600891964092-4316c288032e?w=400&h=300&fit=crop',
-      badge: 'Plato Estrella',
-    },
-    {
-      id: 6,
-      name: 'Risotto de Hongos Porcini',
-      description: 'Arroz arborio cremoso cocido a fuego lento con hongos porcini, parmesano reggiano y un toque de trufa negra.',
-      price: '$34.000',
-      category: 'almuerzos',
-      image: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400&h=300&fit=crop',
-      badge: 'Vegetariano',
-    },
-    {
-      id: 7,
-      name: 'Salmón Glaseado con Miel',
-      description: 'Salmón noruego glaseado con miel y mostaza dijon, servido sobre cama de quinoa primavera y verduras asadas.',
-      price: '$38.000',
-      category: 'almuerzos',
-      image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop',
-      badge: 'Saludable',
-    },
-    {
-      id: 8,
-      name: 'Lomo de Cerdo BBQ Artesanal',
-      description: 'Lomo de cerdo marinado 24h, glaseado con BBQ ahumada casera, acompañado de coleslaw y papas rostizadas con romero.',
-      price: '$32.000',
-      category: 'almuerzos',
-      image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop',
-      badge: 'BBQ',
-    },
+  /* ----------------------------------------------------------
+     UTILITY — helpers de transformación de la API
+     ---------------------------------------------------------- */
+  function slugify(text) {
+    return String(text || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  }
 
-    // --- CENAS ---
-    {
-      id: 9,
-      name: 'Cena Degustación 7 Tiempos',
-      description: 'Experiencia culinaria completa con 7 platillos de autor seleccionados por nuestro chef ejecutivo, maridaje incluido.',
-      price: '$85.000',
-      category: 'cenas',
-      image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop',
-      badge: 'Experiencia VIP',
-    },
-    {
-      id: 10,
-      name: 'Langosta Thermidor',
-      description: 'Langosta entera gratinada con salsa thermidor, gratin de papas al gratén y vegetales de temporada salteados.',
-      price: '$68.000',
-      category: 'cenas',
-      image: 'https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=400&h=300&fit=crop',
-      badge: 'Premium',
-    },
-    {
-      id: 11,
-      name: 'Pasta Alfredo con Camarones',
-      description: 'Fettuccine artesanal en cremosa salsa alfredo con camarones saltados, ajo, perejil y queso parmesano envejecido.',
-      price: '$36.000',
-      category: 'cenas',
-      image: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop',
-      badge: 'Clásico',
-    },
-    {
-      id: 12,
-      name: 'Cordero al Merlot',
-      description: 'Pierna de cordero braseada 6 horas en merlot, servida con gnocchi de espinaca y reducción de vino tinto.',
-      price: '$45.000',
-      category: 'cenas',
-      image: 'https://images.unsplash.com/photo-1514516345957-556ca7d90a29?w=400&h=300&fit=crop',
-      badge: 'Chef Choice',
-    },
+  function getCategoryIcon(name) {
+    const n = (name || '').toLowerCase()
+    if (n.includes('desayun')) return 'sun'
+    if (n.includes('almuerz')) return 'sunset'
+    if (n.includes('cena')) return 'moon'
+    if (n.includes('ensalad')) return 'leaf'
+    if (n.includes('bebida')) return 'coffee'
+    return 'grid'
+  }
 
-    // --- ENSALADAS ---
-    {
-      id: 13,
-      name: 'Ensalada César Gourmet',
-      description: 'Lechuga romana fresca, croutons de pan artesanal, parmesano en lascas y aderezo césar clásico con anchoas y limón.',
-      price: '$18.000',
-      category: 'ensaladas',
-      image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400&h=300&fit=crop',
-      badge: 'Clásica',
-    },
-    {
-      id: 14,
-      name: 'Ensalada de Quinoa y Aguacate',
-      description: 'Quinoa tricolor, aguacate fresco, mango, pepino, menta y vinagreta de maracuyá con un toque de jengibre.',
-      price: '$20.000',
-      category: 'ensaladas',
-      image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop',
-      badge: 'Vegana',
-    },
-    {
-      id: 15,
-      name: 'Ensalada Mediterránea',
-      description: 'Mezcla de lechugas, tomates cherry, aceitunas kalamata, queso feta, cebolla morada y aderezo de limón y orégano.',
-      price: '$19.000',
-      category: 'ensaladas',
-      image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop',
-      badge: 'Light',
-    },
-    {
-      id: 16,
-      name: 'Ensalada de Pollo Teriyaki',
-      description: 'Tiras de pollo glaseado en teriyaki casero, mezcla de greens, almendras tostadas, arándanos y vinagreta oriental.',
-      price: '$22.000',
-      category: 'ensaladas',
-      image: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=400&h=300&fit=crop',
-      badge: 'Popular',
-    },
+  function transformMenu(apiMenu) {
+    const items = []
+    for (const cat of apiMenu) {
+      const catSlug = slugify(cat.nombre)
+      for (const product of cat.productos_menu || []) {
+        items.push({
+          id: product.id,
+          name: product.nombre,
+          description: product.descripcion || 'Deliciosa preparación de nuestro restaurante.',
+          price: formatPrice(Number(product.precio) || 0),
+          category: catSlug,
+          image: `https://picsum.photos/seed/${slugify(product.nombre)}/400/300`,
+          badge: cat.nombre,
+        })
+      }
+    }
+    return items
+  }
 
-    // --- BEBIDAS ---
-    {
-      id: 17,
-      name: 'Margarita Asogema',
-      description: 'Tequila reposado, licor de naranja, jugo de limón fresco, sal de mar y un toque de hibisco.',
-      price: '$15.000',
-      category: 'bebidas',
-      image: 'https://images.unsplash.com/photo-1514361892635-6b07e31e75f9?w=400&h=300&fit=crop',
-      badge: 'Cóctel Estrella',
-    },
-    {
-      id: 18,
-      name: 'Vino de la Casa',
-      description: 'Selección exclusiva de vinos chilenos y argentinos. Pregunta a nuestro sommelier por el maridaje perfecto.',
-      price: '$22.000',
-      category: 'bebidas',
-      image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&h=300&fit=crop',
-      badge: 'Premium',
-    },
-    {
-      id: 19,
-      name: 'Limonada Natural',
-      description: 'Limonada fresca hecha con limones orgánicos, hierbabuena y un toque de miel de abeja.',
-      price: '$8.000',
-      category: 'bebidas',
-      image: 'https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=400&h=300&fit=crop',
-      badge: 'Refrescante',
-    },
-    {
-      id: 20,
-      name: 'Café Especial Asogema',
-      description: 'Café de altura colombiano preparado en método Chemex, con notas a caramelo y chocolate oscuro.',
-      price: '$7.000',
-      category: 'bebidas',
-      image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop',
-      badge: 'Gourmet',
-    },
-    {
-      id: 21,
-      name: 'Smoothie de Mango y Maracuyá',
-      description: 'Smoothie cremoso de mango fresco y maracuyá, endulzado naturalmente y servido bien frío.',
-      price: '$10.000',
-      category: 'bebidas',
-      image: 'https://images.unsplash.com/photo-1534353473418-4cfa6c56fd38?w=400&h=300&fit=crop',
-      badge: 'Natural',
-    },
-  ]
+  async function loadMenu() {
+    menuLoading.value = true
+    menuError.value = null
+    try {
+      const apiMenu = await fetchMenu()
+      categories.value = [
+        { id: 'all', label: 'Todas', icon: 'grid' },
+        ...apiMenu.map(cat => ({
+          id: slugify(cat.nombre),
+          label: cat.nombre,
+          icon: getCategoryIcon(cat.nombre),
+        })),
+      ]
+      menuItems.value = transformMenu(apiMenu)
+    } catch (err) {
+      menuError.value = 'No se pudo cargar el menú'
+      console.error('Error loading menu:', err)
+    } finally {
+      menuLoading.value = false
+    }
+  }
 
   /* ----------------------------------------------------------
      CAROUSEL DATA
@@ -278,9 +142,9 @@ export function useRestaurant(emit, isLoggedIn) {
   const totalSlides = computed(() => carouselSlides.length)
   const filteredItems = computed(() => {
     if (activeCategory.value === 'all') {
-      return menuItems
+      return menuItems.value
     }
-    return menuItems.filter(item => item.category === activeCategory.value)
+    return menuItems.value.filter(item => item.category === activeCategory.value)
   })
 
   const orderCount = computed(() => {
@@ -444,21 +308,6 @@ export function useRestaurant(emit, isLoggedIn) {
   }
 
   /* ----------------------------------------------------------
-     ICON MAP for categories
-     ---------------------------------------------------------- */
-  function getCategoryIcon(type) {
-    const iconMap = {
-      grid: 'grid',
-      sun: 'sun',
-      sunset: 'sunset',
-      moon: 'moon',
-      leaf: 'leaf',
-      coffee: 'coffee',
-    }
-    return iconMap[type] || 'grid'
-  }
-
-  /* ----------------------------------------------------------
      LIFECYCLE
      ---------------------------------------------------------- */
   onMounted(() => {
@@ -466,6 +315,7 @@ export function useRestaurant(emit, isLoggedIn) {
       isVisible.value = true
     })
     startCarousel()
+    loadMenu()
   })
 
   onUnmounted(() => {
@@ -479,6 +329,8 @@ export function useRestaurant(emit, isLoggedIn) {
     // Data
     categories,
     menuItems,
+    menuLoading,
+    menuError,
     carouselSlides,
     // State
     isVisible,
@@ -513,6 +365,7 @@ export function useRestaurant(emit, isLoggedIn) {
     handleReserveClick,
     confirmOrder,
     goBackToHome,
+    loadMenu,
     getCategoryIcon,
   }
 }

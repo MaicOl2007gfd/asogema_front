@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { useRestaurant } from '../composables/useRestaurant.js'
+import ReviewsView from './ReviewsView.vue'
 
 const emit = defineEmits(['navigate'])
 
@@ -34,6 +35,8 @@ const {
   activeCategory,
   selectedItem,
   filteredItems,
+  menuLoading,
+  menuError,
   order,
   showOrderPanel,
   orderCount,
@@ -251,7 +254,20 @@ const {
       </div>
 
       <!-- Menu Grid -->
-      <div class="restaurant-grid">
+      <div v-if="menuLoading" class="restaurant-empty">
+        <div class="restaurant-loader"></div>
+        <p>Cargando menú...</p>
+      </div>
+
+      <div v-else-if="menuError" class="restaurant-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <p>{{ menuError }}</p>
+      </div>
+
+      <div v-else class="restaurant-grid">
         <div
           v-for="item in filteredItems"
           :key="item.id"
@@ -278,7 +294,7 @@ const {
       </div>
 
       <!-- Empty state -->
-      <div v-if="filteredItems.length === 0" class="restaurant-empty">
+      <div v-if="!menuLoading && !menuError && filteredItems.length === 0" class="restaurant-empty">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -444,6 +460,9 @@ const {
         </div>
       </div>
     </Transition>
+
+    <!-- ── Reseñas ── -->
+    <ReviewsView serviceType="restaurant" theme="light" />
 
     <!-- ==========================================================
          FOOTER
