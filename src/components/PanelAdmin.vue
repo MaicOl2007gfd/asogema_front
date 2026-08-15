@@ -11,6 +11,7 @@ const {
   activeModule, activeSubTab, contextMessage,
   loading, error, retry,
   members, selectedMemberId, selectedMember,
+  emailSaving, emailError, emailSuccess, updateMemberEmail,
   calendarFilters, categoryLabels, calendarGrid, calendarTitle,
   prevMonth, nextMonth, selectedCalendarEvent, openCalendarEvent, closeCalendarEvent,
   todayReservations, todayReservationCount, todayConfirmedCount, todayPendingCount,
@@ -49,6 +50,46 @@ function getUserInitials() {
 function setModule(mod) {
   activeModule.value = mod
   if (mod === 'panel') activeSubTab.value = 'resumen'
+}
+
+// ─── Edición de correo (admin) ─────────────────────────────
+const emailModalOpen = ref(false)
+const emailInput = ref('')
+const emailFieldError = ref('')
+
+function openEmailModal() {
+  if (!selectedMember.value) return
+  emailInput.value = selectedMember.value.email || ''
+  emailFieldError.value = ''
+  emailModalOpen.value = true
+}
+
+function closeEmailModal() {
+  if (emailSaving.value) return
+  emailModalOpen.value = false
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
+async function saveEmail() {
+  emailFieldError.value = ''
+  const value = (emailInput.value || '').trim()
+  if (!value) {
+    emailFieldError.value = 'El correo no puede estar vacío.'
+    return
+  }
+  if (!isValidEmail(value)) {
+    emailFieldError.value = 'Ingresa un correo electrónico válido.'
+    return
+  }
+  const id = selectedMember.value?.id
+  if (id == null) return
+  const res = await updateMemberEmail(id, value)
+  if (res.ok) {
+    emailModalOpen.value = false
+  }
 }
 
 const filterColors = {
@@ -701,6 +742,18 @@ onMounted(() => {
                   Membresía {{ selectedMember.membership }}
                 </span>
                 · {{ selectedMember.email }}
+                <button
+                  type="button"
+                  class="lux-email-edit-btn"
+                  title="Cambiar correo de este usuario"
+                  @click="openEmailModal"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                  Cambiar correo
+                </button>
               </p>
             </div>
           </div>
@@ -818,6 +871,47 @@ onMounted(() => {
       </div>
       </template>
     </main>
+
+    <!-- ══════════════════════════════════════════════════════
+         MODAL — Cambiar correo del usuario
+         ══════════════════════════════════════════════════════ -->
+    <Teleport to="body">
+      <div class="lux-modal-overlay" :class="{ active: emailModalOpen }" @click.self="closeEmailModal">
+        <div class="lux-modal lux-modal-email" v-if="emailModalOpen">
+          <button class="lux-modal-close" @click="closeEmailModal" :disabled="emailSaving" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+          <div class="lux-modal-body">
+            <span class="lux-modal-cat-badge" style="background: rgba(0,206,201,0.12); color: #00a8a3; border-color: rgba(0,206,201,0.25);">Administración</span>
+            <h2 class="lux-modal-title">Cambiar correo</h2>
+            <p class="lux-email-modal-desc">
+              Edita el correo electrónico de <strong>{{ selectedMember?.name }}</strong>.
+            </p>
+            <label class="lux-email-field-label" for="admin-email-input">Nuevo correo electrónico</label>
+            <input
+              id="admin-email-input"
+              v-model="emailInput"
+              type="email"
+              class="lux-email-input"
+              placeholder="usuario@correo.com"
+              :class="{ 'lux-email-input-error': emailFieldError }"
+              @keyup.enter="saveEmail"
+              :disabled="emailSaving"
+            />
+            <p v-if="emailFieldError" class="lux-email-msg error">{{ emailFieldError }}</p>
+            <p v-if="emailError" class="lux-email-msg error">{{ emailError }}</p>
+            <p v-if="emailSuccess" class="lux-email-msg success">{{ emailSuccess }}</p>
+            <div class="lux-email-modal-actions">
+              <button type="button" class="lux-email-btn lux-email-btn-cancel" @click="closeEmailModal" :disabled="emailSaving">Cancelar</button>
+              <button type="button" class="lux-email-btn lux-email-btn-save" @click="saveEmail" :disabled="emailSaving">
+                <span v-if="emailSaving" class="lux-email-spinner" aria-hidden="true"></span>
+                {{ emailSaving ? 'Guardando…' : 'Guardar correo' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
