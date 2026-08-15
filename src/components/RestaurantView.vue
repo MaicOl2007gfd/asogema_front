@@ -8,6 +8,7 @@ const emit = defineEmits(['navigate'])
 
 const { user, isLoggedIn, logout } = useAuth()
 const mobileMenuOpen = ref(false)
+const menuSectionRef = ref(null)
 
 function toggleMobileMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
@@ -43,9 +44,14 @@ const {
   orderTotal,
   currentSlide,
   totalSlides,
+  searchQuery,
+  detailQty,
+  hasActiveFilters,
   setCategory,
   showItemDetail,
   closeItemDetail,
+  incrementDetailQty,
+  decrementDetailQty,
   addToOrder,
   removeFromOrder,
   updateQuantity,
@@ -56,10 +62,25 @@ const {
   handleReserveClick,
   confirmOrder,
   goBackToHome,
+  goToMyReservations,
   goToSlide,
   nextSlide,
   prevSlide,
+  isPaused,
+  pauseCarousel,
+  resumeCarousel,
+  onTouchStart,
+  onTouchEnd,
 } = useRestaurant(emit, isLoggedIn)
+
+function scrollToMenu() {
+  menuSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function onSelectCategory(categoryId) {
+  setCategory(categoryId)
+  scrollToMenu()
+}
 </script>
 
 <template>
@@ -121,8 +142,13 @@ const {
     <!-- ==========================================================
          CAROUSEL
          ========================================================== -->
-    <div class="restaurant-carousel">
-      <div class="carousel-track">
+    <div
+      class="restaurant-carousel"
+      :class="{ paused: isPaused }"
+      @mouseenter="pauseCarousel"
+      @mouseleave="resumeCarousel"
+    >
+      <div class="carousel-track" @touchstart.passive="onTouchStart" @touchend="onTouchEnd">
         <div
           v-for="(slide, i) in carouselSlides"
           :key="slide.id"
@@ -144,6 +170,21 @@ const {
             <p class="carousel-slide-subtitle">{{ slide.subtitle }}</p>
           </div>
         </div>
+      </div>
+
+      <!-- Auto-advance progress bar -->
+      <div class="carousel-progress" aria-hidden="true">
+        <span
+          class="carousel-progress-bar"
+          :class="{ paused: isPaused }"
+          :key="'progress-' + currentSlide"
+        ></span>
+      </div>
+
+      <!-- Slide counter -->
+      <div class="carousel-counter" aria-hidden="true">
+        <strong>{{ String(currentSlide + 1).padStart(2, '0') }}</strong>
+        <span>/ {{ String(totalSlides).padStart(2, '0') }}</span>
       </div>
 
       <button class="carousel-arrow carousel-arrow-prev" @click="prevSlide" aria-label="Anterior">
@@ -193,13 +234,13 @@ const {
       </div>
 
       <!-- Filter Categories -->
-      <div class="restaurant-filters">
+      <div class="restaurant-filters" ref="menuSectionRef">
         <button
           v-for="cat in categories"
           :key="cat.id"
           class="restaurant-filter-btn"
           :class="{ active: activeCategory === cat.id }"
-          @click="setCategory(cat.id)"
+          @click="onSelectCategory(cat.id)"
         >
           <!-- Grid icon -->
           <svg v-if="cat.icon === 'grid'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -253,6 +294,32 @@ const {
         </button>
       </div>
 
+      <!-- Search -->
+      <div class="restaurant-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          v-model="searchQuery"
+          type="search"
+          placeholder="Buscar platillos por nombre, descripción o categoría..."
+          aria-label="Buscar en el menú"
+        />
+        <button
+          v-if="searchQuery"
+          class="restaurant-search-clear"
+          type="button"
+          @click="searchQuery = ''"
+          aria-label="Limpiar búsqueda"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
       <!-- Menu Grid -->
       <div v-if="menuLoading" class="restaurant-empty">
         <div class="restaurant-loader"></div>
@@ -299,7 +366,7 @@ const {
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <p>No hay platillos disponibles en esta categoría</p>
+        <p>{{ hasActiveFilters ? 'No hay platillos que coincidan con tu búsqueda' : 'No hay platillos disponibles en esta categoría' }}</p>
       </div>
 
       <!-- Actions -->
@@ -310,6 +377,15 @@ const {
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
+        </button>
+        <button class="restaurant-btn restaurant-btn-secondary" @click="goToMyReservations">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          Mis Reservas
         </button>
         <button class="restaurant-btn restaurant-btn-secondary" @click="goBackToHome">
           Volver al Inicio
@@ -447,9 +523,35 @@ const {
             <p class="restaurant-modal-desc">{{ selectedItem.description }}</p>
             <div class="restaurant-modal-divider"></div>
             <div class="restaurant-modal-footer">
+              <div class="restaurant-modal-qty">
+                <button
+                  class="restaurant-modal-qty-btn"
+                  type="button"
+                  @click="decrementDetailQty"
+                  :disabled="detailQty <= 1"
+                  aria-label="Disminuir cantidad"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+                <span class="restaurant-modal-qty-value">{{ detailQty }}</span>
+                <button
+                  class="restaurant-modal-qty-btn"
+                  type="button"
+                  @click="incrementDetailQty"
+                  :disabled="detailQty >= 20"
+                  aria-label="Aumentar cantidad"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+              </div>
               <span class="restaurant-modal-price">{{ selectedItem.price }}</span>
-              <button class="restaurant-btn restaurant-btn-primary" @click="addToOrder(selectedItem); closeItemDetail();">
-                Agregar a la Orden
+              <button class="restaurant-btn restaurant-btn-primary" @click="addToOrder(selectedItem, detailQty); closeItemDetail();">
+                {{ detailQty > 1 ? 'Agregar ' + detailQty + ' unidades' : 'Agregar a la Orden' }}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
