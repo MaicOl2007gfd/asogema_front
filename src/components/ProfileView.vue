@@ -38,6 +38,16 @@ const {
   passwordStrength,
   togglePasswordVisibility,
   submitChangePassword,
+  // Verificación de email
+  verifyCode,
+  verifySaving,
+  verifySuccess,
+  verifyError,
+  resendSaving,
+  resendMessage,
+  isEmailVerified,
+  submitVerifyEmail,
+  resendVerificationCode,
   // Código QR único del perfil
   qrDataUrl,
   qrValue,
@@ -67,10 +77,12 @@ function showToast(type, message) {
 }
 
 watch(
-  [profileSuccess, profileError],
+  [profileSuccess, profileError, resendMessage, verifyError],
   () => {
     if (profileSuccess.value) showToast('success', profileSuccess.value)
     else if (profileError.value) showToast('error', profileError.value)
+    else if (resendMessage.value) showToast('success', resendMessage.value)
+    else if (verifyError.value) showToast('error', verifyError.value)
   }
 )
 </script>
@@ -104,6 +116,32 @@ watch(
           <p class="sidebar-email">{{ email }}</p>
 
           <div class="badge-row">
+            <!-- Alerta accionable: correo sin verificar -->
+            <span class="verify-badge" :class="{ verified: isEmailVerified }">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path v-if="isEmailVerified" d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+                <polyline v-if="isEmailVerified" points="22 4 12 14.01 9 11.01"></polyline>
+                <template v-else>
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <path d="M22 4L12 13L2 4"></path>
+                </template>
+              </svg>
+              {{ isEmailVerified ? 'Correo verificado' : 'Correo por verificar' }}
+              <button
+                v-if="!isEmailVerified"
+                type="button"
+                class="resend-inline-btn"
+                :disabled="resendSaving"
+                :aria-label="`Reenviar el código de verificación a ${email}`"
+                @click="resendVerificationCode"
+              >
+                {{ resendSaving ? 'Reenviando…' : 'Reenviar verificación' }}
+              </button>
+            </span>
+            <p v-if="resendMessage" class="sidebar-resend-feedback" role="status">
+              {{ resendMessage }}
+            </p>
+
             <!-- Badge informativo: rol -->
             <span class="role-badge" :class="{ admin: isUserAdmin }">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -138,6 +176,18 @@ watch(
               <path d="M7 11V7a5 5 0 0110 0v4"></path>
             </svg>
             Cambiar contraseña
+          </button>
+          <button
+            type="button"
+            class="sidebar-nav-item"
+            :class="{ active: activeTab === 'email' }"
+            @click="activeTab = 'email'"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+              <path d="M22 4L12 13L2 4"></path>
+            </svg>
+            Verificación de email
           </button>
           <button
             type="button"
@@ -492,6 +542,97 @@ watch(
                     <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke-width="4" stroke-linecap="round"></circle>
                   </svg>
                 </span>
+              </button>
+            </form>
+          </section>
+
+          <!-- ── Verificación de email ── -->
+          <section v-else-if="activeTab === 'email'" key="email" class="panel">
+            <header class="panel-header">
+              <div class="panel-title-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <path d="M22 4L12 13L2 4"></path>
+                </svg>
+              </div>
+              <div>
+                <h1 class="panel-title">Verificación de email</h1>
+                <p class="panel-subtitle">Confirma tu correo para proteger tu cuenta</p>
+              </div>
+            </header>
+
+            <form class="profile-form" @submit.prevent="submitVerifyEmail" novalidate>
+              <div class="verify-card">
+                <div class="verify-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 2L11 13"></path>
+                    <path d="M22 2L15 22l-4-9-9-4 20-7z"></path>
+                  </svg>
+                </div>
+                <p class="verify-text">
+                  Hemos enviado un <strong>código de 6 dígitos</strong> a
+                  <span class="verify-email">{{ email }}</span> al momento de crear tu cuenta.
+                </p>
+
+                <div class="code-input-wrap">
+                  <input
+                    id="profile-verify-code"
+                    v-model="verifyCode"
+                    class="code-input"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="6"
+                    autocomplete="one-time-code"
+                    placeholder="••••••"
+                  />
+                </div>
+
+                <button type="submit" class="primary-btn primary-btn-center" :class="{ loading: verifySaving }" :disabled="verifySaving">
+                  <span class="btn-label" v-if="!verifySaving">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    Verificar correo
+                  </span>
+                  <span class="btn-loader" v-else>
+                    <svg class="spinner" viewBox="0 0 50 50">
+                      <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke-width="4" stroke-linecap="round"></circle>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              <!-- Mensajes -->
+              <div v-if="verifySuccess" class="form-feedback form-feedback-success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>{{ verifySuccess }}</span>
+              </div>
+              <div v-if="verifyError" class="form-feedback form-feedback-error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                <span>{{ verifyError }}</span>
+              </div>
+              <div v-if="resendMessage" class="form-feedback form-feedback-success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>{{ resendMessage }}</span>
+              </div>
+
+              <!-- Reenvío (PENDIENTE BACKEND) -->
+              <button
+                type="button"
+                class="resend-btn"
+                :disabled="resendSaving"
+                @click="resendVerificationCode"
+              >
+                {{ resendSaving ? 'Enviando…' : '¿No recibiste el código? Reenviar' }}
               </button>
             </form>
           </section>

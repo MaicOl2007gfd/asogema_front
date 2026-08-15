@@ -106,34 +106,6 @@ watch(selectedMemberId, (id) => {
   if (id != null) loadMemberDetail(id)
 })
 
-// ─── Cambiar correo de un usuario (admin) ───────────────────
-const emailSaving = ref(false)
-const emailError = ref('')
-const emailSuccess = ref('')
-
-async function updateMemberEmail(id, correo) {
-  emailSaving.value = true
-  emailError.value = ''
-  emailSuccess.value = ''
-  try {
-    const { data } = await api.patch(`/admin/members/${id}`, { correo })
-    const updated = data?.correo ?? correo
-    const m = members.value.find(x => x.id === id)
-    if (m) m.email = updated
-    emailSuccess.value = 'Correo actualizado correctamente.'
-    return { ok: true, correo: updated }
-  } catch (e) {
-    const msg =
-      e?.response?.data?.message ||
-      e?.response?.data?.error ||
-      'No se pudo actualizar el correo. Inténtalo de nuevo.'
-    emailError.value = Array.isArray(msg) ? msg.join(', ') : msg
-    return { ok: false, message: emailError.value }
-  } finally {
-    emailSaving.value = false
-  }
-}
-
 // ─── Calendar Events ────────────────────────────────────────
 const calendarEvents = ref([])
 
@@ -535,7 +507,6 @@ export function usePanelAdmin() {
     activeModule, activeSubTab, contextMessage,
     loading, error, retry,
     members, selectedMemberId, selectedMember,
-    emailSaving, emailError, emailSuccess, updateMemberEmail,
     calendarFilters, categoryLabels, calendarGrid, calendarTitle,
     prevMonth, nextMonth, selectedCalendarEvent, openCalendarEvent, closeCalendarEvent,
     todayReservations, todayReservationCount, todayConfirmedCount, todayPendingCount,
