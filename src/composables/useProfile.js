@@ -5,19 +5,16 @@ import api from './useApi.js'
 
 /**
  * Composable que maneja toda la lógica del Perfil / Ajustes de cuenta.
- * Incluye: actualizar datos del perfil, cambiar contraseña y verificación de email.
+ * Incluye: actualizar datos del perfil y cambiar contraseña.
  *
  * ⚠️ NOTA BACKEND — Piezas pendientes que requieren endpoints aún no implementados
  * en el backend (asogema-back). Cada bloque pendiente está marcado con "PENDIENTE BACKEND":
  *
  *   1. GET /auth/users/me        → solo devuelve { id, correo, rol, rol_nombre }.
- *      No expone nombre, apellido, telefono ni correo_verificado.
+ *      No expone nombre, apellido, telefono.
  *      Por eso los campos se prellenan desde el estado local de autenticación.
  *   2. Editar correo             → UpdateProfileDto NO acepta `correo`.
  *      (pendiente: agregar correo + validación de unicidad en el backend)
- *   3. Reenvío de código         → no existe endpoint público de reenvío.
- *      (pendiente: POST /auth/verify-email/resend { correo })
- *   4. Estado correo_verificado  → no se expone en el perfil.
  *
  * @param {Function} emit - Función emit del componente para navegación
  * @returns {object} Estado reactivo y métodos del perfil
@@ -25,7 +22,7 @@ import api from './useApi.js'
 export function useProfile(emit) {
   const { user, logout } = useAuth()
 
-  /* Tab activo: 'cuenta' | 'seguridad' | 'email' */
+  /* Tab activo: 'cuenta' | 'seguridad' | 'qr' */
   const activeTab = ref('cuenta')
 
   /* Animación de entrada */
@@ -99,19 +96,6 @@ export function useProfile(emit) {
     const idx = Math.min(score, 4)
     return { score: idx, label: labels[idx], percent: (idx + 1) * 20, color: colors[idx] }
   })
-
-  /* ──────────────────────────────────────────────────────────
-     VERIFICACIÓN DE EMAIL
-     ────────────────────────────────────────────────────────── */
-  const verifyCode = ref('')
-  const verifySaving = ref(false)
-  const verifySuccess = ref('')
-  const verifyError = ref('')
-  const resendSaving = ref(false)
-  const resendMessage = ref('')
-
-  // PENDIENTE BACKEND: el backend no expone correo_verificado en el perfil.
-  const isEmailVerified = ref(false)
 
   /* ──────────────────────────────────────────────────────────
      HELPERS
@@ -275,62 +259,6 @@ export function useProfile(emit) {
   }
 
   /* ──────────────────────────────────────────────────────────
-     VERIFICACIÓN DE EMAIL
-     ────────────────────────────────────────────────────────── */
-  function validateVerifyForm() {
-    verifyError.value = ''
-    verifySuccess.value = ''
-    if (!verifyCode.value.trim()) {
-      verifyError.value = 'Ingresa el código de verificación'
-      return false
-    }
-    if (!/^\d{6}$/.test(verifyCode.value.trim())) {
-      verifyError.value = 'El código debe tener 6 dígitos'
-      return false
-    }
-    return true
-  }
-
-  async function submitVerifyEmail() {
-    if (!validateVerifyForm()) return
-
-    verifySaving.value = true
-    try {
-      await api.post('/auth/verify-email', {
-        correo: email.value,
-        codigo: verifyCode.value.trim(),
-      })
-      verifySuccess.value = '¡Correo verificado correctamente!'
-      isEmailVerified.value = true
-      verifyCode.value = ''
-    } catch (err) {
-      verifyError.value = extractError(err, 'El código es incorrecto o ha expirado')
-    } finally {
-      verifySaving.value = false
-    }
-  }
-
-  /**
-   * PENDIENTE BACKEND: no existe endpoint público de reenvío del código.
-   * El código solo se envía automáticamente al registrarse.
-   * Cuando exista, se usará: POST /auth/verify-email/resend { correo }
-   */
-  async function resendVerificationCode() {
-    resendSaving.value = true
-    resendMessage.value = ''
-    verifySuccess.value = ''
-    try {
-      await api.post('/auth/verify-email/resend', { correo: email.value })
-      resendMessage.value = 'Se envió un nuevo código a tu correo'
-    } catch {
-      resendMessage.value = ''
-      verifyError.value = 'El reenvío de código estará disponible próximamente (requiere backend)'
-    } finally {
-      resendSaving.value = false
-    }
-  }
-
-  /* ──────────────────────────────────────────────────────────
      CERRAR SESIÓN
      ────────────────────────────────────────────────────────── */
   function handleLogout() {
@@ -387,16 +315,6 @@ export function useProfile(emit) {
     passwordStrength,
     togglePasswordVisibility,
     submitChangePassword,
-    // Verificación de email
-    verifyCode,
-    verifySaving,
-    verifySuccess,
-    verifyError,
-    resendSaving,
-    resendMessage,
-    isEmailVerified,
-    submitVerifyEmail,
-    resendVerificationCode,
     // Código QR único del perfil
     qrDataUrl,
     qrValue,

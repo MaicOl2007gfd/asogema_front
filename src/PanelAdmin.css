@@ -2129,3 +2129,160 @@
   background: var(--lux-primary-light);
   transform: translateY(-1px);
 }
+
+/* ==========================================================
+   EDIT EMAIL — Admin changes a user's email
+   ========================================================== */
+.lux-email-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 206, 201, 0.35);
+  background: rgba(0, 206, 201, 0.08);
+  color: #00a8a3;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--lux-transition);
+}
+
+.lux-email-edit-btn svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.lux-email-edit-btn:hover {
+  background: rgba(0, 206, 201, 0.16);
+  border-color: var(--lux-accent);
+  color: var(--lux-primary);
+  transform: translateY(-1px);
+}
+
+.lux-modal-email {
+  max-width: 480px;
+}
+
+.lux-email-modal-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--lux-text-muted);
+  margin: -8px 0 20px;
+}
+
+.lux-email-modal-desc strong {
+  color: var(--lux-primary);
+}
+
+.lux-email-field-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--lux-text-muted);
+  margin-bottom: 8px;
+}
+
+.lux-email-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--lux-radius-sm);
+  border: 1.5px solid var(--lux-border);
+  background: var(--lux-bg-light);
+  color: var(--lux-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  transition: border-color var(--lux-transition), box-shadow var(--lux-transition);
+  outline: none;
+}
+
+.lux-email-input:focus {
+  border-color: var(--lux-accent);
+  box-shadow: 0 0 0 3px rgba(0, 206, 201, 0.12);
+}
+
+.lux-email-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lux-email-input-error {
+  border-color: #e17055 !important;
+}
+
+.lux-email-msg {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 10px 0 0;
+}
+
+.lux-email-msg.error {
+  color: #c0392b;
+}
+
+.lux-email-msg.success {
+  color: #00b894;
+}
+
+.lux-email-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.lux-email-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--lux-radius-sm);
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--lux-transition);
+}
+
+.lux-email-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lux-email-btn-cancel {
+  background: rgba(19, 50, 21, 0.06);
+  color: var(--lux-text-muted);
+  border: 1px solid var(--lux-border);
+}
+
+.lux-email-btn-cancel:hover:not(:disabled) {
+  background: rgba(19, 50, 21, 0.1);
+  color: var(--lux-primary);
+}
+
+.lux-email-btn-save {
+  background: linear-gradient(135deg, var(--lux-primary), var(--lux-primary-light));
+  color: var(--lux-bg);
+}
+
+.lux-email-btn-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--lux-accent), #00b894);
+  color: var(--lux-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 206, 201, 0.2);
+}
+
+.lux-email-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(243, 232, 211, 0.4);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: lux-panel-spin 0.8s linear infinite;
+}
