@@ -8,6 +8,7 @@ import RegisterView from './components/RegisterView.vue'
 import ProfileView from './components/ProfileView.vue'
 import ForgotPasswordView from './components/ForgotPasswordView.vue'
 import HotelView from './components/HotelView.vue'
+import BookingView from './components/BookingView.vue'
 import RestaurantView from './components/RestaurantView.vue'
 import DashboardView from './components/DashboardView.vue'
 import EventsView from './components/EventsView.vue'
@@ -19,6 +20,9 @@ const currentView = ref('index')
 const { isLoggedIn, isAdmin, user } = useAuth()
 
 // Secciones que requieren sesión iniciada
+// Nota: 'hotel-reservation' no está en la lista para que al pulsar
+// "Seleccionar" en el catálogo se pueda ver la pantalla de reserva;
+// la confirmación final sigue exigiendo iniciar sesión (useHotel).
 const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'dashboard', 'admin', 'profile']
 
 const showLoginAlert = ref(false)
@@ -76,6 +80,7 @@ onMounted(async () => {
     <ForgotPasswordView v-else-if="currentView === 'forgot-password'" key="forgot-password" @navigate="navigate" />
     <ProfileView v-else-if="currentView === 'profile'" key="profile" @navigate="navigate" />
     <HotelView v-else-if="currentView === 'hotel'" key="hotel" @navigate="navigate" />
+    <BookingView v-else-if="currentView === 'hotel-reservation'" key="hotel-reservation" @navigate="navigate" />
     <RestaurantView v-else-if="currentView === 'restaurant'" key="restaurant" @navigate="navigate" />
     <EventsView v-else-if="currentView === 'events'" key="events" @navigate="navigate" />
     <TableReservationView v-else-if="currentView === 'table-reservation'" key="table-reservation" @navigate="navigate" />

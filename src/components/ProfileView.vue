@@ -1,6 +1,8 @@
+
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useProfile } from '../composables/useProfile.js'
+import { useHotel } from '../composables/useHotel.js'
 import '../Profile.css'
 
 const emit = defineEmits(['navigate'])
@@ -60,6 +62,50 @@ const {
   copyQrLink,
 } = useProfile(emit)
 
+/* ── Reservas de Hotel (historial + cancelar) ────────────────────
+   Reutiliza el composable singleton de Hotel: mismo estado que la
+   página del Hotel, por lo que cancelar aquí se refleja allí y
+   viceversa. */
+const {
+  bookings: hotelBookings,
+  bookingsLoading: hotelBookingsLoading,
+  bookingsError: hotelBookingsError,
+  bookingToCancel,
+  showCancelConfirm,
+  isCancelling,
+  loadBookings,
+  requestCancel,
+  closeCancelConfirm,
+  confirmCancel,
+  formatDate,
+  formatCurrency,
+} = useHotel()
+
+const bookingStatusLabels = {
+  confirmada: 'Confirmada',
+  pendiente: 'Pendiente',
+  'check-in': 'Check-In',
+  'check-out': 'Check-Out',
+  cancelada: 'Cancelada',
+  completada: 'Completada',
+}
+function bookingStatusLabel(s) {
+  return bookingStatusLabels[s] || s
+}
+function canCancelBooking(booking) {
+  return !['cancelada', 'completada', 'check-out'].includes(booking.status)
+}
+
+const activeHotelBookings = computed(
+  () =>
+    hotelBookings.value.filter(
+      (b) => !['cancelada', 'completada', 'check-out'].includes(b.status),
+    ).length,
+)
+const totalHotelSpent = computed(() =>
+  hotelBookings.value.reduce((sum, b) => sum + (Number(b.total) || 0), 0),
+)
+
 const isUserAdmin = computed(
   () => user.value?.rol_nombre === 'Administrador' || user.value?.rol_id === 1
 )
@@ -85,6 +131,11 @@ watch(
     else if (verifyError.value) showToast('error', verifyError.value)
   }
 )
+
+// Cargar el historial de reservas de hotel al abrir el perfil.
+onMounted(() => {
+  loadBookings()
+})
 </script>
 
 <template>
@@ -202,6 +253,21 @@ watch(
               <path d="M3 14h7v7H3z"></path>
             </svg>
             Mi Código QR
+          </button>
+          <button
+            type="button"
+            class="sidebar-nav-item"
+            :class="{ active: activeTab === 'reservas' }"
+            @click="activeTab = 'reservas'"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Mis Reservas
+            <span v-if="hotelBookings.length" class="sidebar-nav-badge">{{ hotelBookings.length }}</span>
           </button>
         </nav>
 
@@ -753,6 +819,147 @@ watch(
               </div>
             </div>
           </section>
+
+          <!-- ── Mis Reservas de Hotel ── -->
+          <section v-else-if="activeTab === 'reservas'" key="reservas" class="panel panel-reservas">
+            <header class="panel-header">
+              <div class="panel-title-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 21h18"></path>
+                  <path d="M3 10h18"></path>
+                  <path d="M5 6l7-3 7 3"></path>
+                  <path d="M4 10v11"></path>
+                  <path d="M20 10v11"></path>
+                </svg>
+              </div>
+              <div>
+                <h1 class="panel-title">Mis Reservas de Hotel</h1>
+                <p class="panel-subtitle">Historial de tus reservas y cancelación</p>
+              </div>
+            </header>
+
+            <!-- Resumen de estadísticas -->
+            <div v-if="hotelBookings.length" class="reservas-summary">
+              <div class="reservas-summary-item">
+                <strong>{{ hotelBookings.length }}</strong>
+                <span>Reservas</span>
+              </div>
+              <div class="reservas-summary-item">
+                <strong>{{ activeHotelBookings }}</strong>
+                <span>Activas</span>
+              </div>
+              <div class="reservas-summary-item">
+                <strong>{{ formatCurrency(totalHotelSpent) }}</strong>
+                <span>Total invertido</span>
+              </div>
+            </div>
+
+            <!-- Cargando -->
+            <div v-if="hotelBookingsLoading" class="reservas-state">
+              <span class="pf-spinner" role="status" aria-label="Cargando"></span>
+              <p>Cargando tus reservas…</p>
+            </div>
+
+            <!-- Error -->
+            <div v-else-if="hotelBookingsError" class="reservas-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <h3>No pudimos cargar tus reservas</h3>
+              <p>{{ hotelBookingsError }}</p>
+              <button type="button" class="primary-btn" @click="loadBookings">Reintentar</button>
+            </div>
+
+            <!-- Sin reservas -->
+            <div v-else-if="hotelBookings.length === 0" class="reservas-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <h3>Aún no tienes reservas de hotel</h3>
+              <p>Explora las habitaciones de Hotel Asogema y haz tu primera reserva.</p>
+              <button type="button" class="primary-btn" @click="emit('navigate', 'hotel')">Reservar en el Hotel</button>
+            </div>
+
+            <!-- Lista de reservas -->
+            <div v-else class="reservas-list">
+              <article
+                v-for="booking in hotelBookings"
+                :key="booking.id"
+                class="reserva-card"
+                :class="`reserva-${booking.status}`"
+              >
+                <div class="reserva-card-head">
+                  <div class="reserva-room">
+                    <span class="reserva-room-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 21h18"></path>
+                        <path d="M3 10h18"></path>
+                        <path d="M5 6l7-3 7 3"></path>
+                        <path d="M4 10v11"></path>
+                        <path d="M20 10v11"></path>
+                      </svg>
+                    </span>
+                    <span class="reserva-room-txt">
+                      <small>Reserva #{{ booking.id }}</small>
+                      <h3>{{ booking.roomName }}</h3>
+                    </span>
+                  </div>
+                  <span class="reserva-status">
+                    <i class="reserva-status-dot"></i>
+                    {{ bookingStatusLabel(booking.status) }}
+                  </span>
+                </div>
+
+                <div class="reserva-meta">
+                  <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    {{ formatDate(booking.checkIn) }} → {{ formatDate(booking.checkOut) }}
+                  </span>
+                  <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 00-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 010 7.75"></path>
+                    </svg>
+                    {{ booking.guests }} {{ booking.guests === 1 ? 'huésped' : 'huéspedes' }}
+                  </span>
+                </div>
+
+                <p v-if="booking.observaciones" class="reserva-notes">Notas: {{ booking.observaciones }}</p>
+
+                <div class="reserva-foot">
+                  <div class="reserva-total">
+                    <small>Total de la reserva</small>
+                    <strong>{{ formatCurrency(booking.total) }}</strong>
+                  </div>
+                  <button
+                    v-if="canCancelBooking(booking)"
+                    type="button"
+                    class="reserva-cancel"
+                    @click="requestCancel(booking)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Cancelar Reserva
+                  </button>
+                  <span v-else class="reserva-finished">Reserva finalizada</span>
+                </div>
+              </article>
+            </div>
+          </section>
         </Transition>
       </main>
     </div>
@@ -782,5 +989,49 @@ watch(
         <span>{{ toast.message }}</span>
       </div>
     </Transition>
+
+    <!-- ── Confirmación de cancelación de reserva ── -->
+    <div
+      class="reservas-cancel-overlay"
+      :class="{ active: showCancelConfirm }"
+      @click.self="closeCancelConfirm"
+    >
+      <div class="reservas-cancel-modal" v-if="bookingToCancel">
+        <div class="reservas-cancel-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <h3>¿Cancelar esta reserva?</h3>
+        <p>
+          Vas a cancelar tu reserva de <strong>{{ bookingToCancel.roomName }}</strong> del
+          {{ formatDate(bookingToCancel.checkIn) }} al {{ formatDate(bookingToCancel.checkOut) }}.
+          Esta acción no se puede deshacer.
+        </p>
+        <div class="reservas-cancel-actions">
+          <button
+            type="button"
+            class="reservas-cancel-btn reservas-cancel-danger"
+            @click="confirmCancel"
+            :disabled="isCancelling"
+          >
+            <template v-if="isCancelling">
+              <span class="pf-spinner"></span>
+              Cancelando…
+            </template>
+            <template v-else>Sí, cancelar reserva</template>
+          </button>
+          <button
+            type="button"
+            class="reservas-cancel-btn reservas-cancel-secondary"
+            @click="closeCancelConfirm"
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
