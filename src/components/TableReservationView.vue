@@ -39,10 +39,11 @@ const {
   isSubmitting,
   showSuccess,
   errors,
+  submitError,
   today,
-  currentUserName,
   isFormValid,
   totalGuests,
+  isTimeDisabled,
   tables,
   tablesLoading,
   tablesError,
@@ -55,6 +56,7 @@ const {
   closeSuccess,
   goBackToHome,
   goBackToRestaurant,
+  goToMyReservations,
 } = useTableReservation(emit)
 </script>
 
@@ -111,6 +113,17 @@ const {
         <div class="trsv-header-tag">Restaurante Asogema</div>
         <h1>Reserva tu Mesa</h1>
         <p>Disfruta de una experiencia gastronómica única. Reserva tu mesa y déjate sorprender.</p>
+        <div class="trsv-header-actions">
+          <button type="button" class="trsv-btn trsv-btn-secondary" @click="goToMyReservations">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Mis Reservas
+          </button>
+        </div>
       </div>
 
       <!-- Info Bar -->
@@ -193,6 +206,15 @@ const {
             <button class="trsv-btn trsv-btn-secondary" @click="resetForm">
               Nueva Reserva
             </button>
+            <button class="trsv-btn trsv-btn-secondary" @click="goToMyReservations">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              Ver Mis Reservas
+            </button>
           </div>
         </div>
       </div>
@@ -200,16 +222,6 @@ const {
       <!-- Form -->
       <div v-else class="trsv-form-card">
         <h2 class="trsv-form-title">Completa tu Reserva</h2>
-
-        <div class="trsv-logged-in">
-          <div class="trsv-logged-in-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-          </div>
-          <span>Reservando como <strong>{{ currentUserName }}</strong></span>
-        </div>
 
         <div class="trsv-form-row">
           <div class="trsv-form-group">
@@ -226,7 +238,7 @@ const {
             <label>Hora</label>
             <select v-model="time" :class="{ error: errors.time }">
               <option value="">Seleccionar hora</option>
-              <option v-for="slot in timeSlots" :key="slot" :value="slot">{{ slot }}</option>
+              <option v-for="slot in timeSlots" :key="slot" :value="slot" :disabled="isTimeDisabled(slot)">{{ slot }}</option>
             </select>
             <span v-if="errors.time" class="error-msg">{{ errors.time }}</span>
           </div>
@@ -315,6 +327,15 @@ const {
             placeholder="Alergias, preferencias de mesa, solicitudes especiales..."
             rows="3"
           ></textarea>
+        </div>
+
+        <div v-if="submitError" class="trsv-submit-error" role="alert">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ submitError }}</span>
         </div>
 
         <button class="trsv-submit" @click="handleSubmit" :disabled="isSubmitting">

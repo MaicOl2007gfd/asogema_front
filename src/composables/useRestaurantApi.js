@@ -57,9 +57,30 @@ export function useRestaurantApi() {
     return data
   }
 
+  /**
+   * Fetch current user's restaurant (table) reservations
+   * @returns {Promise<Array>} Array of user's reservations with mesa details
+   */
+  async function fetchMyReservations() {
+    const { data } = await api.get('/restaurant/reservations/mine')
+    return data
+  }
+
+  /**
+   * Cancel a restaurant reservation (changes its estado to CANCELADA)
+   * @param {number} reservationId - Reservation ID (from reservas_restaurante.id)
+   * @returns {Promise<Object>} Updated reservation response
+   */
+  async function cancelReservation(reservationId) {
+    const { data } = await api.patch(`/restaurant/reservations/${reservationId}/cancel`)
+    return data
+  }
+
   return {
     fetchMenu,
     fetchTables,
     createReservation,
+    fetchMyReservations,
+    cancelReservation,
   }
 }

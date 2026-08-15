@@ -13,6 +13,7 @@ import RestaurantView from './components/RestaurantView.vue'
 import DashboardView from './components/DashboardView.vue'
 import EventsView from './components/EventsView.vue'
 import TableReservationView from './components/TableReservationView.vue'
+import RestaurantReservationsView from './components/RestaurantReservationsView.vue'
 import PanelAdmin from './components/PanelAdmin.vue'
 
 const currentView = ref('index')
@@ -23,7 +24,7 @@ const { isLoggedIn, isAdmin, user } = useAuth()
 // Nota: 'hotel-reservation' no está en la lista para que al pulsar
 // "Seleccionar" en el catálogo se pueda ver la pantalla de reserva;
 // la confirmación final sigue exigiendo iniciar sesión (useHotel).
-const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'dashboard', 'admin', 'profile']
+const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'profile']
 
 const showLoginAlert = ref(false)
 const pendingView = ref(null)
@@ -84,6 +85,7 @@ onMounted(async () => {
     <RestaurantView v-else-if="currentView === 'restaurant'" key="restaurant" @navigate="navigate" />
     <EventsView v-else-if="currentView === 'events'" key="events" @navigate="navigate" />
     <TableReservationView v-else-if="currentView === 'table-reservation'" key="table-reservation" @navigate="navigate" />
+    <RestaurantReservationsView v-else-if="currentView === 'restaurant-reservations'" key="restaurant-reservations" @navigate="navigate" />
     <DashboardView v-else-if="currentView === 'dashboard'" key="dashboard" @navigate="navigate" />
     <PanelAdmin v-else-if="currentView === 'admin'" key="admin" @navigate="navigate" />
   </Transition>

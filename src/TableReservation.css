@@ -277,6 +277,12 @@
   line-height: 1.7;
 }
 
+.trsv-header-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
 /* --- Restaurant Info Bar --- */
 .trsv-info-bar {
   display: flex;
@@ -569,6 +575,28 @@
 
 .trsv-tables-hint {
   color: var(--trsv-text-light);
+}
+
+/* --- Submit Error Banner --- */
+.trsv-submit-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-top: 8px;
+  margin-bottom: 10px;
+  border-radius: var(--trsv-radius-sm);
+  background: rgba(255, 107, 107, 0.08);
+  border: 1.5px solid rgba(255, 107, 107, 0.35);
+  color: #d63031;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.trsv-submit-error svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 /* --- Submit Button --- */
