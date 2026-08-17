@@ -16,6 +16,7 @@ import EventsView from './components/EventsView.vue'
 import TableReservationView from './components/TableReservationView.vue'
 import RestaurantReservationsView from './components/RestaurantReservationsView.vue'
 import PanelAdmin from './components/PanelAdmin.vue'
+import PaymentResultView from './components/PaymentResultView.vue'
 
 const currentView = ref('index')
 
@@ -90,6 +91,7 @@ onMounted(async () => {
     <RestaurantReservationsView v-else-if="currentView === 'restaurant-reservations'" key="restaurant-reservations" @navigate="navigate" />
     <DashboardView v-else-if="currentView === 'dashboard'" key="dashboard" @navigate="navigate" />
     <PanelAdmin v-else-if="currentView === 'admin'" key="admin" @navigate="navigate" />
+    <PaymentResultView v-else-if="currentView === 'payment-result'" key="payment-result" @navigate="navigate" />
   </Transition>
 
   <!-- Alerta de acceso restringido (no logueado) -->

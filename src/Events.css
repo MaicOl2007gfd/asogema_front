@@ -1262,6 +1262,35 @@
   height: 18px;
 }
 
+.events-success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.events-btn-secondary {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 36px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid rgba(13, 38, 16, 0.3);
+  background: transparent;
+  color: #0d2610;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.events-btn-secondary:hover {
+  background: rgba(13, 38, 16, 0.06);
+  transform: translateY(-1px);
+}
+
 /* Success state */
 .events-form-success {
   text-align: center;
