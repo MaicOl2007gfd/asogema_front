@@ -167,8 +167,10 @@ export function useRegister(emit) {
 
       isLoading.value = false
 
+      localStorage.setItem('asogema_pending_verify', email.value)
+
       if (emit) {
-        emit('navigate', 'login')
+        emit('navigate', 'verify-email')
       }
     } catch (err) {
       isLoading.value = false
