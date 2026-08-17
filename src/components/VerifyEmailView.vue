@@ -47,7 +47,7 @@ const {
     <div class="pattern-overlay" aria-hidden="true"></div>
     <div class="light-overlay" aria-hidden="true"></div>
 
-    <div class="login-card verify-card" :class="{ visible: isVisible }">
+    <div class="login-card verify-view-card" :class="{ visible: isVisible }">
       <button
         type="button"
         class="back-arrow"
@@ -160,7 +160,7 @@ const {
 </template>
 
 <style scoped>
-.verify-card {
+.verify-view-card {
   max-width: 440px;
 }
 
