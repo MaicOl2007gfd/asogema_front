@@ -1,16 +1,105 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import api from './useApi.js'
+import { useTasks } from './useTasks.js'
+
+const {
+  tasks, employees, selectedDate, showTaskModal, editingTask,
+  taskLoading, taskError, tasksForSelectedDate, tasksByDate,
+  fetchTasks, fetchEmployees, createTask, updateTask, deleteTask,
+  openTaskModal, openEditTaskModal, closeTaskModal,
+} = useTasks()
 
 // ─── Loading & Error ────────────────────────────────────────
 const loading = ref(false)
 const error = ref(null)
 
+// ─── Task Filters (Admin module) ───────────────────────────
+const taskFilterEstado = ref('')
+const taskFilterPrioridad = ref('')
+const taskFilterEmpleado = ref(null)
+
+const filteredTasks = computed(() => {
+  let list = tasks.value.filter(t => {
+    if (taskFilterEstado.value && t.estado !== taskFilterEstado.value) return false
+    if (taskFilterPrioridad.value && t.prioridad !== taskFilterPrioridad.value) return false
+    if (taskFilterEmpleado.value && String(t.asignado_a?.id) !== String(taskFilterEmpleado.value)) return false
+    return true
+  })
+  list.sort((a, b) => {
+    const estadoOrder = { PENDIENTE: 0, EN_PROGRESO: 1, COMPLETADA: 2, CANCELADA: 3 }
+    const prioridadOrder = { URGENTE: 0, ALTA: 1, MEDIA: 2, BAJA: 3 }
+    const eo = (estadoOrder[a.estado] ?? 4) - (estadoOrder[b.estado] ?? 4)
+    if (eo !== 0) return eo
+    return (prioridadOrder[a.prioridad] ?? 4) - (prioridadOrder[b.prioridad] ?? 4)
+  })
+  return list
+})
+
+function priorityLabel(p) {
+  const map = { BAJA: 'Baja', MEDIA: 'Media', ALTA: 'Alta', URGENTE: 'Urgente' }
+  return map[p] || p
+}
+
+function priorityColor(p) {
+  const map = { BAJA: '#00b894', MEDIA: '#fdcb6e', ALTA: '#e17055', URGENTE: '#d63031' }
+  return map[p] || '#fdcb6e'
+}
+
+function estadoLabel(e) {
+  const map = { PENDIENTE: 'Pendiente', EN_PROGRESO: 'En Progreso', COMPLETADA: 'Completada', CANCELADA: 'Cancelada' }
+  return map[e] || e
+}
+
+function estadoColor(e) {
+  const map = { PENDIENTE: '#fdcb6e', EN_PROGRESO: '#0984e3', COMPLETADA: '#00b894', CANCELADA: '#d63031' }
+  return map[e] || '#fdcb6e'
+}
+
+function openNewTaskFromModule() {
+  editingTask.value = null
+  selectedDate.value = new Date().toISOString().slice(0, 10)
+  showTaskModal.value = true
+}
+
 // ─── Members / Socios ───────────────────────────────────────
 const members = ref([])
 const selectedMemberId = ref(null)
 const selectedMember = computed(
-  () => members.value.find(m => m.id === selectedMemberId.value) || members.value[0] || null,
+  () => members.value.find(m => m.id === selectedMemberId.value) || null,
 )
+const memberSearch = ref('')
+const memberPage = ref(1)
+const MEMBERS_PER_PAGE = 10
+const showMemberModal = ref(false)
+
+function openMemberModal(id) {
+  selectedMemberId.value = id
+  showMemberModal.value = true
+}
+
+function closeMemberModal() {
+  showMemberModal.value = false
+}
+
+const filteredMembers = computed(() => {
+  const q = memberSearch.value.trim().toLowerCase()
+  if (!q) return members.value
+  return members.value.filter(m =>
+    (m.name || '').toLowerCase().includes(q) ||
+    (m.email || '').toLowerCase().includes(q) ||
+    (m.telefono || '').toLowerCase().includes(q)
+  )
+})
+
+const memberTotalPages = computed(() => Math.max(1, Math.ceil(filteredMembers.value.length / MEMBERS_PER_PAGE)))
+
+const paginatedMembers = computed(() => {
+  const start = (memberPage.value - 1) * MEMBERS_PER_PAGE
+  return filteredMembers.value.slice(start, start + MEMBERS_PER_PAGE)
+})
+
+import { watch as vueWatch } from 'vue'
+vueWatch(memberSearch, () => { memberPage.value = 1 })
 
 const memberColors = ['#fdcb6e', '#00cec9', '#e17055', '#6c5ce7', '#00b894', '#0984e3', '#d63031', '#e84393']
 
@@ -35,12 +124,8 @@ async function fetchMembers() {
     membershipColor: memberColors[i % memberColors.length],
     initials: getInitials(m.nombre),
     reservations: [],
-    payments: { balance: null, lastPayment: null, lastPaymentDate: null, status: '—' },
-    guests: [],
+    payments: { totalFacturado: 0, invoices: [] },
     events: [],
-    history: [],
-    benefits: [],
-    news: [],
   }))
   if (members.value.length && selectedMemberId.value == null) {
     selectedMemberId.value = members.value[0].id
@@ -84,27 +169,115 @@ async function loadMemberDetail(id) {
       id: `evento-${r.id}`,
       name: r.tipo,
       date: dateOf(r.fecha),
-      time: '—',
       location: r.salon,
       rsvp: normalizeStatus(r.estado),
     }))
-    m.history = (data.facturas || []).map(f => ({
-      date: dateOf(f.fecha),
-      action: `Factura Nº ${f.id}`,
-      amount: f.total,
-    }))
+    const totalFacturado = (data.facturas || []).reduce((sum, f) => sum + (Number(f.total) || 0), 0)
     m.payments = {
-      ...m.payments,
-      lastPaymentDate: m.history[0]?.date ?? null,
+      totalFacturado,
+      invoices: (data.facturas || []).map(f => ({
+        id: f.id,
+        date: dateOf(f.fecha),
+        amount: f.total,
+        status: normalizeStatus(f.estado),
+      })),
     }
   } catch {
-    // Detalle no disponible; se conservan los datos base.
+    // Detalle no disponible
   }
 }
 
-watch(selectedMemberId, (id) => {
+vueWatch(selectedMemberId, (id) => {
   if (id != null) loadMemberDetail(id)
 })
+
+// ─── Day Overview (Calendar click → emergent screen) ────────
+const showDayOverview = ref(false)
+const selectedDayDate = ref(null)
+const dayOverviewLoading = ref(false)
+const dayOverviewData = ref({ tasks: [], reservations: [], events: [] })
+
+function openDayOverview(dateStr) {
+  selectedDayDate.value = dateStr
+  showDayOverview.value = true
+  fetchDayOverview(dateStr)
+}
+
+function closeDayOverview() {
+  showDayOverview.value = false
+  selectedDayDate.value = null
+  dayOverviewData.value = { tasks: [], reservations: [], events: [] }
+}
+
+async function fetchDayOverview(dateStr) {
+  dayOverviewLoading.value = true
+  try {
+    const [tasksRes, reservationsRes, eventsRes] = await Promise.allSettled([
+      api.get('/admin/tasks', { params: { fecha: dateStr } }),
+      api.get('/admin/reservations/today', { params: { fecha: dateStr } }),
+      api.get('/admin/calendar/events'),
+    ])
+
+    const dayTasks = tasksRes.status === 'fulfilled'
+      ? (tasksRes.value.data || []).map(t => ({
+          id: t.id,
+          titulo: t.titulo,
+          descripcion: t.descripcion,
+          hora_inicio: t.hora_inicio,
+          hora_fin: t.hora_fin,
+          estado: t.estado,
+          prioridad: t.prioridad,
+          asignado_a: t.asignado_a,
+        }))
+      : []
+
+    const reservations = []
+    if (reservationsRes.status === 'fulfilled') {
+      const data = reservationsRes.value.data
+      ;(data.hotel || []).forEach(r => reservations.push({
+        id: `hotel-${r.id}`,
+        tipo: 'Hotel',
+        cliente: r.cliente,
+        hora: r.habitacion ? `Hab ${r.habitacion}` : '—',
+        personas: r.personas,
+        estado: r.estado,
+      }))
+      ;(data.restaurante || []).forEach(r => reservations.push({
+        id: `rest-${r.id}`,
+        tipo: 'Restaurante',
+        cliente: r.cliente,
+        hora: r.hora || '—',
+        personas: r.personas,
+        estado: r.estado,
+      }))
+      ;(data.eventos || []).forEach(r => reservations.push({
+        id: `evento-${r.id}`,
+        tipo: 'Evento',
+        cliente: r.cliente,
+        hora: r.hora_inicio || '—',
+        personas: r.personas,
+        estado: r.estado,
+      }))
+    }
+
+    const dayEvents = eventsRes.status === 'fulfilled'
+      ? (eventsRes.value.data || []).filter(e => e.date === dateStr && e.category === 'eventos').map(e => ({
+          id: String(e.id),
+          titulo: e.title,
+          hora: e.time,
+          ubicacion: e.location,
+          categoria: e.category,
+          color: e.color,
+        }))
+      : []
+
+    dayOverviewData.value = { tasks: dayTasks, reservations, events: dayEvents }
+  } catch {
+    dayOverviewData.value = { tasks: [], reservations: [], events: [] }
+  } finally {
+    dayOverviewLoading.value = false
+  }
+}
 
 // ─── Calendar Events ────────────────────────────────────────
 const calendarEvents = ref([])
@@ -122,6 +295,18 @@ const filteredCalendarEvents = computed(() => {
 })
 
 const categoryLabels = { torneos: 'Torneos', eventos: 'Eventos', reservas: 'Reservas', mantenimiento: 'Mantenimiento', horarios: 'Especiales' }
+
+const filterColors = {
+  torneos: '#00cec9',
+  eventos: '#6c5ce7',
+  reservas: '#fdcb6e',
+  mantenimiento: '#e17055',
+  horarios: '#00b894',
+}
+
+function getFilterColor(cat) {
+  return filterColors[cat] || '#00cec9'
+}
 
 async function fetchCalendarEvents() {
   const { data } = await api.get('/admin/calendar/events')
@@ -233,64 +418,11 @@ const topServices = ref([])
 
 async function fetchTopServices() {
   const { data } = await api.get('/admin/services/top')
-  const icons = { Hotel: 'hotel', Restaurante: 'restaurant', Eventos: 'events' }
   topServices.value = (data || []).map(s => ({
     name: s.name,
     bookings: s.bookings,
     percentage: s.percentage,
-    icon: icons[s.name] || 'bars',
-    revenue: null,
     change: '',
-  }))
-}
-
-// ─── Peak Hours ─────────────────────────────────────────────
-const peakHours = ref([])
-
-const maxPeakCustomers = computed(() => Math.max(...peakHours.value.map(p => p.customers), 0))
-
-async function fetchPeakHours() {
-  const { data } = await api.get('/admin/restaurant/peak-hours')
-  peakHours.value = (data.labels || []).map((h, i) => ({
-    hour: h,
-    label: h.slice(0, 2),
-    customers: data.values?.[i] ?? 0,
-  }))
-}
-
-// ─── Top Rooms ──────────────────────────────────────────────
-const topRooms = ref([])
-
-const maxRoomReservations = computed(() => Math.max(...topRooms.value.map(r => r.reservations), 0))
-
-async function fetchTopRooms() {
-  const { data } = await api.get('/admin/rooms/top')
-  topRooms.value = (data || []).map(r => ({
-    name: r.nombre,
-    code: r.nombre,
-    reservations: r.reservas,
-    revenue: r.ingresos,
-    occupancy: r.ocupacion_porcentaje,
-    type: r.tipo || '—',
-  }))
-}
-
-// ─── Upcoming Events ────────────────────────────────────────
-const upcomingEvents = ref([])
-
-const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-
-async function fetchUpcomingEvents() {
-  const { data } = await api.get('/admin/events/upcoming')
-  upcomingEvents.value = (data || []).map(e => ({
-    id: e.id,
-    name: e.nombre,
-    date: dateOf(e.fecha),
-    time: timeOf(e.hora_inicio),
-    attendees: e.asistentes,
-    location: e.salon,
-    organizer: e.cliente,
-    type: normalizeStatus(e.estado),
   }))
 }
 
@@ -301,14 +433,13 @@ const hotelOccupancy = ref({
   totalRooms: 0,
   occupiedRooms: 0,
   changeFromLastWeek: 0,
-  historical: [],
 })
 
 async function fetchOccupancy() {
   const { data } = await api.get('/admin/hotel/occupancy')
-  const hist = data.historico_14_dias || []
   let change = 0
-  if (hist.length >= 2 && hist[0] > 0) {
+  if (data.historico_14_dias?.length >= 2 && data.historico_14_dias[0] > 0) {
+    const hist = data.historico_14_dias
     change = Math.round(((hist[hist.length - 1] - hist[0]) / hist[0]) * 1000) / 10
   }
   hotelOccupancy.value = {
@@ -317,28 +448,6 @@ async function fetchOccupancy() {
     totalRooms: data.totales,
     available: data.disponibles,
     changeFromLastWeek: change,
-    historical: hist,
-  }
-}
-
-// ─── Comparative Data ───────────────────────────────────────
-const comparativeIncome = ref({
-  currentYear: [],
-  previousYear: [],
-  labels: [],
-})
-
-const maxComparIncome = computed(() => {
-  const all = [...comparativeIncome.value.currentYear, ...comparativeIncome.value.previousYear]
-  return Math.max(...all, 0)
-})
-
-async function fetchComparativeIncome() {
-  const { data } = await api.get('/admin/comparative/income')
-  comparativeIncome.value = {
-    labels: data.labels || [],
-    currentYear: data.year_actual || [],
-    previousYear: data.year_anterior || [],
   }
 }
 
@@ -355,6 +464,7 @@ function normalizeStatus(s) {
     PENDIENTE: 'pendiente',
     CANCELADA: 'cancelada',
     COMPLETADA: 'completada',
+    EN_PROGRESO: 'en progreso',
   }
   return map[s] || String(s).toLowerCase()
 }
@@ -393,24 +503,8 @@ function statusBadgeClass(status) {
   return map[status] || ''
 }
 
-function eventTypeBadgeClass(type) {
-  const map = {
-    'conferencia': 'lux-event-conferencia',
-    'boda': 'lux-event-boda',
-    'seminario': 'lux-event-seminario',
-    'gala': 'lux-event-gala',
-    'taller': 'lux-event-taller',
-    'concierto': 'lux-event-concierto',
-  }
-  return map[type] || ''
-}
-
 function getBarHeight(val, max) {
   if (!max) return 0
-  return (val / max) * 100
-}
-
-function getComparBarHeight(val, max) {
   return (val / max) * 100
 }
 
@@ -424,11 +518,12 @@ const calendarGrid = computed(() => {
   const startPad = firstDay.getDay()
   const daysInMonth = lastDay.getDate()
   const cells = []
-  for (let i = 0; i < startPad; i++) cells.push({ day: null, events: [] })
+  for (let i = 0; i < startPad; i++) cells.push({ day: null, events: [], hasTasks: false })
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${calendarYear.value}-${String(calendarMonth.value + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     const dayEvents = filteredCalendarEvents.value.filter(e => e.date === dateStr)
-    cells.push({ day: d, date: dateStr, events: dayEvents, isToday: isToday(dateStr) })
+    const dayTasks = tasksByDate.value[dateStr] || []
+    cells.push({ day: d, date: dateStr, events: dayEvents, tasks: dayTasks, hasTasks: dayTasks.length > 0, isToday: isToday(dateStr) })
   }
   return cells
 })
@@ -457,19 +552,16 @@ function nextMonth() {
   }
 }
 
+const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 const calendarTitle = computed(() => `${monthNames[calendarMonth.value]} ${calendarYear.value}`)
-
-const selectedCalendarEvent = ref(null)
-function openCalendarEvent(ev) { selectedCalendarEvent.value = ev }
-function closeCalendarEvent() { selectedCalendarEvent.value = null }
 
 // ─── Module tab state ───────────────────────────────────────
 const activeModule = ref('panel')
-const activeSubTab = ref('resumen')
 
 const moduleContextMessages = {
-  panel: 'Panel General — Visualiza todas las métricas y estadísticas del club en un solo lugar.',
-  calendario: 'Calendario Integral — Gestión de eventos, torneos, reservas y mantenimiento.',
+  panel: 'Panel General — Visualiza las métricas y reservas del día en un solo lugar.',
+  calendario: 'Calendario — Visualiza la agenda del club. Haz clic en un día para ver todos los eventos.',
+  tareas: 'Tareas — Gestiona y asigna tareas a los empleados del club.',
   socio: 'Panel del Socio — Información personalizada y detallada de cada miembro del club.',
 }
 
@@ -484,12 +576,10 @@ async function loadAll() {
     fetchTodayReservations(),
     fetchIncome(),
     fetchTopServices(),
-    fetchPeakHours(),
-    fetchTopRooms(),
-    fetchUpcomingEvents(),
     fetchOccupancy(),
-    fetchComparativeIncome(),
     fetchCalendarEvents(),
+    fetchTasks(),
+    fetchEmployees(),
     fetchMembers(),
   ])
   if (results.some(r => r.status === 'rejected')) {
@@ -504,19 +594,27 @@ function retry() {
 
 export function usePanelAdmin() {
   return {
-    activeModule, activeSubTab, contextMessage,
+    activeModule, contextMessage,
     loading, error, retry,
-    members, selectedMemberId, selectedMember,
-    calendarFilters, categoryLabels, calendarGrid, calendarTitle,
-    prevMonth, nextMonth, selectedCalendarEvent, openCalendarEvent, closeCalendarEvent,
+    calendarFilters, categoryLabels, filterColors, getFilterColor, calendarGrid, calendarTitle,
+    prevMonth, nextMonth,
     todayReservations, todayReservationCount, todayConfirmedCount, todayPendingCount,
     incomePeriods, incomePeriodSelector, incomeChartData,
-    topServices, peakHours, maxPeakCustomers,
-    topRooms, maxRoomReservations,
-    upcomingEvents, monthNames,
+    topServices,
     hotelOccupancy,
-    comparativeIncome, maxComparIncome,
-    formatCurrency, statusBadgeClass, eventTypeBadgeClass,
-    getBarHeight, getComparBarHeight,
+    monthNames,
+    formatCurrency, statusBadgeClass, normalizeStatus, getBarHeight,
+    showDayOverview, selectedDayDate, dayOverviewLoading, dayOverviewData,
+    openDayOverview, closeDayOverview, fetchDayOverview,
+    tasks, employees, selectedDate, showTaskModal, editingTask,
+    taskLoading, taskError, tasksForSelectedDate, tasksByDate,
+    fetchTasks, createTask, updateTask, deleteTask,
+    openTaskModal, openEditTaskModal, closeTaskModal,
+    taskFilterEstado, taskFilterPrioridad, taskFilterEmpleado,
+    filteredTasks, priorityLabel, priorityColor, estadoLabel, estadoColor,
+    openNewTaskFromModule,
+    members, selectedMemberId, selectedMember,
+    memberSearch, memberPage, memberTotalPages, filteredMembers, paginatedMembers, MEMBERS_PER_PAGE,
+    showMemberModal, openMemberModal, closeMemberModal,
   }
 }

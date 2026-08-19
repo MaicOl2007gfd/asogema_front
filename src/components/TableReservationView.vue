@@ -53,6 +53,7 @@ const {
   decrementGuests,
   handleSubmit,
   resetForm,
+  goToPayment,
   closeSuccess,
   goBackToHome,
   goBackToRestaurant,
@@ -196,15 +197,12 @@ const {
             </div>
           </div>
           <div class="trsv-success-actions">
-            <button class="trsv-btn trsv-btn-primary" @click="goBackToRestaurant">
-              Volver al Restaurante
+            <button class="trsv-btn trsv-btn-primary" @click="goToPayment">
+              Pagar Ahora
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
                 <polyline points="12 5 19 12 12 19"></polyline>
               </svg>
-            </button>
-            <button class="trsv-btn trsv-btn-secondary" @click="resetForm">
-              Nueva Reserva
             </button>
             <button class="trsv-btn trsv-btn-secondary" @click="goToMyReservations">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -214,6 +212,9 @@ const {
                 <line x1="3" y1="10" x2="21" y2="10"></line>
               </svg>
               Ver Mis Reservas
+            </button>
+            <button class="trsv-btn trsv-btn-secondary" @click="resetForm">
+              Nueva Reserva
             </button>
           </div>
         </div>

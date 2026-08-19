@@ -37,6 +37,7 @@ export function useTableReservation(emit) {
   const specialRequests = ref('')
   const isSubmitting = ref(false)
   const showSuccess = ref(false)
+  const reservationResult = ref(null)
   const errors = ref({})
   const submitError = ref('')
 
@@ -132,7 +133,8 @@ export function useTableReservation(emit) {
         observaciones: specialRequests.value || undefined,
       }
 
-      await createReservation(reservationData)
+      const result = await createReservation(reservationData)
+      reservationResult.value = result
 
       isSubmitting.value = false
       showSuccess.value = true
@@ -167,6 +169,7 @@ export function useTableReservation(emit) {
     occasion.value = ''
     specialRequests.value = ''
     selectedTable.value = null
+    reservationResult.value = null
     tables.value = []
     tablesError.value = null
     errors.value = {}
@@ -176,6 +179,13 @@ export function useTableReservation(emit) {
 
   function closeSuccess() {
     showSuccess.value = false
+  }
+
+  function goToPayment() {
+    const url = reservationResult.value?.payment?.checkout_url
+    if (url) {
+      window.location.href = url
+    }
   }
 
   function goBackToHome() {
@@ -276,6 +286,7 @@ export function useTableReservation(emit) {
     specialRequests,
     isSubmitting,
     showSuccess,
+    reservationResult,
     errors,
     submitError,
     today,
@@ -294,6 +305,7 @@ export function useTableReservation(emit) {
     decrementGuests,
     handleSubmit,
     resetForm,
+    goToPayment,
     closeSuccess,
     goBackToHome,
     goBackToRestaurant,

@@ -105,6 +105,7 @@ const specialRequests = ref('')
    ---------------------------------------------------------- */
 const isSubmitting = ref(false)
 const showSuccess = ref(false)
+const bookingResult = ref(null)
 const errors = ref({ checkIn: '', checkOut: '', guests: '' })
 
 /* ----------------------------------------------------------
@@ -394,7 +395,8 @@ async function handleSubmit(emit) {
       observaciones: specialRequests.value || undefined,
     }
 
-    await hotelApi.createBooking(bookingData)
+    const result = await hotelApi.createBooking(bookingData)
+    bookingResult.value = result
 
     isSubmitting.value = false
     showSuccess.value = true
@@ -422,7 +424,15 @@ function resetForm() {
   checkOut.value = ''
   guests.value = 1
   specialRequests.value = ''
+  bookingResult.value = null
   errors.value = { checkIn: '', checkOut: '', guests: '' }
+}
+
+function goToPayment() {
+  const url = bookingResult.value?.payment?.checkout_url
+  if (url) {
+    window.location.href = url
+  }
 }
 
 /* ----------------------------------------------------------
@@ -522,6 +532,7 @@ export function useHotel(emit) {
     // Submit
     isSubmitting,
     showSuccess,
+    bookingResult,
     errors,
     // Computed
     nights,
@@ -564,6 +575,7 @@ export function useHotel(emit) {
     validateForm,
     handleSubmit,
     resetForm,
+    goToPayment,
     closeSuccess() {
       showSuccess.value = false
     },
