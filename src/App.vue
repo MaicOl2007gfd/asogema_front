@@ -5,21 +5,28 @@ import api from './composables/useApi.js'
 import IndexView from './components/IndexView.vue'
 import LoginView from './components/LoginView.vue'
 import RegisterView from './components/RegisterView.vue'
+import VerifyEmailView from './components/VerifyEmailView.vue'
 import ProfileView from './components/ProfileView.vue'
 import ForgotPasswordView from './components/ForgotPasswordView.vue'
 import HotelView from './components/HotelView.vue'
+import BookingView from './components/BookingView.vue'
 import RestaurantView from './components/RestaurantView.vue'
 import DashboardView from './components/DashboardView.vue'
 import EventsView from './components/EventsView.vue'
 import TableReservationView from './components/TableReservationView.vue'
+import RestaurantReservationsView from './components/RestaurantReservationsView.vue'
 import PanelAdmin from './components/PanelAdmin.vue'
+import PaymentResultView from './components/PaymentResultView.vue'
 
 const currentView = ref('index')
 
 const { isLoggedIn, isAdmin, user } = useAuth()
 
 // Secciones que requieren sesión iniciada
-const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'dashboard', 'admin', 'profile']
+// Nota: 'hotel-reservation' no está en la lista para que al pulsar
+// "Seleccionar" en el catálogo se pueda ver la pantalla de reserva;
+// la confirmación final sigue exigiendo iniciar sesión (useHotel).
+const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'profile']
 
 const showLoginAlert = ref(false)
 const pendingView = ref(null)
@@ -73,14 +80,18 @@ onMounted(async () => {
     <IndexView v-if="currentView === 'index'" key="index" @navigate="navigate" />
     <LoginView v-else-if="currentView === 'login'" key="login" @navigate="navigate" />
     <RegisterView v-else-if="currentView === 'register'" key="register" @navigate="navigate" />
+    <VerifyEmailView v-else-if="currentView === 'verify-email'" key="verify-email" @navigate="navigate" />
     <ForgotPasswordView v-else-if="currentView === 'forgot-password'" key="forgot-password" @navigate="navigate" />
     <ProfileView v-else-if="currentView === 'profile'" key="profile" @navigate="navigate" />
     <HotelView v-else-if="currentView === 'hotel'" key="hotel" @navigate="navigate" />
+    <BookingView v-else-if="currentView === 'hotel-reservation'" key="hotel-reservation" @navigate="navigate" />
     <RestaurantView v-else-if="currentView === 'restaurant'" key="restaurant" @navigate="navigate" />
     <EventsView v-else-if="currentView === 'events'" key="events" @navigate="navigate" />
     <TableReservationView v-else-if="currentView === 'table-reservation'" key="table-reservation" @navigate="navigate" />
+    <RestaurantReservationsView v-else-if="currentView === 'restaurant-reservations'" key="restaurant-reservations" @navigate="navigate" />
     <DashboardView v-else-if="currentView === 'dashboard'" key="dashboard" @navigate="navigate" />
     <PanelAdmin v-else-if="currentView === 'admin'" key="admin" @navigate="navigate" />
+    <PaymentResultView v-else-if="currentView === 'payment-result'" key="payment-result" @navigate="navigate" />
   </Transition>
 
   <!-- Alerta de acceso restringido (no logueado) -->

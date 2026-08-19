@@ -133,19 +133,34 @@ export function useRestaurant(emit, isLoggedIn) {
   const selectedItem = ref(null)
   const showOrderPanel = ref(false)
   const order = ref([])
+  const searchQuery = ref('')
+  const detailQty = ref(1)
   const currentSlide = ref(0)
+  const isPaused = ref(false)
   let carouselTimer = null
+  let touchStartX = 0
 
   /* ----------------------------------------------------------
      COMPUTED
      ---------------------------------------------------------- */
   const totalSlides = computed(() => carouselSlides.length)
   const filteredItems = computed(() => {
-    if (activeCategory.value === 'all') {
-      return menuItems.value
+    const q = searchQuery.value.trim().toLowerCase()
+    let items = menuItems.value
+    if (activeCategory.value !== 'all') {
+      items = items.filter(item => item.category === activeCategory.value)
     }
-    return menuItems.value.filter(item => item.category === activeCategory.value)
+    if (q) {
+      items = items.filter(item =>
+        item.name.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.badge.toLowerCase().includes(q)
+      )
+    }
+    return items
   })
+
+  const hasActiveFilters = computed(() => searchQuery.value.trim().length > 0)
 
   const orderCount = computed(() => {
     return order.value.reduce((sum, item) => sum + item.quantity, 0)
@@ -165,12 +180,14 @@ export function useRestaurant(emit, isLoggedIn) {
   /* ----------------------------------------------------------
      METHODS — Order / Cart
      ---------------------------------------------------------- */
-  function addToOrder(item) {
+  function addToOrder(item, qty = 1) {
+    if (!item) return
+    const amount = Math.max(1, Math.floor(qty) || 1)
     const existing = order.value.find(o => o.id === item.id)
     if (existing) {
-      existing.quantity++
+      existing.quantity += amount
     } else {
-      order.value.push({ ...item, quantity: 1 })
+      order.value.push({ ...item, quantity: amount })
     }
   }
 
@@ -212,11 +229,15 @@ export function useRestaurant(emit, isLoggedIn) {
   /* ----------------------------------------------------------
      METHODS — Carousel
      ---------------------------------------------------------- */
+  const AUTO_INTERVAL = 5000
+
   function startCarousel() {
     stopCarousel()
     carouselTimer = setInterval(() => {
-      currentSlide.value = (currentSlide.value + 1) % carouselSlides.length
-    }, 5000)
+      if (!isPaused.value) {
+        currentSlide.value = (currentSlide.value + 1) % carouselSlides.length
+      }
+    }, AUTO_INTERVAL)
   }
 
   function stopCarousel() {
@@ -224,6 +245,14 @@ export function useRestaurant(emit, isLoggedIn) {
       clearInterval(carouselTimer)
       carouselTimer = null
     }
+  }
+
+  function pauseCarousel() {
+    isPaused.value = true
+  }
+
+  function resumeCarousel() {
+    isPaused.value = false
   }
 
   function goToSlide(index) {
@@ -241,6 +270,23 @@ export function useRestaurant(emit, isLoggedIn) {
     startCarousel()
   }
 
+  /* --- Touch / swipe support --- */
+  function onTouchStart(e) {
+    touchStartX = e.changedTouches?.[0]?.clientX ?? 0
+  }
+
+  function onTouchEnd(e) {
+    const touchEndX = e.changedTouches?.[0]?.clientX ?? 0
+    const delta = touchEndX - touchStartX
+    const threshold = 50
+    if (Math.abs(delta) < threshold) return
+    if (delta < 0) {
+      nextSlide()
+    } else {
+      prevSlide()
+    }
+  }
+
   /* ----------------------------------------------------------
      METHODS — Navigation
      ---------------------------------------------------------- */
@@ -250,10 +296,19 @@ export function useRestaurant(emit, isLoggedIn) {
 
   function showItemDetail(item) {
     selectedItem.value = item
+    detailQty.value = 1
   }
 
   function closeItemDetail() {
     selectedItem.value = null
+  }
+
+  function incrementDetailQty() {
+    if (detailQty.value < 20) detailQty.value++
+  }
+
+  function decrementDetailQty() {
+    if (detailQty.value > 1) detailQty.value--
   }
 
   function goToLogin() {
@@ -265,6 +320,26 @@ export function useRestaurant(emit, isLoggedIn) {
   function goToReservation() {
     if (emit) {
       emit('navigate', 'table-reservation')
+    }
+  }
+
+  function goToMyReservations() {
+    if (emit) {
+      emit('navigate', 'restaurant-reservations')
+    }
+  }
+
+  /**
+   * Cierra el modal de detalle y el panel de orden con la tecla Escape.
+   */
+  function handleKeydown(e) {
+    if (e.key === 'Escape') {
+      if (selectedItem.value) {
+        closeItemDetail()
+      }
+      if (showOrderPanel.value) {
+        closeOrderPanel()
+      }
     }
   }
 
@@ -316,10 +391,12 @@ export function useRestaurant(emit, isLoggedIn) {
     })
     startCarousel()
     loadMenu()
+    window.addEventListener('keydown', handleKeydown)
   })
 
   onUnmounted(() => {
     stopCarousel()
+    window.removeEventListener('keydown', handleKeydown)
   })
 
   /* ----------------------------------------------------------
@@ -339,8 +416,12 @@ export function useRestaurant(emit, isLoggedIn) {
     showOrderPanel,
     order,
     currentSlide,
+    isPaused,
+    searchQuery,
+    detailQty,
     // Computed
     filteredItems,
+    hasActiveFilters,
     orderCount,
     orderTotal,
     totalSlides,
@@ -356,12 +437,19 @@ export function useRestaurant(emit, isLoggedIn) {
     goToSlide,
     nextSlide,
     prevSlide,
+    pauseCarousel,
+    resumeCarousel,
+    onTouchStart,
+    onTouchEnd,
     // Methods - Navigation
     setCategory,
     showItemDetail,
     closeItemDetail,
+    incrementDetailQty,
+    decrementDetailQty,
     goToLogin,
     goToReservation,
+    goToMyReservations,
     handleReserveClick,
     confirmOrder,
     goBackToHome,

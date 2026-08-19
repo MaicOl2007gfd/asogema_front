@@ -61,6 +61,15 @@ export function useLogin(emit) {
     } catch (err) {
       isLoading.value = false
 
+      if (
+        err.response?.status === 403 &&
+        /verific/i.test(err.response?.data?.message || '')
+      ) {
+        localStorage.setItem('asogema_pending_verify', email.value)
+        if (emit) emit('navigate', 'verify-email')
+        return
+      }
+
       if (err.response?.status === 401) {
         emailError.value = 'Correo o contraseña incorrectos'
       } else if (err.response?.data?.message) {

@@ -62,7 +62,7 @@
   background:
     radial-gradient(120% 70% at 0% 0%, rgba(93, 172, 158, 0.2) 0%, transparent 55%),
     radial-gradient(120% 70% at 100% 100%, rgba(0, 0, 0, 0.12) 0%, transparent 50%),
-    linear-gradient(160deg, #0a461c 0%, #022002 100%);
+    linear-gradient(160deg, #0a461c 0%, #0b4b0b 100%);
   color: #F3E8D3;
 }
 
@@ -97,7 +97,7 @@
   width: 104px;
   height: 104px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #04771793, #0ab45fbd);
+  background: linear-gradient(135deg, #00cec9, #1b2b40);
   border: 3px solid rgba(243, 232, 211, 0.85);
   display: flex;
   align-items: center;
@@ -105,7 +105,7 @@
   font-size: 36px;
   font-weight: 700;
   color: #F3E8D3;
-  box-shadow: 0 14px 34px rgba(195, 221, 221, 0.35);
+  box-shadow: 0 14px 34px rgba(0, 206, 201, 0.35);
 }
 
 .sidebar-name {
@@ -166,7 +166,7 @@
 .verify-badge.verified {
   background: rgba(0, 184, 148, 0.18);
   color: #8bf5cf;
-  border-color: rgba(43, 110, 40, 0.55);
+  border-color: rgba(0, 184, 148, 0.55);
 }
 
 /* Botón accionable dentro del badge */
@@ -256,9 +256,9 @@
 }
 
 .sidebar-nav-item.active {
-  background: linear-gradient(135deg, #bbc9be, #05af13);
+  background: linear-gradient(135deg, #00cec9, #00b894);
   color: #0d1826;
-  box-shadow: 0 10px 26px rgba(195, 221, 221, 0.35);
+  box-shadow: 0 10px 26px rgba(0, 206, 201, 0.35);
   transform: translateX(2px);
 }
 
@@ -336,13 +336,13 @@
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #05350b41, #0aaf17e1);
-  color: #696968;
+  background: linear-gradient(135deg, #1b2b40, #00cec9);
+  color: #F3E8D3;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 10px 24px rgba(195, 221, 221, 0.3);
+  box-shadow: 0 10px 24px rgba(0, 206, 201, 0.3);
 }
 
 .panel-title-icon svg {
@@ -487,7 +487,7 @@
 }
 
 .readonly-lock:hover {
-  color: #bbc46d;
+  color: #00cec9;
   opacity: 1;
 }
 
@@ -529,7 +529,7 @@
   margin: -6px 0 20px;
   padding: 10px 12px;
   background: rgba(0, 206, 201, 0.1);
-  border: 1px solid rgba(10, 116, 24, 0.623);
+  border: 1px solid rgba(0, 206, 201, 0.25);
   border-radius: 10px;
   color: #1b2b40;
   font-size: 12.5px;
@@ -549,7 +549,7 @@
   height: 52px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #adb377, #16700a);
+  background: linear-gradient(135deg, #1b2b40, #00cec9);
   color: #F3E8D3;
   font-size: 15px;
   font-weight: 600;
@@ -561,7 +561,7 @@
   transition:
     transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 12px 28px rgba(6, 73, 4, 0.829);
+  box-shadow: 0 12px 28px rgba(0, 206, 201, 0.28);
 }
 
 .primary-btn:hover:not(:disabled) {
@@ -1369,5 +1369,500 @@
   .code-input {
     font-size: 24px;
     letter-spacing: 10px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   MIS RESERVAS DE HOTEL (historial + cancelar)
+   ════════════════════════════════════════════════════════════ */
+
+/* El panel necesita más ancho para las tarjetas de reserva */
+.panel-reservas {
+  max-width: 760px;
+}
+
+/* Badge del contador en la sidebar */
+.sidebar-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 50px;
+  background: rgba(0, 206, 201, 0.22);
+  color: #aefbf6;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sidebar-nav-item.active .sidebar-nav-badge {
+  background: rgba(13, 24, 38, 0.14);
+  color: #0d1826;
+}
+
+/* Resumen de estadísticas */
+.reservas-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.reservas-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #05350b0d, #0aaf170f);
+  border: 1px solid rgba(10, 175, 23, 0.18);
+  text-align: left;
+}
+
+.reservas-summary-item strong {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0d1826;
+  letter-spacing: -0.3px;
+}
+
+.reservas-summary-item span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #636e72;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* Estados (cargando / error / vacío) */
+.reservas-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 46px 20px;
+  border-radius: 16px;
+  background: rgba(19, 50, 21, 0.04);
+  border: 1px dashed rgba(19, 50, 21, 0.18);
+  text-align: center;
+}
+
+.reservas-state > svg {
+  width: 40px;
+  height: 40px;
+  color: rgba(19, 50, 21, 0.35);
+}
+
+.reservas-state h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1b2b40;
+  margin: 0;
+}
+
+.reservas-state p {
+  font-size: 13px;
+  color: #636e72;
+  margin: 0 0 4px;
+}
+
+.reservas-state .primary-btn {
+  max-width: 260px;
+}
+
+/* Spinner */
+.pf-spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid rgba(19, 50, 21, 0.15);
+  border-top-color: #0aaf17;
+  border-radius: 50%;
+  animation: pf-spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes pf-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Lista de reservas */
+.reservas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reserva-card {
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(19, 50, 21, 0.1);
+  border-left: 4px solid #0aaf17;
+  box-shadow: 0 10px 26px rgba(27, 43, 64, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.reserva-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(27, 43, 64, 0.1);
+}
+
+.reserva-cancelada {
+  border-left-color: #d63031;
+}
+
+.reserva-completada,
+.reserva-check-out {
+  border-left-color: #6c5ce7;
+}
+
+.reserva-pendiente {
+  border-left-color: #fdcb6e;
+}
+
+.reserva-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.reserva-room {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.reserva-room-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #05350b0d, #0aaf1718);
+  color: #0d1826;
+}
+
+.reserva-room-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.reserva-room-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.reserva-room-txt small {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8a979b;
+}
+
+.reserva-room-txt h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1b2b40;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Pill de estado */
+.reserva-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: rgba(10, 175, 23, 0.12);
+  color: #0a6b10;
+  flex-shrink: 0;
+}
+
+.reserva-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.reserva-cancelada .reserva-status {
+  background: rgba(214, 48, 49, 0.12);
+  color: #b31e1e;
+}
+
+.reserva-pendiente .reserva-status {
+  background: rgba(253, 203, 110, 0.2);
+  color: #8f6a12;
+}
+
+.reserva-completada .reserva-status,
+.reserva-check-out .reserva-status {
+  background: rgba(108, 92, 231, 0.14);
+  color: #5b4bc4;
+}
+
+/* Metadatos de la estadía */
+.reserva-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin-bottom: 6px;
+}
+
+.reserva-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: #4b5a63;
+}
+
+.reserva-meta svg {
+  width: 14px;
+  height: 14px;
+  color: rgba(19, 50, 21, 0.45);
+  flex-shrink: 0;
+}
+
+.reserva-notes {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(253, 203, 110, 0.14);
+  color: #6b5210;
+  font-size: 12px;
+}
+
+/* Pie: total + acción */
+.reserva-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(19, 50, 21, 0.08);
+}
+
+.reserva-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reserva-total small {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #8a979b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.reserva-total strong {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0d1826;
+  letter-spacing: -0.2px;
+}
+
+.reserva-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 1px solid rgba(214, 48, 49, 0.4);
+  border-radius: 10px;
+  background: rgba(214, 48, 49, 0.08);
+  color: #b31e1e;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.reserva-cancel svg {
+  width: 14px;
+  height: 14px;
+}
+
+.reserva-cancel:hover {
+  background: #d63031;
+  border-color: #d63031;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(214, 48, 49, 0.3);
+}
+
+.reserva-finished {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a979b;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MODAL DE CONFIRMACIÓN DE CANCELACIÓN
+   ════════════════════════════════════════════════════════════ */
+.reservas-cancel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(2, 10, 3, 0.55);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.reservas-cancel-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.reservas-cancel-modal {
+  width: 100%;
+  max-width: 420px;
+  padding: 30px;
+  border-radius: 20px;
+  background: #F7EFE0;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  transform: translateY(16px) scale(0.97);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reservas-cancel-overlay.active .reservas-cancel-modal {
+  transform: translateY(0) scale(1);
+}
+
+.reservas-cancel-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(214, 48, 49, 0.12);
+  color: #d63031;
+  margin-bottom: 14px;
+}
+
+.reservas-cancel-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.reservas-cancel-modal h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #1b2b40;
+}
+
+.reservas-cancel-modal p {
+  margin: 0 0 22px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #4b5a63;
+}
+
+.reservas-cancel-modal p strong {
+  color: #1b2b40;
+}
+
+.reservas-cancel-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.reservas-cancel-btn {
+  flex: 1;
+  height: 46px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+}
+
+.reservas-cancel-danger {
+  background: #d63031;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(214, 48, 49, 0.35);
+}
+
+.reservas-cancel-danger:hover:not(:disabled) {
+  background: #e05656;
+  transform: translateY(-2px);
+}
+
+.reservas-cancel-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reservas-cancel-secondary {
+  background: transparent;
+  color: #1b2b40;
+  border: 1px solid rgba(19, 50, 21, 0.3);
+}
+
+.reservas-cancel-secondary:hover {
+  border-color: #1b2b40;
+}
+
+.reservas-cancel-btn .pf-spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .reservas-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .reserva-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .reserva-foot {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .reserva-cancel {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .reservas-cancel-actions {
+    flex-direction: column;
   }
 }

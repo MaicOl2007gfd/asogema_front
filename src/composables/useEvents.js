@@ -344,6 +344,13 @@ export function useEvents(emit) {
     resetForm()
   }
 
+  function goToPayment() {
+    const url = bookingResult.value?.payment?.checkout_url
+    if (url) {
+      window.location.href = url
+    }
+  }
+
   /* ----------------------------------------------------------
      METHODS — Carousel
      ---------------------------------------------------------- */
@@ -463,6 +470,7 @@ export function useEvents(emit) {
     handleSubmit,
     resetForm,
     closeSuccess,
+    goToPayment,
     // Methods - Carousel
     goToSlide,
     nextSlide,

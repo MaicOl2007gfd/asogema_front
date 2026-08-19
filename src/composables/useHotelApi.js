@@ -17,7 +17,7 @@ export function useHotelApi() {
    */
   async function fetchRooms(params = {}) {
     const queryParams = new URLSearchParams()
-    
+
     if (params.tipo_habitacion_id) {
       queryParams.append('tipo_habitacion_id', params.tipo_habitacion_id)
     }
@@ -61,9 +61,20 @@ export function useHotelApi() {
     return data
   }
 
+  /**
+   * Cancel a hotel booking (changes its estado to CANCELADA)
+   * @param {number} bookingId - Booking ID
+   * @returns {Promise<Object>} Updated booking response
+   */
+  async function cancelBooking(bookingId) {
+    const { data } = await api.patch(`/hotel/bookings/${bookingId}/cancel`)
+    return data
+  }
+
   return {
     fetchRooms,
     createBooking,
     fetchMyBookings,
+    cancelBooking,
   }
 }
