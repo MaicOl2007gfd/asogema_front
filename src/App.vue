@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { restoreSession, logout, useAuth } from './composables/useAuth.js'
+import { applyOAuthCallback } from './composables/useSocialAuth.js'
 import api from './composables/useApi.js'
 import IndexView from './components/IndexView.vue'
 import LoginView from './components/LoginView.vue'
@@ -61,6 +62,16 @@ function goToLogin() {
 }
 
 onMounted(async () => {
+  // Procesar callback OAuth (Google / Facebook) si el backend redirigió con tokens.
+  // Se ejecuta antes de restoreSession para no sobrescribir la sesión recién creada.
+  const oauth = applyOAuthCallback()
+  if (oauth?.success) {
+    currentView.value = isAdmin.value ? 'admin' : 'index'
+  } else if (oauth?.error) {
+    localStorage.setItem('asogema_oauth_error', oauth.error)
+    currentView.value = 'login'
+  }
+
   restoreSession()
 
   if (localStorage.getItem('asogema_token')) {
