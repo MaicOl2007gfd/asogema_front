@@ -1,0 +1,35 @@
+name: CD - Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Trigger deploy webhook
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Trigger webhook
+        env:
+          WEBHOOK_URL: https://deploy.clubasogema.com/webhook/front
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: |
+          BODY='{"ref":"refs/heads/main"}'
+          SIGNATURE="sha256=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" -binary | xxd -p | tr -d '\n')"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "$WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: $SIGNATURE" \
+            -d "$BODY")
+          echo "Webhook response: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Deploy failed. Code: $STATUS"
+            exit 1
+          fi
