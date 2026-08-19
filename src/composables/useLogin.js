@@ -6,7 +6,7 @@ import api from './useApi.js'
 const OAUTH_ERROR_KEY = 'asogema_oauth_error'
 
 export function useLogin(emit) {
-  const { login: authLogin, isAdmin } = useAuth()
+  const { login: authLogin, isAdmin, isEmployee } = useAuth()
   const email = ref('')
   const password = ref('')
   const remember = ref(false)
@@ -59,10 +59,25 @@ export function useLogin(emit) {
       isLoading.value = false
 
       if (emit) {
-        emit('navigate', isAdmin.value ? 'admin' : 'index')
+        if (isAdmin.value) {
+          emit('navigate', 'admin')
+        } else if (isEmployee.value) {
+          emit('navigate', 'employee')
+        } else {
+          emit('navigate', 'index')
+        }
       }
     } catch (err) {
       isLoading.value = false
+
+      if (
+        err.response?.status === 403 &&
+        /verific/i.test(err.response?.data?.message || '')
+      ) {
+        localStorage.setItem('asogema_pending_verify', email.value)
+        if (emit) emit('navigate', 'verify-email')
+        return
+      }
 
       if (err.response?.status === 401) {
         emailError.value = 'Correo o contraseña incorrectos'

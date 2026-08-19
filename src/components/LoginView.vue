@@ -180,7 +180,7 @@ const { socialLoading, redirectToGoogle, redirectToFacebook } = useSocialAuth()
             </span>
             <span class="checkbox-label">Recordarme</span>
           </label>
-          <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+          <a href="#" class="forgot-link" @click.prevent="$emit('navigate', 'forgot-password')">¿Olvidaste tu contraseña?</a>
         </div>
 
         <!-- Error message -->

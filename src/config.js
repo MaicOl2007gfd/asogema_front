@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export const API_URL = 'http://localhost:3000'
 
 /**
@@ -18,3 +19,15 @@ export const SOCIAL_AUTH = {
   // Nombre del query param con el que el front indica al backend a dónde regresar
   redirectParam: 'redirect_uri',
 }
+=======
+export const API_URL = import.meta.env.PROD
+  ? 'https://api.clubasogema.com'
+  : 'http://localhost:3000'
+
+/**
+ * URL base para el perfil público que codifica el código QR de cada usuario.
+ * Si se deja vacío, se usa el origen actual de la app (window.location.origin)
+ * con la ruta `/u/<id>`.
+ */
+export const PROFILE_BASE_URL = ''
+>>>>>>> origin/develop

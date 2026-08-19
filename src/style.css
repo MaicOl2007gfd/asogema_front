@@ -16,6 +16,7 @@
   --color-text-light: #636e72;
   --color-text-muted: #133215;
   --color-white: #133215;
+  --color-cream: #F3E8D3;
   --color-glass-bg: rgba(255, 255, 255, 0.08);
   --color-glass-border: rgba(255, 255, 255, 0.18);
   --color-glass-shadow: rgba(0, 0, 0, 0.25);
@@ -651,7 +652,7 @@ body {
   height: 12px;
   opacity: 0;
   transition: opacity var(--transition);
-  color: var(--color-white);
+  color: var(--color-cream);
 }
 
 .checkbox-wrapper input:checked + .checkmark {
@@ -712,7 +713,7 @@ body {
   border: none;
   border-radius: var(--radius-sm);
   background: linear-gradient(135deg, var(--color-primary), #00cec9);
-  color: var(--color-white);
+  color: var(--color-cream);
   font-size: 16px;
   font-weight: 600;
   font-family: var(--font-primary);
@@ -776,7 +777,7 @@ body {
 }
 
 .spinner-path {
-  stroke: var(--color-white);
+  stroke: var(--color-cream);
   stroke-dasharray: 125;
   stroke-dashoffset: 100;
   animation: dash 1.5s ease-in-out infinite;

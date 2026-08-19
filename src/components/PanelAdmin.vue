@@ -1,40 +1,34 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { usePanelAdmin } from '../composables/usePanelAdmin.js'
 
 const emit = defineEmits(['navigate'])
-
 const { user, isAdmin, logout } = useAuth()
 
 const {
-  activeModule, activeSubTab, contextMessage,
+  activeModule, contextMessage,
   loading, error, retry,
-  members, selectedMemberId, selectedMember,
-  calendarFilters, categoryLabels, calendarGrid, calendarTitle,
-  prevMonth, nextMonth, selectedCalendarEvent, openCalendarEvent, closeCalendarEvent,
+  calendarFilters, categoryLabels, filterColors, getFilterColor, calendarGrid, calendarTitle,
+  prevMonth, nextMonth,
   todayReservations, todayReservationCount, todayConfirmedCount, todayPendingCount,
   incomePeriods, incomePeriodSelector, incomeChartData,
-  topServices, peakHours, maxPeakCustomers,
-  topRooms, maxRoomReservations,
-  upcomingEvents, monthNames,
+  topServices,
   hotelOccupancy,
-  comparativeIncome, maxComparIncome,
-  formatCurrency, statusBadgeClass, eventTypeBadgeClass,
-  getBarHeight, getComparBarHeight,
+  formatCurrency, statusBadgeClass, normalizeStatus, getBarHeight,
+  showDayOverview, selectedDayDate, dayOverviewLoading, dayOverviewData,
+  openDayOverview, closeDayOverview,
+  tasks, employees, selectedDate, showTaskModal, editingTask,
+  taskLoading, taskError,
+  fetchTasks, createTask, updateTask, deleteTask,
+  openTaskModal, openEditTaskModal, closeTaskModal,
+  taskFilterEstado, taskFilterPrioridad, taskFilterEmpleado,
+  filteredTasks, priorityLabel, priorityColor, estadoLabel, estadoColor,
+  openNewTaskFromModule,
+  members, selectedMemberId, selectedMember,
+  memberSearch, memberPage, memberTotalPages, filteredMembers, paginatedMembers, MEMBERS_PER_PAGE,
+  showMemberModal, openMemberModal, closeMemberModal,
 } = usePanelAdmin()
-
-const subTabs = [
-  { id: 'resumen', label: 'Resumen', icon: 'layout-dashboard' },
-  { id: 'reservas', label: 'Reservas del Día', icon: 'calendar-check' },
-  { id: 'ingresos', label: 'Ingresos', icon: 'chart-line' },
-  { id: 'servicios', label: 'Servicios', icon: 'bars' },
-  { id: 'horaspico', label: 'Horas Pico', icon: 'trending-up' },
-  { id: 'habitaciones', label: 'Habitaciones', icon: 'building' },
-  { id: 'eventos', label: 'Eventos', icon: 'calendar' },
-  { id: 'ocupacion', label: 'Ocupación', icon: 'pie-chart' },
-  { id: 'comparativas', label: 'Comparativas', icon: 'bar-chart' },
-]
 
 const todayDate = computed(() => {
   const d = new Date()
@@ -48,109 +42,153 @@ function getUserInitials() {
 
 function setModule(mod) {
   activeModule.value = mod
-  if (mod === 'panel') activeSubTab.value = 'resumen'
 }
 
-const filterColors = {
-  torneos: '#00cec9',
-  eventos: '#6c5ce7',
-  reservas: '#fdcb6e',
-  mantenimiento: '#e17055',
-  horarios: '#00b894',
+// ─── Task Form ──────────────────────────────────────────────
+const taskForm = ref({
+  titulo: '',
+  descripcion: '',
+  fecha: '',
+  hora_inicio: '',
+  hora_fin: '',
+  prioridad: 'MEDIA',
+  estado: 'PENDIENTE',
+  asignado_a: '',
+})
+
+const taskFormError = ref('')
+const taskFormSaving = ref(false)
+
+watch(showTaskModal, (open) => {
+  if (open) {
+    taskFormError.value = ''
+    if (editingTask.value) {
+      taskForm.value = {
+        titulo: editingTask.value.titulo,
+        descripcion: editingTask.value.descripcion || '',
+        fecha: editingTask.value.fecha,
+        hora_inicio: editingTask.value.hora_inicio || '',
+        hora_fin: editingTask.value.hora_fin || '',
+        prioridad: editingTask.value.prioridad,
+        estado: editingTask.value.estado,
+        asignado_a: editingTask.value.asignado_a?.id || '',
+      }
+    } else {
+      taskForm.value = {
+        titulo: '',
+        descripcion: '',
+        fecha: selectedDate.value || new Date().toISOString().slice(0, 10),
+        hora_inicio: '',
+        hora_fin: '',
+        prioridad: 'MEDIA',
+        estado: 'PENDIENTE',
+        asignado_a: '',
+      }
+    }
+  }
+})
+
+async function handleSaveTask() {
+  taskFormError.value = ''
+  if (!taskForm.value.titulo.trim()) {
+    taskFormError.value = 'El título es obligatorio.'
+    return
+  }
+  if (!taskForm.value.fecha) {
+    taskFormError.value = 'La fecha es obligatoria.'
+    return
+  }
+  if (!taskForm.value.asignado_a) {
+    taskFormError.value = 'Debes asignar la tarea a un empleado.'
+    return
+  }
+
+  taskFormSaving.value = true
+  try {
+    const payload = {
+      titulo: taskForm.value.titulo.trim(),
+      descripcion: taskForm.value.descripcion.trim() || null,
+      fecha: taskForm.value.fecha,
+      hora_inicio: taskForm.value.hora_inicio || null,
+      hora_fin: taskForm.value.hora_fin || null,
+      prioridad: taskForm.value.prioridad,
+      asignado_a: Number(taskForm.value.asignado_a),
+    }
+
+    if (editingTask.value) {
+      payload.estado = taskForm.value.estado
+      await updateTask(editingTask.value.id, payload)
+    } else {
+      await createTask(payload)
+    }
+
+    closeTaskModal()
+    await fetchTasks()
+  } catch (e) {
+    taskFormError.value = e?.response?.data?.message || 'Error al guardar la tarea.'
+  } finally {
+    taskFormSaving.value = false
+  }
 }
 
-function getFilterColor(cat) {
-  return filterColors[cat] || '#00cec9'
+async function handleDeleteTask() {
+  if (!editingTask.value) return
+  if (!confirm('¿Estás seguro de eliminar esta tarea?')) return
+  taskFormSaving.value = true
+  try {
+    await deleteTask(editingTask.value.id)
+    closeTaskModal()
+    await fetchTasks()
+  } catch {
+    taskFormError.value = 'Error al eliminar la tarea.'
+  } finally {
+    taskFormSaving.value = false
+  }
 }
 
 onMounted(() => {
   window.scrollTo(0, 0)
-  if (!isAdmin.value) {
-    emit('navigate', 'index')
-  }
+  if (!isAdmin.value) emit('navigate', 'index')
   retry()
 })
 </script>
 
 <template>
   <div class="lux-page">
-    <!-- ══════════════════════════════════════════════════════
-         HEADER — Dark ink navbar with module pills
-         ══════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════ HEADER ═══════════════════ -->
     <header class="lux-header">
       <div class="lux-header-inner">
-        <!-- Left: Back arrow + Brand / Logo -->
         <div class="lux-header-left">
-          <button
-            type="button"
-            class="lux-back-btn"
-            @click="emit('navigate', 'index')"
-            aria-label="Volver al inicio"
-            title="Volver al inicio"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12"></line>
-              <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
+          <button type="button" class="lux-back-btn" @click="emit('navigate', 'index')" aria-label="Volver al inicio" title="Volver al inicio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           </button>
-
-          <div class="lux-brand" @click="emit('navigate', 'dashboard')">
+          <div class="lux-brand" @click="setModule('panel')">
             <img src="/imagenes/Logo.png" alt="Asogema" class="lux-logo" />
             <span class="lux-brand-text">Asogema</span>
             <span class="lux-brand-club">Club Privado</span>
           </div>
         </div>
 
-        <!-- Module Pills -->
         <nav class="lux-module-nav">
-          <button
-            class="lux-module-pill"
-            :class="{ active: activeModule === 'panel' }"
-            @click="setModule('panel')"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
+          <button class="lux-module-pill" :class="{ active: activeModule === 'panel' }" @click="setModule('panel')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             <span>Panel General</span>
           </button>
-          <button
-            class="lux-module-pill"
-            :class="{ active: activeModule === 'calendario' }"
-            @click="setModule('calendario')"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
+          <button class="lux-module-pill" :class="{ active: activeModule === 'calendario' }" @click="setModule('calendario')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
             <span>Calendario</span>
           </button>
-          <button
-            class="lux-module-pill"
-            :class="{ active: activeModule === 'socio' }"
-            @click="setModule('socio')"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-            </svg>
-            <span>Panel del Socio</span>
+          <button class="lux-module-pill" :class="{ active: activeModule === 'tareas' }" @click="setModule('tareas')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
+            <span>Tareas</span>
+          </button>
+          <button class="lux-module-pill" :class="{ active: activeModule === 'socio' }" @click="setModule('socio')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+            <span>Socios</span>
           </button>
         </nav>
 
-        <!-- Right section: Notifications + User -->
         <div class="lux-header-right">
-          <button class="lux-notif-btn" title="Notificaciones">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-              <path d="M13.73 21a2 2 0 01-3.46 0"></path>
-            </svg>
-            <span class="lux-notif-dot"></span>
-          </button>
           <div class="lux-user-mini">
             <span class="lux-user-name">{{ user?.name || 'Admin' }}</span>
             <div class="lux-user-avatar">{{ getUserInitials() }}</div>
@@ -160,9 +198,7 @@ onMounted(() => {
       </div>
     </header>
 
-    <!-- ══════════════════════════════════════════════════════
-         CONTEXTUAL MESSAGE STRIP
-         ══════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════ CONTEXT STRIP ═══════════════════ -->
     <div class="lux-context-strip">
       <div class="lux-context-inner">
         <span class="lux-context-dot"></span>
@@ -170,654 +206,514 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         MAIN CONTENT
-         ══════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════ MAIN ═══════════════════ -->
     <main class="lux-main">
-
-      <!-- Loading state -->
       <div v-if="loading" class="lux-panel-state">
         <div class="lux-panel-spinner" aria-hidden="true"></div>
         <p>Cargando panel…</p>
       </div>
 
-      <!-- Error state -->
       <div v-else-if="error" class="lux-panel-state lux-panel-error" role="alert">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
         <p>{{ error }}</p>
         <button type="button" @click="retry" class="lux-panel-retry">Reintentar</button>
       </div>
 
       <template v-else>
-      <!-- ===================================================
-           MODULE 1: PANEL GENERAL
-           =================================================== -->
-      <template v-if="activeModule === 'panel'">
-        <!-- Sub-tab navigation -->
-        <div class="lux-subtabs">
-          <button
-            v-for="tab in subTabs"
-            :key="tab.id"
-            class="lux-subtab"
-            :class="{ active: activeSubTab === tab.id }"
-            @click="activeSubTab = tab.id"
-          >
-            <svg v-if="tab.icon === 'layout-dashboard'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            <svg v-else-if="tab.icon === 'calendar-check'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><polyline points="9 14 12 17 15 11"></polyline></svg>
-            <svg v-else-if="tab.icon === 'chart-line'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-            <svg v-else-if="tab.icon === 'bars'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-            <svg v-else-if="tab.icon === 'trending-up'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-            <svg v-else-if="tab.icon === 'building'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><line x1="8" y1="6" x2="10" y2="6"></line><line x1="14" y1="6" x2="16" y2="6"></line></svg>
-            <svg v-else-if="tab.icon === 'calendar'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
-            <svg v-else-if="tab.icon === 'pie-chart'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 118 2.83"></path><path d="M22 12A10 10 0 0012 2v10z"></path></svg>
-            <svg v-else-if="tab.icon === 'bar-chart'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-            <span>{{ tab.label }}</span>
-          </button>
-        </div>
 
-        <!-- ─── TAB: Resumen ─────────────────────────────── -->
-        <section v-if="activeSubTab === 'resumen'" class="lux-section">
-          <div class="lux-section-header">
-            <h2>Resumen Ejecutivo</h2>
-            <p class="lux-section-desc">{{ todayDate }}</p>
-          </div>
+        <!-- ═══════════════════════════════════════════════
+             MODULE 1: PANEL GENERAL
+             ═══════════════════════════════════════════════ -->
+        <template v-if="activeModule === 'panel'">
+          <section class="lux-section">
+            <div class="lux-section-header">
+              <h2>Resumen Ejecutivo</h2>
+              <p class="lux-section-desc">{{ todayDate }}</p>
+            </div>
 
-          <!-- KPI Banner -->
-          <div class="lux-kpi-banner">
-            <div class="lux-kpi-card lux-kpi-green" @click="activeSubTab = 'reservas'">
-              <div class="lux-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg></div>
-              <div class="lux-kpi-body">
-                <span class="lux-kpi-label">Reservas del Día</span>
-                <div class="lux-kpi-value-row">
-                  <span class="lux-kpi-value">{{ todayReservationCount }}</span>
-                  <span class="lux-kpi-trend positive">+12%</span>
+            <div class="lux-kpi-banner">
+              <div class="lux-kpi-card lux-kpi-green">
+                <div class="lux-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg></div>
+                <div class="lux-kpi-body">
+                  <span class="lux-kpi-label">Reservas del Día</span>
+                  <div class="lux-kpi-value-row">
+                    <span class="lux-kpi-value">{{ todayReservationCount }}</span>
+                  </div>
+                  <span class="lux-kpi-sub">{{ todayConfirmedCount }} confirmadas · {{ todayPendingCount }} pendientes</span>
                 </div>
-                <span class="lux-kpi-sub">{{ todayConfirmedCount }} confirmadas · {{ todayPendingCount }} pendientes</span>
               </div>
-            </div>
-            <div class="lux-kpi-card lux-kpi-teal" @click="activeSubTab = 'ingresos'">
-              <div class="lux-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path></svg></div>
-              <div class="lux-kpi-body">
-                <span class="lux-kpi-label">Ingresos Hoy</span>
-                <div class="lux-kpi-value-row">
-                  <span class="lux-kpi-value">{{ formatCurrency(incomePeriods.daily) }}</span>
-                  <span class="lux-kpi-trend positive">+{{ incomePeriods.dailyChange }}%</span>
+              <div class="lux-kpi-card lux-kpi-teal">
+                <div class="lux-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path></svg></div>
+                <div class="lux-kpi-body">
+                  <span class="lux-kpi-label">Ingresos Hoy</span>
+                  <div class="lux-kpi-value-row">
+                    <span class="lux-kpi-value">{{ formatCurrency(incomePeriods.daily) }}</span>
+                    <span v-if="incomePeriods.dailyChange" class="lux-kpi-trend positive">+{{ incomePeriods.dailyChange }}%</span>
+                  </div>
                 </div>
-                <span class="lux-kpi-sub">vs. ayer</span>
               </div>
-            </div>
-            <div class="lux-kpi-card lux-kpi-purple" @click="activeSubTab = 'ocupacion'">
-              <div class="lux-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M3 10h18"></path><path d="M5 6l7-3 7 3"></path><path d="M4 10v11"></path><path d="M20 10v11"></path></svg></div>
-              <div class="lux-kpi-body">
-                <span class="lux-kpi-label">Ocupación</span>
-                <div class="lux-kpi-value-row">
-                  <span class="lux-kpi-value">{{ hotelOccupancy.current }}%</span>
-                  <span class="lux-kpi-trend positive">+{{ hotelOccupancy.changeFromLastWeek }}%</span>
+              <div class="lux-kpi-card lux-kpi-purple">
+                <div class="lux-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M3 10h18"></path><path d="M5 6l7-3 7 3"></path><path d="M4 10v11"></path><path d="M20 10v11"></path></svg></div>
+                <div class="lux-kpi-body">
+                  <span class="lux-kpi-label">Ocupación</span>
+                  <div class="lux-kpi-value-row">
+                    <span class="lux-kpi-value">{{ hotelOccupancy.current }}%</span>
+                  </div>
+                  <span class="lux-kpi-sub">{{ hotelOccupancy.occupiedRooms }}/{{ hotelOccupancy.totalRooms }} hab.</span>
                 </div>
-                <span class="lux-kpi-sub">{{ hotelOccupancy.occupiedRooms }}/{{ hotelOccupancy.totalRooms }} habitaciones</span>
               </div>
-            </div>
-            <div class="lux-kpi-card lux-kpi-amber" @click="activeSubTab = 'ingresos'">
-              <div class="lux-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
-              <div class="lux-kpi-body">
-                <span class="lux-kpi-label">Ingresos Mensuales</span>
-                <div class="lux-kpi-value-row">
-                  <span class="lux-kpi-value">{{ formatCurrency(incomePeriods.monthly) }}</span>
-                  <span class="lux-kpi-trend positive">+{{ incomePeriods.monthlyChange }}%</span>
-                </div>
-                <span class="lux-kpi-sub">vs. mes anterior</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Access Cards -->
-          <div class="lux-quick-grid">
-            <button class="lux-quick-card" @click="activeSubTab = 'reservas'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><polyline points="9 14 12 17 15 11"></polyline></svg>
-              <span>Reservas del Día</span>
-            </button>
-            <button class="lux-quick-card" @click="activeSubTab = 'ingresos'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-              <span>Ingresos</span>
-            </button>
-            <button class="lux-quick-card" @click="activeSubTab = 'servicios'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-              <span>Servicios</span>
-            </button>
-            <button class="lux-quick-card" @click="activeSubTab = 'horaspico'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-              <span>Horas Pico</span>
-            </button>
-            <button class="lux-quick-card" @click="activeSubTab = 'habitaciones'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path></svg>
-              <span>Habitaciones</span>
-            </button>
-            <button class="lux-quick-card" @click="activeSubTab = 'eventos'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
-              <span>Eventos</span>
-            </button>
-            <button class="lux-quick-card" @click="activeSubTab = 'ocupacion'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 118 2.83"></path><path d="M22 12A10 10 0 0012 2v10z"></path></svg>
-              <span>Ocupación</span>
-            </button>
-            <button class="lux-quick-card" @click="activeSubTab = 'comparativas'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-              <span>Comparativas</span>
-            </button>
-          </div>
-        </section>
-
-        <!-- ─── TAB: Reservas del Día ────────────────────── -->
-        <section v-if="activeSubTab === 'reservas'" class="lux-section">
-          <div class="lux-section-header">
-            <h2>Reservas del Día</h2>
-            <p class="lux-section-desc">Todas las reservas programadas para hoy — {{ todayDate }}</p>
-          </div>
-          <div class="lux-card lux-card-table">
-            <table class="lux-table">
-              <thead>
-                <tr>
-                  <th>Hora</th><th>Cliente</th><th>Servicio</th><th>Personas</th><th>Contacto</th><th>Notas</th><th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="r in todayReservations" :key="r.id">
-                  <td><span class="lux-time-badge">{{ r.time }}</span></td>
-                  <td><strong>{{ r.client }}</strong></td>
-                  <td>{{ r.service }}</td>
-                  <td>{{ r.guests }}</td>
-                  <td class="lux-text-muted">{{ r.phone }}</td>
-                  <td class="lux-text-muted">{{ r.notes || '—' }}</td>
-                  <td><span class="lux-status-badge" :class="statusBadgeClass(r.status)">{{ r.status }}</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- ─── TAB: Ingresos ────────────────────────────── -->
-        <section v-if="activeSubTab === 'ingresos'" class="lux-section">
-          <div class="lux-section-header">
-            <h2>Ingresos</h2>
-            <div class="lux-period-selector">
-              <button :class="{ active: incomePeriodSelector === 'diario' }" @click="incomePeriodSelector = 'diario'">Diario</button>
-              <button :class="{ active: incomePeriodSelector === 'semanal' }" @click="incomePeriodSelector = 'semanal'">Semanal</button>
-              <button :class="{ active: incomePeriodSelector === 'mensual' }" @click="incomePeriodSelector = 'mensual'">Mensual</button>
-            </div>
-          </div>
-          <div class="lux-grid-2col">
-            <div class="lux-card">
-              <div class="lux-card-header">
-                <h3>Evolución de Ingresos</h3>
-                <span class="lux-badge">COP</span>
-              </div>
-              <div class="lux-compar-chart">
-                <div class="lux-compar-legend">
-                  <span class="lux-legend-item"><span class="lux-legend-dot current"></span> {{ new Date().getFullYear() }}</span>
-                  <span class="lux-legend-item"><span class="lux-legend-dot previous"></span> {{ new Date().getFullYear() - 1 }}</span>
-                </div>
-                <div class="lux-compar-bars">
-                  <div v-for="(label, idx) in incomeChartData.labels" :key="label" class="lux-compar-col">
-                    <div class="lux-compar-bars-group">
-                      <div class="lux-compar-bar current-year" :style="{ height: getComparBarHeight(incomeChartData.current[idx], Math.max(...incomeChartData.current, ...incomeChartData.previous)) + '%' }"></div>
-                      <div class="lux-compar-bar previous-year" :style="{ height: getComparBarHeight(incomeChartData.previous[idx], Math.max(...incomeChartData.current, ...incomeChartData.previous)) + '%' }"></div>
-                    </div>
-                    <span class="lux-compar-label">{{ label }}</span>
+              <div class="lux-kpi-card lux-kpi-amber">
+                <div class="lux-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
+                <div class="lux-kpi-body">
+                  <span class="lux-kpi-label">Ingresos Mensuales</span>
+                  <div class="lux-kpi-value-row">
+                    <span class="lux-kpi-value">{{ formatCurrency(incomePeriods.monthly) }}</span>
+                    <span v-if="incomePeriods.monthlyChange" class="lux-kpi-trend positive">+{{ incomePeriods.monthlyChange }}%</span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="lux-card">
-              <div class="lux-card-header">
-                <h3>Resumen por Periodo</h3>
-              </div>
-              <div class="lux-periods-grid">
-                <div class="lux-period-item">
-                  <div class="lux-period-icon daily"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
-                  <span class="lux-period-label">Diario</span>
-                  <span class="lux-period-value">{{ formatCurrency(incomePeriods.daily) }}</span>
-                  <span class="lux-period-change positive">+{{ incomePeriods.dailyChange }}%</span>
-                </div>
-                <div class="lux-period-item">
-                  <div class="lux-period-icon weekly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg></div>
-                  <span class="lux-period-label">Semanal</span>
-                  <span class="lux-period-value">{{ formatCurrency(incomePeriods.weekly) }}</span>
-                  <span class="lux-period-change positive">+{{ incomePeriods.weeklyChange }}%</span>
-                </div>
-                <div class="lux-period-item">
-                  <div class="lux-period-icon monthly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
-                  <span class="lux-period-label">Mensual</span>
-                  <span class="lux-period-value">{{ formatCurrency(incomePeriods.monthly) }}</span>
-                  <span class="lux-period-change positive">+{{ incomePeriods.monthlyChange }}%</span>
-                </div>
-              </div>
+          </section>
+
+          <section class="lux-section">
+            <div class="lux-section-header">
+              <h2>Reservas del Día</h2>
             </div>
-          </div>
-        </section>
-
-        <!-- ─── TAB: Servicios ───────────────────────────── -->
-        <section v-if="activeSubTab === 'servicios'" class="lux-section">
-          <div class="lux-section-header">
-            <h2>Servicios Más Utilizados</h2>
-            <p class="lux-section-desc">Ranking de servicios por volumen de reservas e ingresos</p>
-          </div>
-          <div class="lux-card">
-            <div class="lux-services-list">
-              <div v-for="s in topServices" :key="s.name" class="lux-service-item">
-                <div class="lux-service-left">
-                  <div class="lux-service-rank">{{ topServices.indexOf(s) + 1 }}</div>
-                  <div class="lux-service-info">
-                    <strong>{{ s.name }}</strong>
-                    <span>{{ s.bookings }} reservas</span>
-                  </div>
-                </div>
-                <div class="lux-service-bar-track">
-                  <div class="lux-service-bar-fill" :style="{ width: Math.min(s.percentage, 100) + '%' }"></div>
-                  <span class="lux-service-pct">{{ s.percentage }}%</span>
-                </div>
-                <span class="lux-service-change" :class="(s.change || '').startsWith('+') ? 'positive' : ''">{{ s.change || '—' }}</span>
-              </div>
+            <div class="lux-card lux-card-table">
+              <table class="lux-table">
+                <thead>
+                  <tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Personas</th><th>Contacto</th><th>Notas</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                  <tr v-for="r in todayReservations" :key="r.id">
+                    <td><span class="lux-time-badge">{{ r.time }}</span></td>
+                    <td><strong>{{ r.client }}</strong></td>
+                    <td>{{ r.service }}</td>
+                    <td>{{ r.guests }}</td>
+                    <td class="lux-text-muted">{{ r.phone }}</td>
+                    <td class="lux-text-muted">{{ r.notes || '—' }}</td>
+                    <td><span class="lux-status-badge" :class="statusBadgeClass(r.status)">{{ r.status }}</span></td>
+                  </tr>
+                  <tr v-if="!todayReservations.length">
+                    <td colspan="7" class="lux-empty-row">No hay reservas para hoy</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </div>
-        </section>
+          </section>
+        </template>
 
-        <!-- ─── TAB: Horas Pico ──────────────────────────── -->
-        <section v-if="activeSubTab === 'horaspico'" class="lux-section">
-          <div class="lux-section-header">
-            <h2>Horas Pico — Restaurante</h2>
-            <p class="lux-section-desc">Afluencia de clientes por franja horaria (promedio diario)</p>
-          </div>
-          <div class="lux-card">
-            <div class="lux-peak-chart">
-              <div v-for="p in peakHours" :key="p.hour" class="lux-peak-bar-col">
-                <div class="lux-peak-bar-wrap">
-                  <div
-                    class="lux-peak-bar"
-                    :class="{ 'lux-peak-bar-high': p.customers > 40 }"
-                    :style="{ height: getBarHeight(p.customers, maxPeakCustomers) + '%' }"
-                  >
-                    <span v-if="p.customers > 40" class="lux-peak-val">{{ p.customers }}</span>
-                  </div>
-                </div>
-                <span class="lux-peak-label">{{ p.label }}</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ─── TAB: Habitaciones ─────────────────────────── -->
-        <section v-if="activeSubTab === 'habitaciones'" class="lux-section">
-          <div class="lux-section-header">
-            <h2>Habitaciones Más Reservadas</h2>
-            <p class="lux-section-desc">Ranking de habitaciones por número de reservas</p>
-          </div>
-          <div class="lux-card">
-            <div class="lux-rooms-chart">
-              <div v-for="(rm, i) in topRooms" :key="rm.code" class="lux-room-bar-item">
-                <div class="lux-room-bar-left">
-                  <span class="lux-room-rank-badge" :class="'rank-' + (i + 1)">{{ i + 1 }}</span>
-                  <div class="lux-room-bar-info">
-                    <strong>{{ rm.name }}</strong>
-                    <span>{{ rm.code }} · {{ rm.type }}</span>
-                  </div>
-                </div>
-                <div class="lux-room-bar-track">
-                  <div class="lux-room-bar-fill" :style="{ width: getBarHeight(rm.reservations, maxRoomReservations) + '%' }">
-                    <span class="lux-room-bar-count">{{ rm.reservations }}</span>
-                  </div>
-                </div>
-                <div class="lux-room-bar-meta">
-                  <span>{{ formatCurrency(rm.revenue) }}</span>
-                  <span class="lux-room-occ" :class="{ high: rm.occupancy >= 85 }">{{ rm.occupancy }}%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ─── TAB: Eventos ─────────────────────────────── -->
-        <section v-if="activeSubTab === 'eventos'" class="lux-section">
-          <div class="lux-section-header">
-            <h2>Eventos Próximos</h2>
-            <p class="lux-section-desc">Eventos programados en el club</p>
-          </div>
-          <div class="lux-events-grid">
-            <div v-for="ev in upcomingEvents" :key="ev.id" class="lux-event-card">
-              <div class="lux-event-date-box">
-                <span class="lux-event-day">{{ new Date(ev.date).getDate() }}</span>
-                <span class="lux-event-month">{{ monthNames[new Date(ev.date).getMonth()].slice(0, 3) }}</span>
-              </div>
-              <div class="lux-event-card-body">
-                <h3>{{ ev.name }}</h3>
-                <div class="lux-event-meta">
-                  <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> {{ ev.time }}</span>
-                  <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> {{ ev.location }}</span>
-                  <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> {{ ev.attendees }} asistentes</span>
-                </div>
-                <div class="lux-event-card-footer">
-                  <span class="lux-event-type-badge" :class="eventTypeBadgeClass(ev.type)">{{ ev.type }}</span>
-                  <span class="lux-event-organizer">{{ ev.organizer }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ─── TAB: Ocupación ───────────────────────────── -->
-        <section v-if="activeSubTab === 'ocupacion'" class="lux-section">
-          <div class="lux-section-header">
-            <h2>Porcentaje de Ocupación</h2>
-            <p class="lux-section-desc">Nivel de ocupación actual del hotel</p>
-          </div>
-          <div class="lux-grid-2col">
-            <div class="lux-card lux-card-center">
-              <div class="lux-occupancy-ring">
-                <svg viewBox="0 0 120 120" class="lux-ring-svg">
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(19,50,21,0.06)" stroke-width="10" />
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="url(#occGradient)" stroke-width="10" stroke-linecap="round" :stroke-dasharray="`${(hotelOccupancy.current / 100) * 326.73} 326.73`" transform="rotate(-90 60 60)" class="lux-ring-progress" />
-                  <defs>
-                    <linearGradient id="occGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="#00cec9" />
-                      <stop offset="100%" stop-color="#133215" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div class="lux-ring-center">
-                  <span class="lux-ring-pct">{{ hotelOccupancy.current }}%</span>
-                  <span class="lux-ring-label">Ocupado</span>
-                </div>
-              </div>
-              <div class="lux-occupancy-stats">
-                <div class="lux-occ-stat-row">
-                  <div class="lux-occ-stat"><span class="lux-occ-dot occupied"></span><span>Ocupadas</span><strong>{{ hotelOccupancy.occupiedRooms }}</strong></div>
-                  <div class="lux-occ-stat"><span class="lux-occ-dot available"></span><span>Disponibles</span><strong>{{ hotelOccupancy.available }}</strong></div>
-                </div>
-                <div class="lux-occ-bar-track"><div class="lux-occ-bar-fill" :style="{ width: hotelOccupancy.current + '%' }"></div></div>
-                <span class="lux-occ-growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg> +{{ hotelOccupancy.changeFromLastWeek }}% vs. semana anterior</span>
-              </div>
-            </div>
-
-            <!-- Historical mini chart -->
-            <div class="lux-card">
-              <div class="lux-card-header"><h3>Tendencia de Ocupación</h3><span class="lux-badge">Últimos 14 días</span></div>
-              <div class="lux-hist-chart">
-                <div v-for="(val, i) in hotelOccupancy.historical" :key="i" class="lux-hist-bar" :style="{ height: (val / 100) * 100 + '%' }" :title="val + '%'"></div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ─── TAB: Comparativas ────────────────────────── -->
-        <section v-if="activeSubTab === 'comparativas'" class="lux-section">
-          <div class="lux-section-header">
-            <h2>Gráficas Comparativas</h2>
-            <p class="lux-section-desc">Comparativa de ingresos año contra año y reservas por área</p>
-          </div>
-          <div class="lux-grid-2col">
-            <div class="lux-card">
-              <div class="lux-card-header"><h3>Ingresos Mensuales</h3><span class="lux-badge">{{ new Date().getFullYear() }} vs {{ new Date().getFullYear() - 1 }}</span></div>
-              <div class="lux-compar-chart">
-                <div class="lux-compar-legend">
-                  <span class="lux-legend-item"><span class="lux-legend-dot current"></span> {{ new Date().getFullYear() }}</span>
-                  <span class="lux-legend-item"><span class="lux-legend-dot previous"></span> {{ new Date().getFullYear() - 1 }}</span>
-                </div>
-                <div class="lux-compar-bars">
-                  <div v-for="(label, idx) in comparativeIncome.labels" :key="label" class="lux-compar-col">
-                    <div class="lux-compar-bars-group">
-                      <div class="lux-compar-bar current-year" :style="{ height: getComparBarHeight(comparativeIncome.currentYear[idx], maxComparIncome) + '%' }" :title="comparativeIncome.currentYear[idx] + 'M'"></div>
-                      <div class="lux-compar-bar previous-year" :style="{ height: getComparBarHeight(comparativeIncome.previousYear[idx], maxComparIncome) + '%' }" :title="comparativeIncome.previousYear[idx] + 'M'"></div>
-                    </div>
-                    <span class="lux-compar-label">{{ label }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </template>
-
-      <!-- ===================================================
-           MODULE 2: CALENDARIO
-           =================================================== -->
-      <template v-if="activeModule === 'calendario'">
-        <div class="lux-calendar-page">
-          <!-- Filter chips -->
-          <div class="lux-cal-filters">
-            <button
-              v-for="(active, cat) in calendarFilters"
-              :key="cat"
-              class="lux-cal-filter-chip"
-              :class="{ active: active }"
-              :style="{ '--chip-color': getFilterColor(cat) }"
-              @click="calendarFilters[cat] = !calendarFilters[cat]"
-            >
-              <span class="lux-chip-dot" :style="{ background: getFilterColor(cat) }"></span>
-              {{ categoryLabels[cat] }}
-            </button>
-          </div>
-
-          <!-- Calendar header -->
-          <div class="lux-cal-header">
-            <button class="lux-cal-nav" @click="prevMonth">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </button>
-            <h2 class="lux-cal-title">{{ calendarTitle }}</h2>
-            <button class="lux-cal-nav" @click="nextMonth">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
-          </div>
-
-          <!-- Calendar grid -->
-          <div class="lux-cal-grid">
-            <div class="lux-cal-weekdays">
-              <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
-            </div>
-            <div class="lux-cal-days">
-              <div
-                v-for="(cell, idx) in calendarGrid"
-                :key="idx"
-                class="lux-cal-day"
-                :class="{ 'lux-cal-day-empty': !cell.day, 'lux-cal-day-today': cell.isToday, 'lux-cal-day-has-events': cell.events.length > 0 }"
+        <!-- ═══════════════════════════════════════════════
+             MODULE 2: CALENDARIO
+             ═══════════════════════════════════════════════ -->
+        <template v-if="activeModule === 'calendario'">
+          <div class="lux-calendar-page">
+            <div class="lux-cal-filters">
+              <button
+                v-for="(active, cat) in calendarFilters"
+                :key="cat"
+                class="lux-cal-filter-chip"
+                :class="{ active: active }"
+                :style="{ '--chip-color': getFilterColor(cat) }"
+                @click="calendarFilters[cat] = !calendarFilters[cat]"
               >
-                <span v-if="cell.day" class="lux-cal-day-num">{{ cell.day }}</span>
-                <div v-if="cell.events.length > 0" class="lux-cal-events-dots">
-                  <span
-                    v-for="ev in cell.events.slice(0, 3)"
-                    :key="ev.id"
-                    class="lux-cal-event-dot"
-                    :style="{ background: ev.color }"
-                    :title="ev.title"
-                    @click="openCalendarEvent(ev)"
-                  ></span>
-                  <span v-if="cell.events.length > 3" class="lux-cal-event-more">+{{ cell.events.length - 3 }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Event detail modal -->
-        <Teleport to="body">
-          <div class="lux-modal-overlay" :class="{ active: selectedCalendarEvent }" @click.self="closeCalendarEvent">
-            <div class="lux-modal" v-if="selectedCalendarEvent">
-              <button class="lux-modal-close" @click="closeCalendarEvent">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span class="lux-chip-dot" :style="{ background: getFilterColor(cat) }"></span>
+                {{ categoryLabels[cat] }}
               </button>
-              <div class="lux-modal-body">
-                <span class="lux-modal-cat-badge" :style="{ background: selectedCalendarEvent.color + '20', color: selectedCalendarEvent.color, borderColor: selectedCalendarEvent.color + '40' }">{{ categoryLabels[selectedCalendarEvent.category] }}</span>
-                <h2 class="lux-modal-title">{{ selectedCalendarEvent.title }}</h2>
-                <div class="lux-modal-meta">
-                  <div class="lux-modal-meta-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
-                    <span>{{ selectedCalendarEvent.date }}</span>
-                  </div>
-                  <div class="lux-modal-meta-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                    <span>{{ selectedCalendarEvent.time }}</span>
-                  </div>
-                  <div class="lux-modal-meta-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                    <span>{{ selectedCalendarEvent.location }}</span>
+            </div>
+
+            <div class="lux-cal-header">
+              <button class="lux-cal-nav" @click="prevMonth">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <h2 class="lux-cal-title">{{ calendarTitle }}</h2>
+              <button class="lux-cal-nav" @click="nextMonth">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </div>
+
+            <div class="lux-cal-grid">
+              <div class="lux-cal-weekdays">
+                <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
+              </div>
+              <div class="lux-cal-days">
+                <div
+                  v-for="(cell, idx) in calendarGrid"
+                  :key="idx"
+                  class="lux-cal-day"
+                  :class="{
+                    'lux-cal-day-empty': !cell.day,
+                    'lux-cal-day-today': cell.isToday,
+                    'lux-cal-day-has-events': cell.events.length > 0 || cell.hasTasks,
+                    'lux-cal-day-clickable': cell.day
+                  }"
+                  @click="cell.day && openDayOverview(cell.date)"
+                >
+                  <span v-if="cell.day" class="lux-cal-day-num">{{ cell.day }}</span>
+                  <div v-if="cell.events.length > 0 || cell.hasTasks" class="lux-cal-events-dots">
+                    <span v-for="ev in cell.events.slice(0, 2)" :key="ev.id" class="lux-cal-event-dot" :style="{ background: ev.color }" :title="ev.title"></span>
+                    <span v-if="cell.hasTasks" class="lux-cal-event-dot lux-cal-task-dot" :style="{ background: '#e84393' }" :title="cell.tasks.length + ' tarea(s)'"></span>
+                    <span v-if="cell.events.length + (cell.hasTasks ? 1 : 0) > 3" class="lux-cal-event-more">+{{ cell.events.length + cell.tasks.length - 3 }}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </Teleport>
-      </template>
+        </template>
 
-      <!-- ===================================================
-           MODULE 3: PANEL DEL SOCIO
-           =================================================== -->
-      <template v-if="activeModule === 'socio' && selectedMember">
-        <div class="lux-socio-page">
-          <!-- Member selector -->
-          <div class="lux-socio-selector">
-            <button
-              v-for="m in members"
-              :key="m.id"
-              class="lux-socio-pill"
-              :class="{ active: selectedMemberId === m.id }"
-              @click="selectedMemberId = m.id"
-            >
-              <div class="lux-socio-pill-avatar" :style="{ background: m.membershipColor }">{{ m.initials }}</div>
-              <span>{{ m.name }}</span>
-            </button>
-          </div>
-
-          <!-- Welcome header -->
-          <div class="lux-socio-header">
-            <div class="lux-socio-avatar" :style="{ background: selectedMember.membershipColor }">
-              {{ selectedMember.initials }}
-            </div>
-            <div class="lux-socio-hello">
-              <h2>Bienvenido, {{ selectedMember.name }}</h2>
-              <p>
-                <span class="lux-socio-badge" :style="{ background: selectedMember.membershipColor + '20', color: selectedMember.membershipColor }">
-                  Membresía {{ selectedMember.membership }}
-                </span>
-                · {{ selectedMember.email }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Dashboard grid -->
-          <div class="lux-socio-grid">
-            <!-- Mis Reservas -->
-            <div class="lux-card">
-              <div class="lux-card-header"><h3>Mis Reservas</h3><span class="lux-badge">{{ selectedMember.reservations.length }} activas</span></div>
-              <div class="lux-socio-list">
-                <div v-for="res in selectedMember.reservations" :key="res.id" class="lux-socio-list-item">
-                  <div class="lux-socio-list-left">
-                    <strong>{{ res.service }}</strong>
-                    <span>{{ res.date }} · {{ res.time }} · {{ res.guests }} pers.</span>
-                  </div>
-                  <span class="lux-status-badge" :class="statusBadgeClass(res.status)">{{ res.status }}</span>
-                </div>
-              </div>
+        <!-- ═══════════════════════════════════════════════
+             MODULE 3: TAREAS
+             ═══════════════════════════════════════════════ -->
+        <template v-if="activeModule === 'tareas'">
+          <section class="lux-section">
+            <div class="lux-section-header">
+              <h2>Gestión de Tareas</h2>
+              <button class="lux-btn-primary" @click="openNewTaskFromModule">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nueva Tarea
+              </button>
             </div>
 
-            <!-- Mis Pagos -->
-            <div class="lux-card">
-              <div class="lux-card-header"><h3>Mis Pagos</h3></div>
-              <div class="lux-socio-payments">
-                <div class="lux-payment-big">
-                  <span class="lux-payment-label">Saldo Actual</span>
-                  <span class="lux-payment-value">{{ formatCurrency(selectedMember.payments.balance) }}</span>
-                  <span class="lux-payment-status" :class="selectedMember.payments.status === 'al día' ? 'positive' : 'warning'">{{ selectedMember.payments.status }}</span>
-                </div>
-                <div class="lux-payment-last">
-                  <span class="lux-payment-label">Último Pago</span>
-                  <span class="lux-payment-amount">{{ formatCurrency(selectedMember.payments.lastPayment) }}</span>
-                  <span class="lux-payment-date">{{ selectedMember.payments.lastPaymentDate }}</span>
-                </div>
-              </div>
+            <div class="lux-task-filters">
+              <select v-model="taskFilterEstado" class="lux-task-filter-select">
+                <option value="">Todos los estados</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="EN_PROGRESO">En Progreso</option>
+                <option value="COMPLETADA">Completada</option>
+                <option value="CANCELADA">Cancelada</option>
+              </select>
+              <select v-model="taskFilterPrioridad" class="lux-task-filter-select">
+                <option value="">Todas las prioridades</option>
+                <option value="URGENTE">Urgente</option>
+                <option value="ALTA">Alta</option>
+                <option value="MEDIA">Media</option>
+                <option value="BAJA">Baja</option>
+              </select>
+              <select v-model="taskFilterEmpleado" class="lux-task-filter-select">
+                <option value="">Todos los empleados</option>
+                <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
+              </select>
             </div>
 
-            <!-- Mis Invitados -->
-            <div class="lux-card">
-              <div class="lux-card-header"><h3>Mis Invitados</h3><span class="lux-badge">{{ selectedMember.guests.length }}</span></div>
-              <div class="lux-socio-list">
-                <div v-for="g in selectedMember.guests" :key="g.name" class="lux-socio-list-item">
-                  <div class="lux-socio-list-left">
-                    <strong>{{ g.name }}</strong>
-                    <span>{{ g.relationship }}</span>
-                  </div>
-                  <span class="lux-guest-status" :class="g.status">{{ g.status }}</span>
-                </div>
-              </div>
+            <div v-if="taskLoading" class="lux-panel-state">
+              <div class="lux-panel-spinner"></div>
+              <p>Cargando tareas…</p>
             </div>
 
-            <!-- Mis Eventos -->
-            <div class="lux-card">
-              <div class="lux-card-header"><h3>Mis Eventos</h3></div>
-              <div class="lux-socio-list">
-                <div v-for="ev in selectedMember.events" :key="ev.id" class="lux-socio-list-item">
-                  <div class="lux-socio-list-left">
-                    <strong>{{ ev.name }}</strong>
-                    <span>{{ ev.date }} · {{ ev.time }} · {{ ev.location }}</span>
-                  </div>
-                  <span class="lux-rsvp-badge" :class="ev.rsvp">{{ ev.rsvp }}</span>
-                </div>
-              </div>
+            <div v-else class="lux-card lux-card-table">
+              <table class="lux-table">
+                <thead>
+                  <tr><th>Título</th><th>Fecha</th><th>Horario</th><th>Prioridad</th><th>Estado</th><th>Asignada a</th><th></th></tr>
+                </thead>
+                <tbody>
+                  <tr v-for="t in filteredTasks" :key="t.id" class="lux-task-row" @click="openEditTaskModal(t)">
+                    <td><strong>{{ t.titulo }}</strong></td>
+                    <td>{{ t.fecha }}</td>
+                    <td class="lux-text-muted">{{ t.hora_inicio || '—' }}{{ t.hora_fin ? ' - ' + t.hora_fin : '' }}</td>
+                    <td><span class="lux-task-priority-badge" :style="{ background: priorityColor(t.prioridad) + '20', color: priorityColor(t.prioridad) }">{{ priorityLabel(t.prioridad) }}</span></td>
+                    <td><span class="lux-task-estado-badge" :style="{ background: estadoColor(t.estado) + '20', color: estadoColor(t.estado) }">{{ estadoLabel(t.estado) }}</span></td>
+                    <td class="lux-text-muted">{{ t.asignado_a?.nombre || '—' }}</td>
+                    <td>
+                      <button class="lux-task-edit-btn" @click.stop="openEditTaskModal(t)" title="Editar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr v-if="!filteredTasks.length && !taskLoading">
+                    <td colspan="7" class="lux-empty-row">No hay tareas que coincidan con los filtros</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </template>
+
+        <!-- ═══════════════════════════════════════════════
+             MODULE 4: PANEL DEL SOCIO
+             ═══════════════════════════════════════════════ -->
+        <template v-if="activeModule === 'socio'">
+          <div class="lux-socio-page">
+            <div class="lux-socio-search">
+              <svg class="lux-socio-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input v-model="memberSearch" type="text" class="lux-socio-search-input" placeholder="Buscar por nombre, email o teléfono..." />
+              <span v-if="memberSearch" class="lux-socio-search-clear" @click="memberSearch = ''">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </span>
             </div>
 
-            <!-- Mi Historial -->
-            <div class="lux-card">
-              <div class="lux-card-header"><h3>Mi Historial</h3><span class="lux-badge">Últimos movimientos</span></div>
-              <div class="lux-socio-list">
-                <div v-for="h in selectedMember.history" :key="h.date + h.action" class="lux-socio-list-item">
-                  <div class="lux-socio-list-left">
-                    <strong>{{ h.action }}</strong>
-                    <span>{{ h.date }}</span>
-                  </div>
-                  <span class="lux-history-amount">{{ formatCurrency(h.amount) }}</span>
-                </div>
-              </div>
+            <div class="lux-card lux-card-table">
+              <table class="lux-table">
+                <thead>
+                  <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Membresía</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                  <tr v-for="m in paginatedMembers" :key="m.id" class="lux-socio-table-row" :class="{ active: selectedMemberId === m.id }" @click="openMemberModal(m.id)">
+                    <td>
+                      <div class="lux-socio-name-cell">
+                        <div class="lux-socio-cell-avatar" :style="{ background: m.membershipColor }">{{ m.initials }}</div>
+                        <strong>{{ m.name }}</strong>
+                      </div>
+                    </td>
+                    <td class="lux-text-muted">{{ m.email }}</td>
+                    <td class="lux-text-muted">{{ m.telefono || '—' }}</td>
+                    <td>
+                      <span class="lux-socio-membership-badge" :style="{ background: m.membershipColor + '20', color: m.membershipColor }">{{ m.membership }}</span>
+                    </td>
+                    <td><span class="lux-status-badge lux-status-confirmed">Activo</span></td>
+                  </tr>
+                  <tr v-if="paginatedMembers.length === 0">
+                    <td colspan="5" class="lux-empty-row">No se encontraron socios</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <!-- Mis Beneficios -->
-            <div class="lux-card">
-              <div class="lux-card-header"><h3>Mis Beneficios</h3><span class="lux-badge">{{ selectedMember.benefits.filter(b => b.active).length }}/{{ selectedMember.benefits.length }} activos</span></div>
-              <div class="lux-benefits-grid">
-                <div v-for="b in selectedMember.benefits" :key="b.name" class="lux-benefit-item" :class="{ inactive: !b.active }">
-                  <svg v-if="b.active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                  <span>{{ b.name }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Noticias del Club -->
-            <div class="lux-card lux-card-wide">
-              <div class="lux-card-header"><h3>Noticias del Club</h3></div>
-              <div class="lux-news-list">
-                <div v-for="n in selectedMember.news" :key="n.date + n.title" class="lux-news-item">
-                  <div class="lux-news-date">
-                    <span class="lux-news-day">{{ new Date(n.date).getDate() }}</span>
-                    <span class="lux-news-month">{{ monthNames[new Date(n.date).getMonth()].slice(0, 3) }}</span>
-                  </div>
-                  <div class="lux-news-body">
-                    <h4>{{ n.title }}</h4>
-                    <p>{{ n.excerpt }}</p>
-                  </div>
-                </div>
+            <div class="lux-socio-pagination">
+              <span class="lux-socio-pagination-info">
+                Mostrando {{ filteredMembers.length === 0 ? 0 : (memberPage - 1) * MEMBERS_PER_PAGE + 1 }}–{{ Math.min(memberPage * MEMBERS_PER_PAGE, filteredMembers.length) }} de {{ filteredMembers.length }}
+              </span>
+              <div class="lux-socio-pagination-btns">
+                <button class="lux-socio-page-btn" :disabled="memberPage <= 1" @click="memberPage--">← Anterior</button>
+                <span class="lux-socio-page-num">{{ memberPage }} / {{ memberTotalPages }}</span>
+                <button class="lux-socio-page-btn" :disabled="memberPage >= memberTotalPages" @click="memberPage++">Siguiente →</button>
               </div>
             </div>
           </div>
-        </div>
-      </template>
+        </template>
 
-      <!-- Empty members state -->
-      <div v-else-if="activeModule === 'socio'" class="lux-panel-state">
-        <p>No hay socios registrados para mostrar.</p>
-      </div>
       </template>
     </main>
+
+    <!-- ═══════════════════ DAY OVERVIEW DRAWER ═══════════════════ -->
+    <Teleport to="body">
+      <Transition name="drawer-fade">
+        <div v-if="showDayOverview" class="lux-drawer-overlay" @click.self="closeDayOverview">
+          <div class="lux-drawer" :class="{ open: showDayOverview }">
+            <div class="lux-drawer-header">
+              <div>
+                <h2>{{ selectedDayDate ? new Date(selectedDayDate + 'T12:00:00').toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '' }}</h2>
+                <span class="lux-drawer-subtitle">Resumen completo del día</span>
+              </div>
+              <button class="lux-drawer-close" @click="closeDayOverview">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+
+            <div class="lux-drawer-body">
+              <div v-if="dayOverviewLoading" class="lux-panel-state">
+                <div class="lux-panel-spinner"></div>
+                <p>Cargando…</p>
+              </div>
+
+              <template v-else>
+                <!-- Tasks section -->
+                <div class="lux-drawer-section">
+                  <h3><span class="lux-drawer-section-dot" style="background:#e84393"></span> Tareas <span class="lux-drawer-count">{{ dayOverviewData.tasks.length }}</span></h3>
+                  <div v-if="dayOverviewData.tasks.length === 0" class="lux-drawer-empty">Sin tareas para este día</div>
+                  <div v-else class="lux-drawer-list">
+                    <div v-for="t in dayOverviewData.tasks" :key="t.id" class="lux-drawer-item lux-drawer-task" @click="closeDayOverview(); openEditTaskModal(t)">
+                      <div class="lux-drawer-item-left">
+                        <span class="lux-drawer-task-priority" :style="{ background: priorityColor(t.prioridad) }"></span>
+                        <div>
+                          <strong>{{ t.titulo }}</strong>
+                          <span v-if="t.descripcion" class="lux-drawer-item-desc">{{ t.descripcion }}</span>
+                        </div>
+                      </div>
+                      <div class="lux-drawer-item-right">
+                        <span v-if="t.hora_inicio" class="lux-drawer-item-time">{{ t.hora_inicio }}{{ t.hora_fin ? ' - ' + t.hora_fin : '' }}</span>
+                        <span class="lux-task-estado-badge" :style="{ background: estadoColor(t.estado) + '20', color: estadoColor(t.estado) }">{{ estadoLabel(t.estado) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Reservations section -->
+                <div class="lux-drawer-section">
+                  <h3><span class="lux-drawer-section-dot" style="background:#0984e3"></span> Reservas <span class="lux-drawer-count">{{ dayOverviewData.reservations.length }}</span></h3>
+                  <div v-if="dayOverviewData.reservations.length === 0" class="lux-drawer-empty">Sin reservas para este día</div>
+                  <div v-else class="lux-drawer-list">
+                    <div v-for="r in dayOverviewData.reservations" :key="r.id" class="lux-drawer-item">
+                      <div class="lux-drawer-item-left">
+                        <span class="lux-drawer-item-type" :class="'type-' + r.tipo.toLowerCase()">{{ r.tipo }}</span>
+                        <div>
+                          <strong>{{ r.cliente }}</strong>
+                          <span class="lux-drawer-item-desc">{{ r.hora }} · {{ r.personas }} pers.</span>
+                        </div>
+                      </div>
+                      <span class="lux-status-badge" :class="statusBadgeClass(normalizeStatus(r.estado))">{{ normalizeStatus(r.estado) }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Events section -->
+                <div class="lux-drawer-section">
+                  <h3><span class="lux-drawer-section-dot" style="background:#6c5ce7"></span> Eventos <span class="lux-drawer-count">{{ dayOverviewData.events.length }}</span></h3>
+                  <div v-if="dayOverviewData.events.length === 0" class="lux-drawer-empty">Sin eventos para este día</div>
+                  <div v-else class="lux-drawer-list">
+                    <div v-for="ev in dayOverviewData.events" :key="ev.id" class="lux-drawer-item">
+                      <div class="lux-drawer-item-left">
+                        <span class="lux-drawer-item-dot" :style="{ background: ev.color }"></span>
+                        <div>
+                          <strong>{{ ev.titulo }}</strong>
+                          <span class="lux-drawer-item-desc">{{ ev.hora }} · {{ ev.ubicacion }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══════════════════ TASK CREATE/EDIT MODAL ═══════════════════ -->
+    <Teleport to="body">
+      <div class="lux-modal-overlay" :class="{ active: showTaskModal }" @click.self="closeTaskModal">
+        <div class="lux-modal lux-modal-task" v-if="showTaskModal">
+          <button class="lux-modal-close" @click="closeTaskModal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+          <div class="lux-modal-body">
+            <h2 class="lux-modal-title">{{ editingTask ? 'Editar Tarea' : 'Nueva Tarea' }}</h2>
+            <div v-if="taskFormError" class="lux-task-form-error">{{ taskFormError }}</div>
+            <form class="lux-task-form" @submit.prevent="handleSaveTask">
+              <div class="lux-task-form-group">
+                <label>Título *</label>
+                <input v-model="taskForm.titulo" type="text" maxlength="150" placeholder="Ej: Limpiar salón principal" required />
+              </div>
+              <div class="lux-task-form-group">
+                <label>Descripción</label>
+                <textarea v-model="taskForm.descripcion" rows="3" placeholder="Detalles de la tarea..."></textarea>
+              </div>
+              <div class="lux-task-form-row">
+                <div class="lux-task-form-group">
+                  <label>Fecha *</label>
+                  <input v-model="taskForm.fecha" type="date" required />
+                </div>
+                <div class="lux-task-form-group">
+                  <label>Hora Inicio</label>
+                  <input v-model="taskForm.hora_inicio" type="time" />
+                </div>
+                <div class="lux-task-form-group">
+                  <label>Hora Fin</label>
+                  <input v-model="taskForm.hora_fin" type="time" />
+                </div>
+              </div>
+              <div class="lux-task-form-row">
+                <div class="lux-task-form-group">
+                  <label>Prioridad</label>
+                  <select v-model="taskForm.prioridad">
+                    <option value="BAJA">Baja</option>
+                    <option value="MEDIA">Media</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="URGENTE">Urgente</option>
+                  </select>
+                </div>
+                <div v-if="editingTask" class="lux-task-form-group">
+                  <label>Estado</label>
+                  <select v-model="taskForm.estado">
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="EN_PROGRESO">En Progreso</option>
+                    <option value="COMPLETADA">Completada</option>
+                    <option value="CANCELADA">Cancelada</option>
+                  </select>
+                </div>
+              </div>
+              <div class="lux-task-form-group">
+                <label>Asignar a (Empleado) *</label>
+                <select v-model="taskForm.asignado_a" required>
+                  <option value="" disabled>Seleccionar empleado...</option>
+                  <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
+                </select>
+              </div>
+              <div class="lux-task-form-actions">
+                <button v-if="editingTask" type="button" class="lux-btn-danger" @click="handleDeleteTask" :disabled="taskFormSaving">Eliminar</button>
+                <div class="lux-task-form-actions-right">
+                  <button type="button" class="lux-btn-secondary" @click="closeTaskModal" :disabled="taskFormSaving">Cancelar</button>
+                  <button type="submit" class="lux-btn-primary" :disabled="taskFormSaving">{{ taskFormSaving ? 'Guardando...' : (editingTask ? 'Actualizar' : 'Crear') }}</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ═══════════════════ MEMBER DETAIL MODAL ═══════════════════ -->
+    <Teleport to="body">
+      <div class="lux-modal-overlay" :class="{ active: showMemberModal }" @click.self="closeMemberModal">
+        <div class="lux-modal lux-modal-member" v-if="showMemberModal && selectedMember">
+          <button class="lux-modal-close" @click="closeMemberModal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+          <div class="lux-modal-member-body">
+            <div class="lux-socio-header">
+              <div class="lux-socio-avatar" :style="{ background: selectedMember.membershipColor }">{{ selectedMember.initials }}</div>
+              <div class="lux-socio-hello">
+                <h2>{{ selectedMember.name }}</h2>
+                <p>
+                  <span class="lux-socio-badge" :style="{ background: selectedMember.membershipColor + '20', color: selectedMember.membershipColor }">Membresía {{ selectedMember.membership }}</span>
+                  · {{ selectedMember.email }}
+                </p>
+              </div>
+            </div>
+
+            <div class="lux-socio-grid">
+              <div class="lux-card">
+                <div class="lux-card-header"><h3>Reservas</h3><span class="lux-badge">{{ selectedMember.reservations.length }}</span></div>
+                <div class="lux-socio-list">
+                  <div v-for="res in selectedMember.reservations" :key="res.id" class="lux-socio-list-item">
+                    <div class="lux-socio-list-left">
+                      <strong>{{ res.service }}</strong>
+                      <span>{{ res.date }} · {{ res.guests }} pers.</span>
+                    </div>
+                    <span class="lux-status-badge" :class="statusBadgeClass(res.status)">{{ res.status }}</span>
+                  </div>
+                  <p v-if="!selectedMember.reservations.length" class="lux-socio-no-data">Sin reservas registradas</p>
+                </div>
+              </div>
+
+              <div class="lux-card">
+                <div class="lux-card-header"><h3>Pagos</h3><span class="lux-badge">{{ selectedMember.payments.invoices.length }} facturas</span></div>
+                <div class="lux-payment-summary">
+                  <span class="lux-payment-label">Total Facturado</span>
+                  <span class="lux-payment-value">{{ formatCurrency(selectedMember.payments.totalFacturado) }}</span>
+                </div>
+                <div class="lux-socio-list" v-if="selectedMember.payments.invoices.length">
+                  <div v-for="inv in selectedMember.payments.invoices" :key="inv.id" class="lux-socio-list-item">
+                    <div class="lux-socio-list-left">
+                      <strong>Factura Nº {{ inv.id }}</strong>
+                      <span>{{ inv.date }}</span>
+                    </div>
+                    <span class="lux-history-amount">{{ formatCurrency(inv.amount) }}</span>
+                  </div>
+                </div>
+                <p v-else class="lux-socio-no-data">Sin facturas registradas</p>
+              </div>
+
+              <div class="lux-card lux-card-wide">
+                <div class="lux-card-header"><h3>Reservas de Eventos</h3><span class="lux-badge">{{ selectedMember.events.length }}</span></div>
+                <div class="lux-socio-list">
+                  <div v-for="ev in selectedMember.events" :key="ev.id" class="lux-socio-list-item">
+                    <div class="lux-socio-list-left">
+                      <strong>{{ ev.name }}</strong>
+                      <span>{{ ev.date }} · {{ ev.location }}</span>
+                    </div>
+                    <span class="lux-rsvp-badge" :class="ev.rsvp">{{ ev.rsvp }}</span>
+                  </div>
+                  <p v-if="!selectedMember.events.length" class="lux-socio-no-data">Sin reservas de eventos</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 

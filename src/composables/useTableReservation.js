@@ -37,7 +37,9 @@ export function useTableReservation(emit) {
   const specialRequests = ref('')
   const isSubmitting = ref(false)
   const showSuccess = ref(false)
+  const reservationResult = ref(null)
   const errors = ref({})
+  const submitError = ref('')
 
   /* ----------------------------------------------------------
      TABLES STATE (from API)
@@ -64,6 +66,25 @@ export function useTableReservation(emit) {
   })
 
   const totalGuests = computed(() => guests.value)
+
+  /**
+   * Indica si una franja horaria ya pasó para el día seleccionado.
+   * Solo aplica cuando la fecha elegida es hoy; se exige al menos 60 minutos
+   * de anticipación para dar margen de preparación.
+   */
+  const isTimeDisabled = computed(() => {
+    return (slot) => {
+      const now = new Date()
+      const localToday =
+        `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      if (date.value !== localToday) return false
+      const [hh, mm] = String(slot).split(':').map(Number)
+      if (isNaN(hh) || isNaN(mm)) return false
+      const slotMinutes = hh * 60 + mm
+      const nowMinutes = now.getHours() * 60 + now.getMinutes()
+      return slotMinutes <= nowMinutes + 60
+    }
+  })
 
   /* ----------------------------------------------------------
      METHODS
@@ -100,6 +121,7 @@ export function useTableReservation(emit) {
     }
 
     isSubmitting.value = true
+    submitError.value = ''
 
     try {
       const reservationData = {
@@ -111,23 +133,31 @@ export function useTableReservation(emit) {
         observaciones: specialRequests.value || undefined,
       }
 
-      await createReservation(reservationData)
+      const result = await createReservation(reservationData)
+      reservationResult.value = result
 
       isSubmitting.value = false
       showSuccess.value = true
+      submitError.value = ''
     } catch (err) {
       isSubmitting.value = false
       if (err.response?.status === 409) {
-        errors.value.mesa = err.response?.data?.message || 'La mesa no está disponible en esa fecha y hora'
+        const msg = err.response?.data?.message || 'La mesa no está disponible en esa fecha y hora'
+        errors.value.mesa = msg
+        submitError.value = msg
       } else if (err.response?.status === 404) {
-        errors.value.mesa = err.response?.data?.message || 'La mesa no fue encontrada'
+        const msg = err.response?.data?.message || 'La mesa no fue encontrada'
+        errors.value.mesa = msg
+        submitError.value = msg
       } else if (err.response?.data?.message) {
         const msg = Array.isArray(err.response.data.message)
           ? err.response.data.message[0]
           : err.response.data.message
         errors.value.mesa = msg
+        submitError.value = msg
       } else {
         errors.value.mesa = 'Error al crear la reserva. Intenta de nuevo.'
+        submitError.value = 'Error al crear la reserva. Intenta de nuevo.'
       }
     }
   }
@@ -139,14 +169,23 @@ export function useTableReservation(emit) {
     occasion.value = ''
     specialRequests.value = ''
     selectedTable.value = null
+    reservationResult.value = null
     tables.value = []
     tablesError.value = null
     errors.value = {}
+    submitError.value = ''
     showSuccess.value = false
   }
 
   function closeSuccess() {
     showSuccess.value = false
+  }
+
+  function goToPayment() {
+    const url = reservationResult.value?.payment?.checkout_url
+    if (url) {
+      window.location.href = url
+    }
   }
 
   function goBackToHome() {
@@ -155,6 +194,10 @@ export function useTableReservation(emit) {
 
   function goBackToRestaurant() {
     if (emit) emit('navigate', 'restaurant')
+  }
+
+  function goToMyReservations() {
+    if (emit) emit('navigate', 'restaurant-reservations')
   }
 
   /* ----------------------------------------------------------
@@ -207,6 +250,12 @@ export function useTableReservation(emit) {
     if (selectedTable.value && !isFormValid.value) {
       selectedTable.value = null
     }
+    submitError.value = ''
+    // Si la hora seleccionada dejó de estar disponible (p. ej. cambió el día),
+    // se limpia para forzar una nueva selección.
+    if (time.value && isTimeDisabled.value(time.value)) {
+      time.value = ''
+    }
     loadTables()
   })
 
@@ -237,11 +286,14 @@ export function useTableReservation(emit) {
     specialRequests,
     isSubmitting,
     showSuccess,
+    reservationResult,
     errors,
+    submitError,
     today,
     currentUserName,
     isFormValid,
     totalGuests,
+    isTimeDisabled,
     // Tables
     tables,
     tablesLoading,
@@ -253,9 +305,11 @@ export function useTableReservation(emit) {
     decrementGuests,
     handleSubmit,
     resetForm,
+    goToPayment,
     closeSuccess,
     goBackToHome,
     goBackToRestaurant,
+    goToMyReservations,
     loadTables,
   }
 }
