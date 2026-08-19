@@ -1,4 +1,4 @@
-/* ============================================================
+ /* ============================================================
    INDEX / LANDING PAGE — ASOGEMA
    ============================================================
    Diseño premium de hotel:
@@ -1046,6 +1046,20 @@
   pointer-events: none;
 }
 
+/* Mensaje del encabezado de Experiencias — estilo elegante
+   (solo aquí; otras secciones conservan el .section-desc original) */
+.experiencias-section .section-desc {
+  font-family: var(--idx-font-display);
+  font-size: clamp(17px, 1.6vw, 20px);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.9;
+  color: var(--idx-text);
+  max-width: 680px;
+  margin: 6px auto 0;
+  letter-spacing: 0.2px;
+}
+
 .experiencias-grid {
   max-width: var(--idx-container);
   margin: 0 auto;
@@ -1102,19 +1116,22 @@
 
 .experiencia-card-badge {
   position: absolute;
-  bottom: 16px;
+  top: 16px;
   left: 16px;
   z-index: 2;
-  padding: 7px 18px;
+  white-space: nowrap;
+  padding: 8px 16px;
   border-radius: 50px;
-  background: rgba(19, 50, 21, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(11, 31, 13, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 6px 18px rgba(11, 31, 13, 0.35);
   color: var(--idx-gold-light);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.6px;
-  border: 1px solid rgba(200, 169, 106, 0.3);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  border: 1px solid rgba(200, 169, 106, 0.45);
 }
 
 .experiencia-card-body {
@@ -1161,11 +1178,14 @@
 }
 
 .experiencia-desc {
-  font-size: 13px;
-  font-weight: 300;
-  line-height: 1.75;
-  color: var(--idx-text-muted);
+  font-family: var(--idx-font-display);
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.85;
+  color: var(--idx-text);
   margin-bottom: 22px;
+  letter-spacing: 0.2px;
 }
 
 .experiencia-feats {
@@ -2043,6 +2063,13 @@
    RESPONSIVE — MOBILE
    ---------------------------------------------------------- */
 @media (max-width: 768px) {
+  .experiencia-card-badge {
+    top: 12px;
+    left: 12px;
+    padding: 7px 14px;
+    font-size: 11px;
+  }
+
   .index-nav {
     padding: 0 24px;
   }
@@ -2230,6 +2257,13 @@
 }
 
 @media (max-width: 480px) {
+  .experiencia-card-badge {
+    top: 10px;
+    left: 10px;
+    padding: 6px 12px;
+    font-size: 10.5px;
+  }
+
   .slide-content {
     padding: 0 24px;
   }

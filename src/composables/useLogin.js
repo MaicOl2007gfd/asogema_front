@@ -2,6 +2,9 @@ import { ref, onMounted } from 'vue'
 import { useAuth } from './useAuth.js'
 import api from './useApi.js'
 
+// Clave usada por App.vue para notificar un error del callback OAuth
+const OAUTH_ERROR_KEY = 'asogema_oauth_error'
+
 export function useLogin(emit) {
   const { login: authLogin, isAdmin } = useAuth()
   const email = ref('')
@@ -74,6 +77,13 @@ export function useLogin(emit) {
   }
 
   onMounted(() => {
+    // Mostrar un error del login social (si App.vue lo dejó pendiente)
+    const oauthError = localStorage.getItem(OAUTH_ERROR_KEY)
+    if (oauthError) {
+      errorMessage.value = oauthError
+      localStorage.removeItem(OAUTH_ERROR_KEY)
+    }
+  
     requestAnimationFrame(() => {
       isVisible.value = true
     })
