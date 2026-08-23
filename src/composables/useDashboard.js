@@ -311,7 +311,7 @@ export function useDashboard(emit) {
         capacity: tipo?.capacidad || 1,
         desc: tipo?.descripcion || room.descripcion || 'Habitación cómoda y acogedora.',
         fullDesc: tipo?.descripcion || room.descripcion || 'Disfruta de una estancia acogedora en nuestras habitaciones.',
-        image: `https://picsum.photos/id/${1043 + index}/600/400`,
+        image: room.imagen_url || `https://picsum.photos/id/${1043 + index}/600/400`,
         features: [
           tipo?.nombre?.includes('Suite') ? 'Cama King' : 'Cama Queen',
           'WiFi Gratis',

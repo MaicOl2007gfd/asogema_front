@@ -28,6 +28,20 @@ const {
   members, selectedMemberId, selectedMember,
   memberSearch, memberPage, memberTotalPages, filteredMembers, paginatedMembers, MEMBERS_PER_PAGE,
   showMemberModal, openMemberModal, closeMemberModal,
+  // Habitaciones
+  rooms, roomTypes, roomsLoading, roomsError,
+  showRoomForm, editingRoom, newRoom, roomFormError, roomFormSaving,
+  fetchRooms, createRoom, updateRoom, deleteRoom, resetRoomForm, openEditRoom, onTipoChange,
+  // Subida de imágenes
+  imageUploading, onSalonImageChange, onProductImageChange, onRoomImageChange,
+  // Menú
+  products, menuCategories, productsLoading, productsError,
+  showProductForm, editingProduct, newProduct, productFormError, productFormSaving,
+  fetchProducts, createProduct, updateProduct, deleteProduct, resetProductForm, openEditProduct,
+  // Salones
+  salons, salonsLoading, salonsError,
+  showSalonForm, editingSalon, newSalon, salonFormError, salonFormSaving,
+  fetchSalons, createSalon, updateSalon, deleteSalon, resetSalonForm, openEditSalon,
 } = usePanelAdmin()
 
 const todayDate = computed(() => {
@@ -185,6 +199,18 @@ onMounted(() => {
           <button class="lux-module-pill" :class="{ active: activeModule === 'socio' }" @click="setModule('socio')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
             <span>Socios</span>
+          </button>
+          <button class="lux-module-pill" :class="{ active: activeModule === 'habitaciones' }" @click="setModule('habitaciones')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+            <span>Habitaciones</span>
+          </button>
+          <button class="lux-module-pill" :class="{ active: activeModule === 'menu' }" @click="setModule('menu')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-4l-2-2L2 12l10-8 8 8-2-2v4"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <span>Menú</span>
+          </button>
+          <button class="lux-module-pill" :class="{ active: activeModule === 'salones' }" @click="setModule('salones')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11m2.66-1.66a2.83 2.83 0 114 4L15 11.66l-3.08 3.08a2.83 2.83 0 01-4-4l3.08-3.08z"></path><line x1="16" y1="8" x2="21" y2="13"></line><line x1="21" y1="16" x2="16" y2="21"></line></svg>
+            <span>Salones</span>
           </button>
         </nav>
 
@@ -482,6 +508,316 @@ onMounted(() => {
               </div>
             </div>
           </div>
+        </template>
+
+        <!-- ═══════════════════════════════════════════════
+             MODULE 5: HABITACIONES
+             ═══════════════════════════════════════════════ -->
+        <template v-if="activeModule === 'habitaciones'">
+          <div class="lux-section-header">
+            <h2 class="lux-section-title">Habitaciones</h2>
+            <button class="lux-btn-primary" @click="showRoomForm = true; editingRoom = null; resetRoomForm()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Nueva Habitación
+            </button>
+          </div>
+
+          <div v-if="roomsLoading" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando habitaciones...</p></div>
+          <div v-else-if="roomsError" class="lux-panel-state lux-panel-error"><p>{{ roomsError }}</p><button class="lux-btn-secondary" @click="fetchRooms">Reintentar</button></div>
+          <template v-else>
+            <div class="lux-card lux-card-table">
+              <table class="lux-table">
+                <thead>
+                  <tr><th>#</th><th>Piso</th><th>Tipo</th><th>Capacidad</th><th>Precio / Noche</th><th>Estado</th><th></th></tr>
+                </thead>
+                <tbody>
+                  <tr v-for="room in rooms" :key="room.id">
+                    <td><strong>{{ room.numero }}</strong></td>
+                    <td>{{ room.piso }}</td>
+                    <td>{{ room.tipos_habitacion?.nombre || '—' }}</td>
+                    <td>{{ room.tipos_habitacion?.capacidad || '—' }}</td>
+                    <td>{{ formatCurrency(room.tipos_habitacion?.precio_noche) }}</td>
+                    <td><span class="lux-status-badge" :class="room.disponible ? 'lux-status-confirmed' : 'lux-status-cancelled'">{{ room.disponible ? 'Disponible' : 'Ocupada' }}</span></td>
+                    <td class="lux-table-actions">
+                      <button class="lux-icon-btn" @click="openEditRoom(room)" title="Editar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      </button>
+                      <button class="lux-icon-btn lux-icon-btn-danger" @click="deleteRoom(room.id)" title="Eliminar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5-3h4a1 1 0 011 1v1H9V4a1 1 0 011-1z"></path></svg>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr v-if="rooms.length === 0"><td colspan="7" class="lux-empty-row">No hay habitaciones registradas</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </template>
+
+          <!-- Room Form Modal -->
+          <Teleport to="body">
+            <div class="lux-modal-overlay" :class="{ active: showRoomForm }" @click.self="showRoomForm = false">
+              <div class="lux-modal" v-if="showRoomForm">
+                <button class="lux-modal-close" @click="showRoomForm = false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <div class="lux-modal-body">
+                  <h2 class="lux-modal-title">{{ editingRoom ? 'Editar Habitación' : 'Nueva Habitación' }}</h2>
+                  <div v-if="roomFormError" class="lux-task-form-error">{{ roomFormError }}</div>
+                  <form class="lux-task-form" @submit.prevent="editingRoom ? updateRoom() : createRoom()">
+                    <div class="lux-task-form-group">
+                      <label>Número *</label>
+                      <input v-model="newRoom.numero" type="text" placeholder="Ej: 101" required />
+                    </div>
+                    <div class="lux-task-form-row">
+                      <div class="lux-task-form-group">
+                        <label>Piso *</label>
+                        <input v-model="newRoom.piso" type="number" min="1" placeholder="Ej: 1" required />
+                      </div>
+                      <div class="lux-task-form-group">
+                        <label>Tipo *</label>
+                        <select v-model="newRoom.tipo_id" required @change="onTipoChange">
+                          <option value="" disabled>Seleccionar tipo...</option>
+                          <option v-for="t in roomTypes" :key="t.id" :value="t.id">{{ t.nombre }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="lux-task-form-row">
+                      <div class="lux-task-form-group">
+                        <label>Capacidad *</label>
+                        <input v-model="newRoom.capacidad" type="number" min="1" placeholder="Ej: 2" required />
+                      </div>
+                      <div class="lux-task-form-group">
+                        <label>Precio por noche *</label>
+                        <input v-model="newRoom.precio_noche" type="number" min="0" step="1000" placeholder="Ej: 150000" required />
+                      </div>
+                    </div>
+                    <div class="lux-task-form-group">
+                      <label>Imagen</label>
+                      <input
+                        class="lux-form-file-input"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        :disabled="imageUploading"
+                        @change="onRoomImageChange"
+                      />
+                      <p v-if="imageUploading" class="lux-image-uploading">Subiendo imagen...</p>
+                      <div v-if="newRoom.imagen_url" class="lux-image-preview-wrap">
+                        <img :src="newRoom.imagen_url" alt="Imagen seleccionada" class="lux-image-preview" />
+                        <button type="button" class="lux-btn-secondary lux-btn-remove-image" @click="newRoom.imagen_url = ''">Quitar</button>
+                      </div>
+                    </div>
+                    <p class="lux-text-muted" style="font-size: 11px; margin: -6px 0 0">El precio y la capacidad pertenecen al tipo de habitación y afectan a todas las habitaciones de ese tipo.</p>
+                    <div class="lux-task-form-actions">
+                      <div class="lux-task-form-actions-right">
+                        <button type="button" class="lux-btn-secondary" @click="showRoomForm = false" :disabled="roomFormSaving">Cancelar</button>
+                        <button type="submit" class="lux-btn-primary" :disabled="roomFormSaving">{{ roomFormSaving ? 'Guardando...' : (editingRoom ? 'Actualizar' : 'Crear') }}</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </Teleport>
+        </template>
+
+        <!-- ═══════════════════════════════════════════════
+             MODULE 6: MENÚ
+             ═══════════════════════════════════════════════ -->
+        <template v-if="activeModule === 'menu'">
+          <div class="lux-section-header">
+            <h2 class="lux-section-title">Menú</h2>
+            <button class="lux-btn-primary" @click="showProductForm = true; editingProduct = null; resetProductForm()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Nuevo Producto
+            </button>
+          </div>
+
+          <div v-if="productsLoading" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando productos...</p></div>
+          <div v-else-if="productsError" class="lux-panel-state lux-panel-error"><p>{{ productsError }}</p><button class="lux-btn-secondary" @click="fetchProducts">Reintentar</button></div>
+          <template v-else>
+            <div class="lux-card lux-card-table">
+              <table class="lux-table">
+                <thead>
+                  <tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th></th></tr>
+                </thead>
+                <tbody>
+                  <tr v-for="p in products" :key="p.id">
+                    <td><strong>{{ p.nombre }}</strong></td>
+                    <td>{{ p.categorias_menu?.nombre || '—' }}</td>
+                    <td>{{ formatCurrency(p.precio) }}</td>
+                    <td :class="{ 'lux-text-muted': p.stock === 0 }">{{ p.stock }}</td>
+                    <td class="lux-table-actions">
+                      <button class="lux-icon-btn" @click="openEditProduct(p)" title="Editar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      </button>
+                      <button class="lux-icon-btn lux-icon-btn-danger" @click="deleteProduct(p.id)" title="Eliminar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5-3h4a1 1 0 011 1v1H9V4a1 1 0 011-1z"></path></svg>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr v-if="products.length === 0"><td colspan="5" class="lux-empty-row">No hay productos en el menú</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </template>
+
+          <!-- Product Form Modal -->
+          <Teleport to="body">
+            <div class="lux-modal-overlay" :class="{ active: showProductForm }" @click.self="showProductForm = false">
+              <div class="lux-modal" v-if="showProductForm">
+                <button class="lux-modal-close" @click="showProductForm = false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <div class="lux-modal-body">
+                  <h2 class="lux-modal-title">{{ editingProduct ? 'Editar Producto' : 'Nuevo Producto' }}</h2>
+                  <div v-if="productFormError" class="lux-task-form-error">{{ productFormError }}</div>
+                  <form class="lux-task-form" @submit.prevent="editingProduct ? updateProduct() : createProduct()">
+                    <div class="lux-task-form-group">
+                      <label>Nombre *</label>
+                      <input v-model="newProduct.nombre" type="text" placeholder="Ej: Arroz con coco" required />
+                    </div>
+                    <div class="lux-task-form-row">
+                      <div class="lux-task-form-group">
+                        <label>Categoría *</label>
+                        <select v-model="newProduct.categoria_id" required>
+                          <option value="" disabled>Seleccionar categoría...</option>
+                          <option v-for="c in menuCategories" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+                        </select>
+                      </div>
+                      <div class="lux-task-form-group">
+                        <label>Precio *</label>
+                        <input v-model="newProduct.precio" type="number" min="0" step="100" placeholder="Ej: 25000" required />
+                      </div>
+                      <div class="lux-task-form-group">
+                        <label>Stock *</label>
+                        <input v-model="newProduct.stock" type="number" min="0" placeholder="Ej: 50" required />
+                      </div>
+                    </div>
+                    <div class="lux-task-form-group">
+                      <label>Descripción</label>
+                      <textarea v-model="newProduct.descripcion" rows="2" placeholder="Descripción del plato..."></textarea>
+                    </div>
+                    <div class="lux-task-form-group">
+                      <label>Imagen</label>
+                      <input
+                        class="lux-form-file-input"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        :disabled="imageUploading"
+                        @change="onProductImageChange"
+                      />
+                      <p v-if="imageUploading" class="lux-image-uploading">Subiendo imagen...</p>
+                      <div v-if="newProduct.imagen_url" class="lux-image-preview-wrap">
+                        <img :src="newProduct.imagen_url" alt="Imagen seleccionada" class="lux-image-preview" />
+                        <button type="button" class="lux-btn-secondary lux-btn-remove-image" @click="newProduct.imagen_url = ''">Quitar</button>
+                      </div>
+                    </div>
+                    <div class="lux-task-form-actions">
+                      <div class="lux-task-form-actions-right">
+                        <button type="button" class="lux-btn-secondary" @click="showProductForm = false" :disabled="productFormSaving">Cancelar</button>
+                        <button type="submit" class="lux-btn-primary" :disabled="productFormSaving">{{ productFormSaving ? 'Guardando...' : (editingProduct ? 'Actualizar' : 'Crear') }}</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </Teleport>
+        </template>
+
+        <!-- ═══════════════════════════════════════════════
+             MODULE 7: SALONES
+             ═══════════════════════════════════════════════ -->
+        <template v-if="activeModule === 'salones'">
+          <div class="lux-section-header">
+            <h2 class="lux-section-title">Salones de Eventos</h2>
+            <button class="lux-btn-primary" @click="showSalonForm = true; editingSalon = null; resetSalonForm()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Nuevo Salón
+            </button>
+          </div>
+
+          <div v-if="salonsLoading" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando salones...</p></div>
+          <div v-else-if="salonsError" class="lux-panel-state lux-panel-error"><p>{{ salonsError }}</p><button class="lux-btn-secondary" @click="fetchSalons">Reintentar</button></div>
+          <template v-else>
+            <div class="lux-salones-grid">
+              <div v-for="s in salons" :key="s.id" class="lux-card lux-salon-card">
+                <div class="lux-salon-card-header">
+                  <h3>{{ s.nombre }}</h3>
+                  <div class="lux-salon-card-actions">
+                    <button class="lux-icon-btn" @click="openEditSalon(s)" title="Editar">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button class="lux-icon-btn lux-icon-btn-danger" @click="deleteSalon(s.id)" title="Eliminar">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5-3h4a1 1 0 011 1v1H9V4a1 1 0 011-1z"></path></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="lux-salon-card-body">
+                  <div class="lux-salon-stat"><span class="lux-salon-stat-label">Capacidad</span><span class="lux-salon-stat-value">{{ s.capacidad }} personas</span></div>
+                  <div class="lux-salon-stat"><span class="lux-salon-stat-label">Precio Base</span><span class="lux-salon-stat-value">{{ formatCurrency(s.precio_base) }}</span></div>
+                  <div v-if="s.ubicacion" class="lux-salon-stat"><span class="lux-salon-stat-label">Ubicación</span><span class="lux-salon-stat-value">{{ s.ubicacion }}</span></div>
+                </div>
+              </div>
+              <div v-if="salons.length === 0" class="lux-panel-state"><p>No hay salones de eventos registrados</p></div>
+            </div>
+          </template>
+
+          <!-- Salon Form Modal -->
+          <Teleport to="body">
+            <div class="lux-modal-overlay" :class="{ active: showSalonForm }" @click.self="showSalonForm = false">
+              <div class="lux-modal" v-if="showSalonForm">
+                <button class="lux-modal-close" @click="showSalonForm = false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <div class="lux-modal-body">
+                  <h2 class="lux-modal-title">{{ editingSalon ? 'Editar Salón' : 'Nuevo Salón' }}</h2>
+                  <div v-if="salonFormError" class="lux-task-form-error">{{ salonFormError }}</div>
+                  <form class="lux-task-form" @submit.prevent="editingSalon ? updateSalon() : createSalon()">
+                    <div class="lux-task-form-group">
+                      <label>Nombre *</label>
+                      <input v-model="newSalon.nombre" type="text" placeholder="Ej: Salón Principal" required />
+                    </div>
+                    <div class="lux-task-form-row">
+                      <div class="lux-task-form-group">
+                        <label>Capacidad *</label>
+                        <input v-model="newSalon.capacidad" type="number" min="1" placeholder="Ej: 100" required />
+                      </div>
+                      <div class="lux-task-form-group">
+                        <label>Precio Base *</label>
+                        <input v-model="newSalon.precio_base" type="number" min="0" step="10000" placeholder="Ej: 500000" required />
+                      </div>
+                    </div>
+                    <div class="lux-task-form-group">
+                      <label>Ubicación</label>
+                      <input v-model="newSalon.ubicacion" type="text" placeholder="Ej: Planta baja, ala este" />
+                    </div>
+                    <div class="lux-task-form-group">
+                      <label>Imagen</label>
+                      <input
+                        class="lux-form-file-input"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        :disabled="imageUploading"
+                        @change="onSalonImageChange"
+                      />
+                      <p v-if="imageUploading" class="lux-image-uploading">Subiendo imagen...</p>
+                      <div v-if="newSalon.imagen_url" class="lux-image-preview-wrap">
+                        <img :src="newSalon.imagen_url" alt="Imagen seleccionada" class="lux-image-preview" />
+                        <button type="button" class="lux-btn-secondary lux-btn-remove-image" @click="newSalon.imagen_url = ''">Quitar</button>
+                      </div>
+                    </div>
+                    <div class="lux-task-form-actions">
+                      <div class="lux-task-form-actions-right">
+                        <button type="button" class="lux-btn-secondary" @click="showSalonForm = false" :disabled="salonFormSaving">Cancelar</button>
+                        <button type="submit" class="lux-btn-primary" :disabled="salonFormSaving">{{ salonFormSaving ? 'Guardando...' : (editingSalon ? 'Actualizar' : 'Crear') }}</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </Teleport>
         </template>
 
       </template>
