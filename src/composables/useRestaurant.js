@@ -59,7 +59,7 @@ export function useRestaurant(emit, isLoggedIn) {
           description: product.descripcion || 'Deliciosa preparación de nuestro restaurante.',
           price: formatPrice(Number(product.precio) || 0),
           category: catSlug,
-          image: `https://picsum.photos/seed/${slugify(product.nombre)}/400/300`,
+          image: product.imagen_url || `https://picsum.photos/seed/${slugify(product.nombre)}/400/300`,
           badge: cat.nombre,
         })
       }

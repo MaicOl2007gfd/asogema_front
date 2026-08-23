@@ -1592,6 +1592,7 @@
 
 .lux-modal-body {
   padding: 32px 32px 36px;
+  overflow: hidden;
 }
 
 .lux-modal-cat-badge {
@@ -2504,6 +2505,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .lux-task-form-group label {
@@ -3005,4 +3007,151 @@
 .lux-status-badge.lux-status-pendiente,
 .lux-status-badge.lux-status-cancelada {
   /* inherit existing styles */
+}
+
+/* ==========================================================
+   TABLE ACTION BUTTONS
+   ========================================================== */
+.lux-table-actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.lux-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--lux-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.lux-icon-btn:hover {
+  background: rgba(19, 50, 21, 0.06);
+  color: var(--lux-primary);
+}
+
+.lux-icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.lux-icon-btn-danger:hover {
+  background: rgba(214, 48, 49, 0.08);
+  color: #d63031;
+}
+
+/* ==========================================================
+   SALONES GRID
+   ========================================================== */
+.lux-salones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.lux-salon-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.lux-salon-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.lux-salon-card-header h3 {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--lux-primary);
+  margin: 0;
+}
+
+.lux-salon-card-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.lux-salon-card-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lux-salon-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lux-salon-stat-label {
+  font-size: 13px;
+  color: var(--lux-text-muted);
+}
+
+.lux-salon-stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lux-text);
+}
+
+/* ─── Subida de imágenes (S3) ─────────────────────────────── */
+.lux-form-file-input {
+  padding: 8px 10px;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.lux-form-file-input::file-selector-button {
+  padding: 6px 12px;
+  margin-right: 10px;
+  border: none;
+  border-radius: var(--lux-radius-xs);
+  background: var(--lux-accent);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lux-form-file-input:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.lux-image-uploading {
+  font-size: 12px;
+  color: var(--lux-text-muted);
+}
+
+.lux-image-preview-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.lux-image-preview {
+  width: 96px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: var(--lux-radius-xs);
+  border: 1px solid var(--lux-border);
+}
+
+.lux-btn-remove-image {
+  padding: 6px 12px;
+  font-size: 12px;
 }

@@ -192,8 +192,10 @@ function transformRoomData(apiRooms) {
       capacity: tipo?.capacidad || 1,
       desc,
       fullDesc: desc,
-      image: roomGallery(index)[0].src,
-      gallery: roomGallery(index),
+      image: room.imagen_url || roomGallery(index)[0].src,
+      gallery: room.imagen_url
+        ? [{ src: room.imagen_url, alt: `Vista principal de ${label}` }, ...roomGallery(index).slice(1)]
+        : roomGallery(index),
       features: [
         isSuite ? 'Cama King' : 'Cama Queen',
         'WiFi Premium',
