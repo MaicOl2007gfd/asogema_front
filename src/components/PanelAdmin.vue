@@ -33,7 +33,9 @@ const {
   showRoomForm, editingRoom, newRoom, roomFormError, roomFormSaving,
   fetchRooms, createRoom, updateRoom, deleteRoom, resetRoomForm, openEditRoom, onTipoChange,
   // Subida de imágenes
-  imageUploading, onSalonImageChange, onProductImageChange, onRoomImageChange,
+  imageUploading, formGallery,
+  onSalonGalleryChange, onProductGalleryChange, onRoomGalleryChange,
+  markGalleryPrincipal, removeGalleryImage,
   // Menú
   products, menuCategories, productsLoading, productsError,
   showProductForm, editingProduct, newProduct, productFormError, productFormSaving,
@@ -592,19 +594,26 @@ onMounted(() => {
                       </div>
                     </div>
                     <div class="lux-task-form-group">
-                      <label>Imagen</label>
+                      <label>Imágenes</label>
+                      <div v-if="formGallery.length" class="lux-gallery-grid">
+                        <div v-for="(img, i) in formGallery" :key="img.id ?? img.url" class="lux-gallery-item" :class="{ 'lux-gallery-item--principal': img.es_principal }">
+                          <img :src="img.url" alt="Imagen de la galería" class="lux-gallery-thumb" />
+                          <span v-if="img.es_principal" class="lux-gallery-badge">Principal</span>
+                          <div class="lux-gallery-actions">
+                            <button type="button" class="lux-gallery-btn" :disabled="img.es_principal || imageUploading" title="Marcar como principal" @click="markGalleryPrincipal(i, 'habitacion')">★</button>
+                            <button type="button" class="lux-gallery-btn lux-gallery-btn-danger" title="Eliminar imagen" @click="removeGalleryImage(i, 'habitacion')">✕</button>
+                          </div>
+                        </div>
+                      </div>
                       <input
                         class="lux-form-file-input"
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
                         :disabled="imageUploading"
-                        @change="onRoomImageChange"
+                        @change="onRoomGalleryChange"
                       />
                       <p v-if="imageUploading" class="lux-image-uploading">Subiendo imagen...</p>
-                      <div v-if="newRoom.imagen_url" class="lux-image-preview-wrap">
-                        <img :src="newRoom.imagen_url" alt="Imagen seleccionada" class="lux-image-preview" />
-                        <button type="button" class="lux-btn-secondary lux-btn-remove-image" @click="newRoom.imagen_url = ''">Quitar</button>
-                      </div>
+                      <p v-else class="lux-text-muted" style="font-size: 11px; margin: 0">Puedes agregar varias imágenes. La marcada como principal será la portada.</p>
                     </div>
                     <p class="lux-text-muted" style="font-size: 11px; margin: -6px 0 0">El precio y la capacidad pertenecen al tipo de habitación y afectan a todas las habitaciones de ese tipo.</p>
                     <div class="lux-task-form-actions">
@@ -698,19 +707,26 @@ onMounted(() => {
                       <textarea v-model="newProduct.descripcion" rows="2" placeholder="Descripción del plato..."></textarea>
                     </div>
                     <div class="lux-task-form-group">
-                      <label>Imagen</label>
+                      <label>Imágenes</label>
+                      <div v-if="formGallery.length" class="lux-gallery-grid">
+                        <div v-for="(img, i) in formGallery" :key="img.id ?? img.url" class="lux-gallery-item" :class="{ 'lux-gallery-item--principal': img.es_principal }">
+                          <img :src="img.url" alt="Imagen de la galería" class="lux-gallery-thumb" />
+                          <span v-if="img.es_principal" class="lux-gallery-badge">Principal</span>
+                          <div class="lux-gallery-actions">
+                            <button type="button" class="lux-gallery-btn" :disabled="img.es_principal || imageUploading" title="Marcar como principal" @click="markGalleryPrincipal(i, 'producto')">★</button>
+                            <button type="button" class="lux-gallery-btn lux-gallery-btn-danger" title="Eliminar imagen" @click="removeGalleryImage(i, 'producto')">✕</button>
+                          </div>
+                        </div>
+                      </div>
                       <input
                         class="lux-form-file-input"
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
                         :disabled="imageUploading"
-                        @change="onProductImageChange"
+                        @change="onProductGalleryChange"
                       />
                       <p v-if="imageUploading" class="lux-image-uploading">Subiendo imagen...</p>
-                      <div v-if="newProduct.imagen_url" class="lux-image-preview-wrap">
-                        <img :src="newProduct.imagen_url" alt="Imagen seleccionada" class="lux-image-preview" />
-                        <button type="button" class="lux-btn-secondary lux-btn-remove-image" @click="newProduct.imagen_url = ''">Quitar</button>
-                      </div>
+                      <p v-else class="lux-text-muted" style="font-size: 11px; margin: 0">Puedes agregar varias imágenes. La marcada como principal será la portada.</p>
                     </div>
                     <div class="lux-task-form-actions">
                       <div class="lux-task-form-actions-right">
@@ -793,19 +809,26 @@ onMounted(() => {
                       <input v-model="newSalon.ubicacion" type="text" placeholder="Ej: Planta baja, ala este" />
                     </div>
                     <div class="lux-task-form-group">
-                      <label>Imagen</label>
+                      <label>Imágenes</label>
+                      <div v-if="formGallery.length" class="lux-gallery-grid">
+                        <div v-for="(img, i) in formGallery" :key="img.id ?? img.url" class="lux-gallery-item" :class="{ 'lux-gallery-item--principal': img.es_principal }">
+                          <img :src="img.url" alt="Imagen de la galería" class="lux-gallery-thumb" />
+                          <span v-if="img.es_principal" class="lux-gallery-badge">Principal</span>
+                          <div class="lux-gallery-actions">
+                            <button type="button" class="lux-gallery-btn" :disabled="img.es_principal || imageUploading" title="Marcar como principal" @click="markGalleryPrincipal(i, 'salon')">★</button>
+                            <button type="button" class="lux-gallery-btn lux-gallery-btn-danger" title="Eliminar imagen" @click="removeGalleryImage(i, 'salon')">✕</button>
+                          </div>
+                        </div>
+                      </div>
                       <input
                         class="lux-form-file-input"
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
                         :disabled="imageUploading"
-                        @change="onSalonImageChange"
+                        @change="onSalonGalleryChange"
                       />
                       <p v-if="imageUploading" class="lux-image-uploading">Subiendo imagen...</p>
-                      <div v-if="newSalon.imagen_url" class="lux-image-preview-wrap">
-                        <img :src="newSalon.imagen_url" alt="Imagen seleccionada" class="lux-image-preview" />
-                        <button type="button" class="lux-btn-secondary lux-btn-remove-image" @click="newSalon.imagen_url = ''">Quitar</button>
-                      </div>
+                      <p v-else class="lux-text-muted" style="font-size: 11px; margin: 0">Puedes agregar varias imágenes. La marcada como principal será la portada.</p>
                     </div>
                     <div class="lux-task-form-actions">
                       <div class="lux-task-form-actions-right">
