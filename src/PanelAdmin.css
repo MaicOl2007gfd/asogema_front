@@ -3155,3 +3155,76 @@
   padding: 6px 12px;
   font-size: 12px;
 }
+
+/* ─── Galería de imágenes (multi-foto por ítem) ───────────── */
+.lux-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.lux-gallery-item {
+  position: relative;
+  border: 1px solid var(--lux-border);
+  border-radius: var(--lux-radius-xs);
+  overflow: hidden;
+}
+
+.lux-gallery-item--principal {
+  border-color: var(--lux-accent);
+  box-shadow: 0 0 0 1px var(--lux-accent);
+}
+
+.lux-gallery-thumb {
+  width: 100%;
+  height: 74px;
+  object-fit: cover;
+  display: block;
+}
+
+.lux-gallery-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--lux-accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.lux-gallery-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 4px;
+  background: #fff;
+}
+
+.lux-gallery-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--lux-text-muted);
+  transition: all 0.15s;
+}
+
+.lux-gallery-btn:hover:not(:disabled) {
+  background: rgba(19, 50, 21, 0.06);
+  color: var(--lux-primary);
+}
+
+.lux-gallery-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lux-gallery-btn-danger:hover {
+  background: rgba(214, 48, 49, 0.08) !important;
+  color: #d63031 !important;
+}
