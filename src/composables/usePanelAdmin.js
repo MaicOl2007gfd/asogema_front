@@ -555,6 +555,488 @@ function nextMonth() {
 const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 const calendarTitle = computed(() => `${monthNames[calendarMonth.value]} ${calendarYear.value}`)
 
+// ─── Habitaciones ────────────────────────────────────────────
+const rooms = ref([])
+const roomTypes = ref([])
+const roomsLoading = ref(false)
+const roomsError = ref(null)
+const showRoomForm = ref(false)
+const editingRoom = ref(null)
+const newRoom = ref({ numero: '', tipo_id: '', piso: '', capacidad: '', precio_noche: '', imagen_url: '' })
+const roomFormError = ref('')
+const roomFormSaving = ref(false)
+
+async function fetchRooms() {
+  roomsLoading.value = true
+  roomsError.value = null
+  try {
+    const [roomsRes, typesRes] = await Promise.all([
+      api.get('/admin/rooms'),
+      api.get('/admin/room-types'),
+    ])
+    rooms.value = roomsRes.data || []
+    roomTypes.value = typesRes.data || []
+  } catch {
+    roomsError.value = 'No se pudieron cargar las habitaciones.'
+  } finally {
+    roomsLoading.value = false
+  }
+}
+
+function onTipoChange() {
+  const tipo = roomTypes.value.find((t) => String(t.id) === String(newRoom.value.tipo_id))
+  newRoom.value.capacidad = tipo?.capacidad ?? ''
+  newRoom.value.precio_noche = tipo?.precio_noche ?? ''
+}
+
+async function syncRoomTypeData() {
+  const tipo = roomTypes.value.find((t) => String(t.id) === String(newRoom.value.tipo_id))
+  if (!tipo) return
+  const data = {}
+  if (newRoom.value.precio_noche !== '' && Number(newRoom.value.precio_noche) !== Number(tipo.precio_noche)) {
+    data.precio_noche = Number(newRoom.value.precio_noche)
+  }
+  if (newRoom.value.capacidad !== '' && Number(newRoom.value.capacidad) !== Number(tipo.capacidad)) {
+    data.capacidad = Number(newRoom.value.capacidad)
+  }
+  if (Object.keys(data).length === 0) return
+  await api.patch(`/admin/room-types/${tipo.id}`, data)
+}
+
+async function createRoom() {
+  roomFormSaving.value = true
+  roomFormError.value = ''
+  try {
+    const { data: created } = await api.post('/admin/rooms', {
+      numero: newRoom.value.numero,
+      piso: Number(newRoom.value.piso),
+      tipo_id: Number(newRoom.value.tipo_id),
+      imagen_url: newRoom.value.imagen_url || null,
+    })
+    await syncRoomTypeData()
+    await persistPendingGallery('habitacion', created?.id)
+    showRoomForm.value = false
+    resetRoomForm()
+    await fetchRooms()
+  } catch (e) {
+    roomFormError.value = e?.response?.data?.message || 'Error al crear la habitación.'
+  } finally {
+    roomFormSaving.value = false
+  }
+}
+
+async function updateRoom() {
+  roomFormSaving.value = true
+  roomFormError.value = ''
+  try {
+    await api.patch(`/admin/rooms/${editingRoom.value.id}`, {
+      numero: newRoom.value.numero,
+      piso: Number(newRoom.value.piso),
+      tipo_id: Number(newRoom.value.tipo_id),
+      imagen_url: newRoom.value.imagen_url || null,
+    })
+    await syncRoomTypeData()
+    showRoomForm.value = false
+    resetRoomForm()
+    await fetchRooms()
+  } catch (e) {
+    roomFormError.value = e?.response?.data?.message || 'Error al actualizar la habitación.'
+  } finally {
+    roomFormSaving.value = false
+  }
+}
+
+async function deleteRoom(id) {
+  if (!confirm('¿Eliminar esta habitación?')) return
+  try {
+    await api.delete(`/admin/rooms/${id}`)
+    await fetchRooms()
+  } catch (e) {
+    roomsError.value = e?.response?.data?.message || 'Error al eliminar la habitación.'
+  }
+}
+
+function resetRoomForm() {
+  newRoom.value = { numero: '', tipo_id: '', piso: '', capacidad: '', precio_noche: '', imagen_url: '' }
+  roomFormError.value = ''
+  editingRoom.value = null
+  formGallery.value = []
+}
+
+function openEditRoom(room) {
+  editingRoom.value = { ...room }
+  newRoom.value = {
+    numero: room.numero,
+    tipo_id: room.tipo_habitacion_id,
+    piso: room.piso,
+    capacidad: room.tipos_habitacion?.capacidad ?? '',
+    precio_noche: room.tipos_habitacion?.precio_noche ?? '',
+    imagen_url: room.imagen_url ?? '',
+  }
+  loadGalleryFromItem(room)
+  showRoomForm.value = true
+}
+
+// ─── Menú / Productos ────────────────────────────────────────
+const products = ref([])
+const menuCategories = ref([])
+const productsLoading = ref(false)
+const productsError = ref(null)
+const showProductForm = ref(false)
+const editingProduct = ref(null)
+const newProduct = ref({ nombre: '', categoria_id: '', precio: '', stock: '', descripcion: '', imagen_url: '' })
+const productFormError = ref('')
+const productFormSaving = ref(false)
+
+async function fetchProducts() {
+  productsLoading.value = true
+  productsError.value = null
+  try {
+    const [productsRes, catsRes] = await Promise.all([
+      api.get('/admin/menu/products'),
+      api.get('/admin/menu/categories'),
+    ])
+    products.value = productsRes.data || []
+    menuCategories.value = catsRes.data || []
+  } catch {
+    productsError.value = 'No se pudieron cargar los productos del menú.'
+  } finally {
+    productsLoading.value = false
+  }
+}
+
+async function createProduct() {
+  productFormSaving.value = true
+  productFormError.value = ''
+  try {
+    const { data: created } = await api.post('/admin/menu/products', {
+      nombre: newProduct.value.nombre,
+      categoria_id: Number(newProduct.value.categoria_id),
+      precio: Number(newProduct.value.precio),
+      stock: Number(newProduct.value.stock),
+      descripcion: newProduct.value.descripcion || null,
+      imagen_url: newProduct.value.imagen_url || null,
+    })
+    await persistPendingGallery('producto', created?.id)
+    showProductForm.value = false
+    resetProductForm()
+    await fetchProducts()
+  } catch (e) {
+    productFormError.value = e?.response?.data?.message || 'Error al crear el producto.'
+  } finally {
+    productFormSaving.value = false
+  }
+}
+
+async function updateProduct() {
+  productFormSaving.value = true
+  productFormError.value = ''
+  try {
+    await api.patch(`/admin/menu/products/${editingProduct.value.id}`, {
+      nombre: newProduct.value.nombre,
+      precio: Number(newProduct.value.precio),
+      stock: Number(newProduct.value.stock),
+      descripcion: newProduct.value.descripcion || null,
+      imagen_url: newProduct.value.imagen_url || null,
+    })
+    showProductForm.value = false
+    resetProductForm()
+    await fetchProducts()
+  } catch (e) {
+    productFormError.value = e?.response?.data?.message || 'Error al actualizar el producto.'
+  } finally {
+    productFormSaving.value = false
+  }
+}
+
+async function deleteProduct(id) {
+  if (!confirm('¿Eliminar este producto?')) return
+  try {
+    await api.delete(`/admin/menu/products/${id}`)
+    await fetchProducts()
+  } catch (e) {
+    productsError.value = e?.response?.data?.message || 'Error al eliminar el producto.'
+  }
+}
+
+function resetProductForm() {
+  newProduct.value = { nombre: '', categoria_id: '', precio: '', stock: '', descripcion: '', imagen_url: '' }
+  productFormError.value = ''
+  editingProduct.value = null
+  formGallery.value = []
+}
+
+function openEditProduct(p) {
+  editingProduct.value = { ...p }
+  newProduct.value = {
+    nombre: p.nombre,
+    categoria_id: p.categoria_id,
+    precio: p.precio,
+    stock: p.stock,
+    descripcion: p.descripcion || '',
+    imagen_url: p.imagen_url || '',
+  }
+  loadGalleryFromItem(p)
+  showProductForm.value = true
+}
+
+// ─── Salones ─────────────────────────────────────────────────
+const salons = ref([])
+const salonsLoading = ref(false)
+const salonsError = ref(null)
+const showSalonForm = ref(false)
+const editingSalon = ref(null)
+const newSalon = ref({ nombre: '', capacidad: '', precio_base: '', ubicacion: '', imagen_url: '' })
+const salonFormError = ref('')
+const salonFormSaving = ref(false)
+
+async function fetchSalons() {
+  salonsLoading.value = true
+  salonsError.value = null
+  try {
+    const { data } = await api.get('/admin/events/salons')
+    salons.value = data || []
+  } catch {
+    salonsError.value = 'No se pudieron cargar los salones de eventos.'
+  } finally {
+    salonsLoading.value = false
+  }
+}
+
+async function createSalon() {
+  salonFormSaving.value = true
+  salonFormError.value = ''
+  try {
+    const { data: created } = await api.post('/admin/events/salons', {
+      nombre: newSalon.value.nombre,
+      capacidad: Number(newSalon.value.capacidad),
+      precio_base: Number(newSalon.value.precio_base),
+      ubicacion: newSalon.value.ubicacion || null,
+      imagen_url: newSalon.value.imagen_url || null,
+    })
+    await persistPendingGallery('salon', created?.id)
+    showSalonForm.value = false
+    resetSalonForm()
+    await fetchSalons()
+  } catch (e) {
+    salonFormError.value = e?.response?.data?.message || 'Error al crear el salón.'
+  } finally {
+    salonFormSaving.value = false
+  }
+}
+
+async function updateSalon() {
+  salonFormSaving.value = true
+  salonFormError.value = ''
+  try {
+    await api.patch(`/admin/events/salons/${editingSalon.value.id}`, {
+      nombre: newSalon.value.nombre,
+      capacidad: Number(newSalon.value.capacidad),
+      precio_base: Number(newSalon.value.precio_base),
+      ubicacion: newSalon.value.ubicacion || null,
+      imagen_url: newSalon.value.imagen_url || null,
+    })
+    showSalonForm.value = false
+    resetSalonForm()
+    await fetchSalons()
+  } catch (e) {
+    salonFormError.value = e?.response?.data?.message || 'Error al actualizar el salón.'
+  } finally {
+    salonFormSaving.value = false
+  }
+}
+
+async function deleteSalon(id) {
+  if (!confirm('¿Eliminar este salón?')) return
+  try {
+    await api.delete(`/admin/events/salons/${id}`)
+    await fetchSalons()
+  } catch (e) {
+    salonsError.value = e?.response?.data?.message || 'Error al eliminar el salón.'
+  }
+}
+
+function resetSalonForm() {
+  newSalon.value = { nombre: '', capacidad: '', precio_base: '', ubicacion: '', imagen_url: '' }
+  salonFormError.value = ''
+  editingSalon.value = null
+  formGallery.value = []
+}
+
+function openEditSalon(s) {
+  editingSalon.value = { ...s }
+  newSalon.value = {
+    nombre: s.nombre,
+    capacidad: s.capacidad,
+    precio_base: s.precio_base,
+    ubicacion: s.ubicacion || '',
+    imagen_url: s.imagen_url || '',
+  }
+  loadGalleryFromItem(s)
+  showSalonForm.value = true
+}
+
+// ─── Subida de imágenes (S3) ─────────────────────────────────
+const IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const imageUploading = ref(false)
+
+function validateImageFile(file) {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return 'Formato no permitido. Usa JPG, PNG o WebP.'
+  if (file.size > IMAGE_MAX_SIZE_BYTES) return 'La imagen supera el máximo de 5MB.'
+  return ''
+}
+
+async function uploadImage(file, folder) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const { data } = await api.post('/admin/uploads', formData, {
+    params: { folder },
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 30000,
+  })
+  return data.url
+}
+
+// ─── Galería de imágenes por ítem ────────────────────────────
+// Ítems: { id: number|null, url: string, es_principal: boolean, orden: number }
+const formGallery = ref([])
+
+const GALLERY_CFG = {
+  habitacion: { entidad: 'habitacion', folder: 'habitaciones', form: newRoom, error: roomFormError, editing: editingRoom },
+  producto: { entidad: 'producto', folder: 'productos', form: newProduct, error: productFormError, editing: editingProduct },
+  salon: { entidad: 'salon', folder: 'salones', form: newSalon, error: salonFormError, editing: editingSalon },
+}
+
+function loadGalleryFromItem(item) {
+  const fromApi = Array.isArray(item?.imagenes) ? item.imagenes : []
+  const base = fromApi.length
+    ? fromApi
+    : item?.imagen_url
+      ? [{ id: null, url: item.imagen_url, es_principal: true, orden: 0 }]
+      : []
+  formGallery.value = base
+    .map((img) => ({
+      id: img.id ?? null,
+      url: img.url,
+      es_principal: !!img.es_principal,
+      orden: img.orden ?? 0,
+    }))
+    .sort((a, b) => a.orden - b.orden)
+}
+
+function syncFormCover(kind) {
+  const cfg = GALLERY_CFG[kind]
+  const principal = formGallery.value.find((i) => i.es_principal)
+  cfg.form.value.imagen_url = principal?.url || ''
+}
+
+async function onGalleryImageChange(event, kind) {
+  const cfg = GALLERY_CFG[kind]
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  const validationError = validateImageFile(file)
+  if (validationError) {
+    cfg.error.value = validationError
+    return
+  }
+  cfg.error.value = ''
+  imageUploading.value = true
+  try {
+    const url = await uploadImage(file, cfg.folder)
+    const editingId = cfg.editing.value?.id
+    if (editingId != null) {
+      // Modo edición: la referencia se guarda de inmediato en el back
+      const { data } = await api.post('/admin/imagenes', {
+        entidad: cfg.entidad,
+        entidad_id: Number(editingId),
+        url,
+        es_principal: formGallery.value.length === 0,
+        orden: formGallery.value.length,
+      })
+      formGallery.value.push({
+        id: data.id,
+        url: data.url,
+        es_principal: !!data.es_principal,
+        orden: data.orden,
+      })
+    } else {
+      // Modo creación: se encolá y se registra al guardar el ítem
+      formGallery.value.push({
+        id: null,
+        url,
+        es_principal: formGallery.value.length === 0,
+        orden: formGallery.value.length,
+      })
+    }
+    syncFormCover(kind)
+  } catch {
+    cfg.error.value = 'No se pudo subir la imagen. Inténtalo de nuevo.'
+  } finally {
+    imageUploading.value = false
+  }
+}
+
+async function markGalleryPrincipal(index, kind) {
+  const item = formGallery.value[index]
+  if (!item || item.es_principal) return
+  formGallery.value.forEach((img, i) => { img.es_principal = i === index })
+  syncFormCover(kind)
+  if (item.id != null) {
+    try {
+      await api.patch(`/admin/imagenes/${item.id}`, { es_principal: true })
+    } catch {
+      GALLERY_CFG[kind].error.value = 'No se pudo marcar como principal.'
+    }
+  }
+}
+
+async function removeGalleryImage(index, kind) {
+  const item = formGallery.value[index]
+  if (!item) return
+  if (item.id != null) {
+    if (!confirm('¿Eliminar esta imagen de la galería?')) return
+    try {
+      await api.delete(`/admin/imagenes/${item.id}`)
+    } catch {
+      GALLERY_CFG[kind].error.value = 'No se pudo eliminar la imagen.'
+      return
+    }
+  }
+  const wasPrincipal = item.es_principal
+  formGallery.value.splice(index, 1)
+  if (wasPrincipal && formGallery.value.length > 0) {
+    // El back ya reasigna la principal en DELETE; en creación se marca local
+    const next = formGallery.value[0]
+    next.es_principal = true
+    if (next.id != null) {
+      api.patch(`/admin/imagenes/${next.id}`, { es_principal: true }).catch(() => {})
+    }
+  }
+  syncFormCover(kind)
+}
+
+// Registra en el back las imágenes encoladas durante la creación del ítem
+async function persistPendingGallery(kind, entityId) {
+  if (entityId == null) return
+  const cfg = GALLERY_CFG[kind]
+  const pendientes = formGallery.value.filter((img) => img.id == null)
+  for (const img of pendientes) {
+    await api.post('/admin/imagenes', {
+      entidad: cfg.entidad,
+      entidad_id: Number(entityId),
+      url: img.url,
+      es_principal: img.es_principal,
+      orden: img.orden,
+    })
+  }
+}
+
+const onSalonGalleryChange = (e) => onGalleryImageChange(e, 'salon')
+const onProductGalleryChange = (e) => onGalleryImageChange(e, 'producto')
+const onRoomGalleryChange = (e) => onGalleryImageChange(e, 'habitacion')
+
 // ─── Module tab state ───────────────────────────────────────
 const activeModule = ref('panel')
 
@@ -563,6 +1045,9 @@ const moduleContextMessages = {
   calendario: 'Calendario — Visualiza la agenda del club. Haz clic en un día para ver todos los eventos.',
   tareas: 'Tareas — Gestiona y asigna tareas a los empleados del club.',
   socio: 'Panel del Socio — Información personalizada y detallada de cada miembro del club.',
+  habitaciones: 'Habitaciones — Gestiona las habitaciones individuales del hotel.',
+  menu: 'Menú — Administra las categorías y productos del restaurante.',
+  salones: 'Salones — Gestiona los salones de eventos disponibles para reservar.',
 }
 
 const contextMessage = computed(() => moduleContextMessages[activeModule.value])
@@ -581,6 +1066,9 @@ async function loadAll() {
     fetchTasks(),
     fetchEmployees(),
     fetchMembers(),
+    fetchRooms(),
+    fetchProducts(),
+    fetchSalons(),
   ])
   if (results.some(r => r.status === 'rejected')) {
     error.value = 'No se pudieron cargar algunos datos del panel. Revisa tu conexión e inténtalo de nuevo.'
@@ -616,5 +1104,17 @@ export function usePanelAdmin() {
     members, selectedMemberId, selectedMember,
     memberSearch, memberPage, memberTotalPages, filteredMembers, paginatedMembers, MEMBERS_PER_PAGE,
     showMemberModal, openMemberModal, closeMemberModal,
+    rooms, roomTypes, roomsLoading, roomsError,
+    showRoomForm, editingRoom, newRoom, roomFormError, roomFormSaving,
+    fetchRooms, createRoom, updateRoom, deleteRoom, resetRoomForm, openEditRoom, onTipoChange,
+    imageUploading, formGallery,
+    onSalonGalleryChange, onProductGalleryChange, onRoomGalleryChange,
+    markGalleryPrincipal, removeGalleryImage,
+    products, menuCategories, productsLoading, productsError,
+    showProductForm, editingProduct, newProduct, productFormError, productFormSaving,
+    fetchProducts, createProduct, updateProduct, deleteProduct, resetProductForm, openEditProduct,
+    salons, salonsLoading, salonsError,
+    showSalonForm, editingSalon, newSalon, salonFormError, salonFormSaving,
+    fetchSalons, createSalon, updateSalon, deleteSalon, resetSalonForm, openEditSalon,
   }
 }
