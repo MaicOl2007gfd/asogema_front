@@ -1,6 +1,7 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
+import { isStaffUser, getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
 import { useIndex } from '../composables/useIndex.js'
 import MagicBento from './MagicBento.vue'
 import ClickSpark from './ClickSpark.vue'
@@ -8,6 +9,8 @@ import ClickSpark from './ClickSpark.vue'
 const emit = defineEmits(['navigate'])
 
 const { user, isLoggedIn, isAdmin, logout } = useAuth()
+
+const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
 const {
   slides,
@@ -32,13 +35,7 @@ const {
 } = useIndex(emit)
 
 function getUserInitials() {
-  if (!user.value) return '?'
-  return user.value.name
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  return utilsGetUserInitials(user.value)
 }
 
 function handleLogout() {
@@ -51,11 +48,7 @@ function handleAdminClick() {
 }
 
 function handleExperienceCta(action) {
-  if (action === 'hotel') {
-    emit('navigate', isLoggedIn.value ? 'dashboard' : 'hotel')
-  } else {
-    emit('navigate', action)
-  }
+  emit('navigate', action)
 }
 
 onMounted(() => onMount())
@@ -86,7 +79,7 @@ onUnmounted(() => onUnmount())
          NAVBAR
          ====================================================== -->
     <nav class="index-nav" :class="{ scrolled: isScrolled }">
-      <div class="nav-brand" @click="scrollToSection('hero')">
+      <div class="nav-brand" @click="emit('navigate', 'index')">
         <img src="/imagenes/Logo.png" alt="Asogema" class="nav-logo" />
         <span class="nav-brand-text">Asogema</span>
       </div>
@@ -98,11 +91,13 @@ onUnmounted(() => onUnmount())
           <span class="nav-user-greeting">Bienvenido</span>
           <strong class="nav-user-name">{{ user.name }}</strong>
         </li>
-        <li><a href="#inicio" @click.prevent="scrollToSection('hero')">Inicio</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'index')">Inicio</a></li>
         <li><a href="#nosotros" @click.prevent="scrollToSection('nosotros')">Club</a></li>
-        <li><a href="#hotel" @click.prevent="scrollToSection('hotel')">Hotel</a></li>
-        <li><a href="#restaurante" @click.prevent="scrollToSection('restaurante')">Restaurante</a></li>
-        <li><a href="#eventos" @click.prevent="scrollToSection('eventos')">Eventos</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
+        <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
+        <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
         <li><a href="#galeria" @click.prevent="scrollToSection('galeria')">Galería</a></li>
         <li><a href="#historia" @click.prevent="scrollToSection('historia')">Historia</a></li>
         <li><a href="#contact" @click.prevent="scrollToSection('contact')">Contacto</a></li>

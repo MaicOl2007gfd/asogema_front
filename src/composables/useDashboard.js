@@ -1,6 +1,7 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useAuth } from './useAuth.js'
 import { useHotelApi } from './useHotelApi.js'
+import { getUserInitials as utilsGetUserInitials } from './useUtils.js'
 
 /**
  * Composable que maneja la lógica del Dashboard (logged-in).
@@ -156,13 +157,7 @@ export function useDashboard(emit) {
      METHODS
      ---------------------------------------------------------- */
   function getUserInitials() {
-    if (!user.value) return '?'
-    return user.value.name
-      .split(' ')
-      .map(w => w[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
+    return utilsGetUserInitials(user.value)
   }
 
   function incrementGuests() {
@@ -311,7 +306,7 @@ export function useDashboard(emit) {
         capacity: tipo?.capacidad || 1,
         desc: tipo?.descripcion || room.descripcion || 'Habitación cómoda y acogedora.',
         fullDesc: tipo?.descripcion || room.descripcion || 'Disfruta de una estancia acogedora en nuestras habitaciones.',
-        image: `https://picsum.photos/id/${1043 + index}/600/400`,
+        image: room.imagen_url || `https://picsum.photos/id/${1043 + index}/600/400`,
         features: [
           tipo?.nombre?.includes('Suite') ? 'Cama King' : 'Cama Queen',
           'WiFi Gratis',

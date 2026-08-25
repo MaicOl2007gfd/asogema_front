@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useDashboard } from '../composables/useDashboard.js'
 import { useAuth } from '../composables/useAuth.js'
+import { isStaffUser } from '../composables/useUtils.js'
 import ReviewsView from './ReviewsView.vue'
 
 const emit = defineEmits(['navigate'])
@@ -11,7 +12,9 @@ function toggleMobileMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
 
-const { user, isAdmin } = useAuth()
+const { user, isLoggedIn, isAdmin } = useAuth()
+
+const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
 const {
   rooms,
@@ -72,6 +75,8 @@ const {
         <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
+        <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
+        <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
       </ul>
 
       <div class="nav-user" :class="{ open: mobileMenuOpen }">

@@ -1,16 +1,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
+import { isStaffUser, getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
 import { useHotel } from '../composables/useHotel.js'
 
 const emit = defineEmits(['navigate'])
 const mobileMenuOpen = ref(false)
 
-const { logout } = useAuth()
+const { user, isLoggedIn, logout, isAdmin } = useAuth()
 
 const {
-  user,
-  isLoggedIn,
   rooms,
   roomsLoading,
   roomsError,
@@ -47,10 +46,11 @@ const {
   requestCancel,
   closeCancelConfirm,
   confirmCancel,
-  goBackToHome,
   goBackToHotel,
   switchTab,
 } = useHotel()
+
+const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
 const statusLabels = {
   confirmada: 'Confirmada',
@@ -77,13 +77,7 @@ const totalSpent = computed(() =>
 )
 
 function getUserInitials() {
-  if (!user.value) return '?'
-  return user.value.name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  return utilsGetUserInitials(user.value)
 }
 
 function toggleMobileMenu() {
@@ -94,10 +88,6 @@ function handleLogout() {
   logout()
   mobileMenuOpen.value = false
   emit('navigate', 'index')
-}
-
-function onGoHome() {
-  goBackToHome(emit)
 }
 
 function onGoBackHotel() {
@@ -138,16 +128,18 @@ onMounted(async () => {
          NAVBAR
          ====================================================== -->
     <nav class="hotel-nav">
-      <div class="hotel-nav-brand" @click="onGoHome">
+      <div class="hotel-nav-brand">
         <img src="/imagenes/Logo.png" alt="Asogema" class="hotel-nav-logo" />
         <span class="hotel-nav-brand-text">Asogema</span>
       </div>
 
       <ul class="hotel-nav-links" :class="{ open: mobileMenuOpen }">
-        <li><a href="#" @click.prevent="onGoHome">Inicio</a></li>
+        <li><a href="#" @click.prevent="emit('navigate', 'index')">Inicio</a></li>
         <li><a href="#" class="active" @click.prevent>Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
+        <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
+        <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
       </ul>
 
       <div class="hotel-nav-actions" :class="{ open: mobileMenuOpen }">
