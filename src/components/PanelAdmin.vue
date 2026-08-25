@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
+import { getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
 import { usePanelAdmin } from '../composables/usePanelAdmin.js'
 
 const emit = defineEmits(['navigate'])
@@ -52,8 +53,7 @@ const todayDate = computed(() => {
 })
 
 function getUserInitials() {
-  if (!user.value) return '?'
-  return user.value.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  return utilsGetUserInitials(user.value)
 }
 
 function setModule(mod) {

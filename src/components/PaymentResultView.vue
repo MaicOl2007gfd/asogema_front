@@ -17,14 +17,16 @@ const {
   isLoading,
   error,
   paymentData,
-  wompiTransactionId,
+  unauthorized,
   isVisible,
+  isVerifying,
+  downloadingPdf,
+  pdfError,
+  status,
+  displayStatus,
   formatCurrency,
-  getDisplayStatus,
-  mapWompiStatus,
+  downloadInvoicePdf,
 } = usePaymentResult()
-
-const status = getDisplayStatus()
 
 function goToEvents() {
   emit('navigate', 'events')
@@ -32,6 +34,10 @@ function goToEvents() {
 
 function goToDashboard() {
   emit('navigate', 'dashboard')
+}
+
+function goToLogin() {
+  emit('navigate', 'login')
 }
 
 function goHome() {
@@ -56,6 +62,21 @@ function goHome() {
         <div v-if="isLoading" class="pr-loader">
           <div class="pr-spinner"></div>
           <p>Verificando estado del pago...</p>
+        </div>
+
+        <!-- Sin sesión -->
+        <div v-else-if="unauthorized" class="pr-unauthorized">
+          <div class="pr-error-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h2>Inicia sesión para ver tu pago</h2>
+          <p>Necesitas iniciar sesión para consultar el estado de tu pago y descargar tu factura electrónica.</p>
+          <div class="pr-actions">
+            <button class="pr-btn pr-btn--primary" @click="goToLogin">Iniciar sesión</button>
+          </div>
         </div>
 
         <!-- Error -->
@@ -103,7 +124,7 @@ function goHome() {
               </svg>
             </div>
             <h2 class="pr-title">Pago Pendiente</h2>
-            <p class="pr-subtitle">Tu pago está siendo procesado. Esto puede tomar unos minutos. Te notificaremos por correo cuando se confirme.</p>
+            <p class="pr-subtitle">{{ isVerifying ? 'Estamos confirmando tu pago con el proveedor...' : 'Tu pago aún no ha sido confirmado. Si ya pagaste, verifica tu correo para conocer el estado de tu reserva.' }}</p>
           </template>
 
           <!-- Declined / Error / Voided -->
@@ -153,7 +174,7 @@ function goHome() {
                     'pr-status-dot--declined': status === 'DECLINED' || status === 'RECHAZADO' || status === 'ERROR' || status === 'VOIDED' || status === 'ANULADO',
                   }"
                 ></span>
-                {{ mapWompiStatus(status) }}
+                {{ displayStatus }}
               </span>
             </div>
             <div v-if="paymentData.pagos?.length" class="pr-detail-row">
@@ -164,10 +185,88 @@ function goHome() {
               <span class="pr-detail-label">Método</span>
               <span class="pr-detail-value">{{ paymentData.pagos[0].metodo_pago }}</span>
             </div>
+            <div v-if="paymentData.pagos?.[0]?.fecha_pago" class="pr-detail-row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span class="pr-detail-label">Fecha</span>
+              <span class="pr-detail-value">{{ new Date(paymentData.pagos[0].fecha_pago).toLocaleString('es-CO') }}</span>
+            </div>
           </div>
 
-          <!-- Actions -->
-          <div class="pr-actions">
+          <!-- Factura electrónica -->
+          <div
+            v-if="(status === 'APPROVED' || status === 'PAGADO' || status === 'CONFIRMADO') && paymentData?.cufe"
+            class="pr-invoice"
+          >
+            <div class="pr-invoice-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+              <h3>Factura Electrónica</h3>
+            </div>
+
+            <div class="pr-invoice-row">
+              <span class="pr-invoice-label">Número DIAN</span>
+              <span class="pr-invoice-value">{{ paymentData.numero_factura }}</span>
+            </div>
+            <div class="pr-invoice-row pr-invoice-row--cufe">
+              <span class="pr-invoice-label">CUFE</span>
+              <span class="pr-invoice-value pr-invoice-value--cufe">{{ paymentData.cufe }}</span>
+            </div>
+            <div class="pr-invoice-row">
+              <span class="pr-invoice-label">Estado DIAN</span>
+              <span class="pr-invoice-value pr-invoice-value--valid">Validada</span>
+            </div>
+
+            <div class="pr-invoice-actions">
+              <button class="pr-btn pr-btn--invoice" :disabled="downloadingPdf" @click="downloadInvoicePdf">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                {{ downloadingPdf ? 'Descargando...' : 'Descargar PDF' }}
+              </button>
+              <a
+                v-if="paymentData.qr_url"
+                class="pr-btn pr-btn--invoice pr-btn--invoice-link"
+                :href="paymentData.qr_url"
+                target="_blank"
+                rel="noopener"
+              >
+                Ver en DIAN
+              </a>
+            </div>
+            <p v-if="pdfError" class="pr-invoice-error">{{ pdfError }}</p>
+            <p class="pr-invoice-note">Este documento tiene validez oficial ante la DIAN.</p>
+          </div>
+
+          <!-- QR del pedido de restaurante -->
+          <div v-if="paymentData.qr_pedido" class="pr-qr-pedido">
+            <div class="pr-qr-pedido-head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                <path d="M14 14h3v3h-3zM21 14v.01M14 21v.01M17 21v.01M21 17v.01"></path>
+              </svg>
+              <div>
+                <h3>Tu código de pedido</h3>
+                <p>Muestra este QR en el restaurante para recoger tu pedido</p>
+              </div>
+            </div>
+            <img :src="paymentData.qr_pedido" alt="QR del pedido" class="pr-qr-pedido-img" />
+          </div>
+
+          <!-- Actions: solo cuando el pago ya terminó (confirmado o fallido) -->
+          <div v-if="status !== 'PENDING' && status !== 'PENDIENTE'" class="pr-actions">
             <button class="pr-btn pr-btn--primary" @click="goToEvents">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -188,7 +287,7 @@ function goHome() {
             </button>
           </div>
 
-          <div class="pr-note">
+          <div v-if="status !== 'PENDING' && status !== 'PENDIENTE'" class="pr-note">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="16" x2="12" y2="12"></line>

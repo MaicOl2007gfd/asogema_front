@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { restoreSession, logout, useAuth } from './composables/useAuth.js'
 import { applyOAuthCallback } from './composables/useSocialAuth.js'
 import api from './composables/useApi.js'
@@ -19,18 +19,25 @@ import RestaurantReservationsView from './components/RestaurantReservationsView.
 import PanelAdmin from './components/PanelAdmin.vue'
 import PanelEmpleado from './components/PanelEmpleado.vue'
 import PaymentResultView from './components/PaymentResultView.vue'
-
+import PaymentCheckoutView from './components/PaymentCheckoutView.vue'
+import WalletView from './components/WalletView.vue'
+import QrReaderView from './components/QrReaderView.vue'
+import { isStaffUser } from './composables/useUtils.js'
 const currentView = ref('index')
 
 const { isLoggedIn, isAdmin, isEmployee, user } = useAuth()
 
-// Secciones que requieren sesión iniciada
-const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'employee', 'profile']
+const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
+// Secciones que requieren sesión iniciada
+const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'employee', 'profile', 'wallet', 'qr-reader']
+
+const sessionReady = ref(false)
 const showLoginAlert = ref(false)
 const pendingView = ref(null)
 
 function navigate(view) {
+  if (!sessionReady.value) return
   if (protectedViews.includes(view) && !isLoggedIn.value) {
     pendingView.value = view
     showLoginAlert.value = true
@@ -41,6 +48,14 @@ function navigate(view) {
     return
   }
   if (view === 'employee' && !isEmployee.value) {
+    currentView.value = 'index'
+    return
+  }
+  if (view === 'qr-reader' && !isStaff.value) {
+    currentView.value = 'index'
+    return
+  }
+  if (view === 'wallet' && isStaff.value && !isAdmin.value) {
     currentView.value = 'index'
     return
   }
@@ -69,6 +84,11 @@ onMounted(async () => {
     currentView.value = 'login'
   }
 
+  const params = new URLSearchParams(window.location.search)
+  if (params.get('factura_id')) {
+    currentView.value = 'payment-result'
+  }
+
   restoreSession()
 
   if (localStorage.getItem('asogema_token')) {
@@ -85,6 +105,7 @@ onMounted(async () => {
       logout()
     }
   }
+  sessionReady.value = true
 })
 </script>
 
@@ -106,6 +127,9 @@ onMounted(async () => {
     <PanelAdmin v-else-if="currentView === 'admin'" key="admin" @navigate="navigate" />
     <PanelEmpleado v-else-if="currentView === 'employee'" key="employee" @navigate="navigate" />
     <PaymentResultView v-else-if="currentView === 'payment-result'" key="payment-result" @navigate="navigate" />
+    <PaymentCheckoutView v-else-if="currentView === 'checkout'" key="checkout" @navigate="navigate" />
+    <WalletView v-else-if="currentView === 'wallet'" key="wallet" @navigate="navigate" />
+    <QrReaderView v-else-if="currentView === 'qr-reader'" key="qr-reader" @navigate="navigate" />
   </Transition>
 
   <!-- Alerta de acceso restringido (no logueado) -->

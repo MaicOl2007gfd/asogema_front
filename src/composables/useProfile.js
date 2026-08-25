@@ -1,6 +1,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from './useAuth.js'
 import { useQrCode } from './useQrCode.js'
+import { getUserInitials as utilsGetUserInitials } from './useUtils.js'
 import api from './useApi.js'
 
 // Permite que otras vistas (p. ej. tras una reserva exitosa)
@@ -124,19 +125,7 @@ export function useProfile(emit) {
      HELPERS
      ────────────────────────────────────────────────────────── */
   function getUserInitials() {
-    if (!user.value) return '?'
-    const raw = `${user.value.nombre || ''} ${user.value.apellido || ''}`.trim()
-      || user.value.name
-      || ''
-    return (
-      raw
-        .split(' ')
-        .map(w => w[0])
-        .filter(Boolean)
-        .join('')
-        .toUpperCase()
-        .slice(0, 2) || '?'
-    )
+    return utilsGetUserInitials(user.value)
   }
 
   function extractError(err, fallback) {

@@ -1,12 +1,15 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { isStaffUser, getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
 import { useAuth } from '../composables/useAuth.js'
 import { useRestaurant } from '../composables/useRestaurant.js'
 import ReviewsView from './ReviewsView.vue'
 
 const emit = defineEmits(['navigate'])
 
-const { user, isLoggedIn, logout } = useAuth()
+const { user, isLoggedIn, logout, isAdmin } = useAuth()
+
+const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 const mobileMenuOpen = ref(false)
 const menuSectionRef = ref(null)
 
@@ -20,13 +23,7 @@ function handleLogout() {
 }
 
 function getUserInitials() {
-  if (!user.value) return '?'
-  return user.value.name
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  return utilsGetUserInitials(user.value)
 }
 
 const {
@@ -99,6 +96,8 @@ function onSelectCategory(categoryId) {
         <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
+        <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
+        <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
       </ul>
 
       <div class="inner-nav-actions" :class="{ open: mobileMenuOpen }">
