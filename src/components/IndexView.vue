@@ -552,7 +552,7 @@ onUnmounted(() => onUnmount())
     <!-- ======================================================
          CTA — Llamado a la acción final
          ====================================================== -->
-    <section class="cta-section section-padding">
+    <section v-if="!isLoggedIn" class="cta-section section-padding">
       <div class="cta-banner reveal">
         <div class="cta-content">
           <span class="cta-tag">Únete a la familia</span>
@@ -563,10 +563,8 @@ onUnmounted(() => onUnmount())
           </p>
         </div>
         <div class="cta-actions">
-          <ClickSpark spark-color="#133215" :spark-size="10" :spark-radius="25" :spark-count="12" :duration="600" @spark-click="emit('navigate', isLoggedIn ? 'dashboard' : 'register')">
-            <button class="cta-btn cta-btn-primary" type="button">
-              {{ isLoggedIn ? 'Ir a mi Panel' : 'Crear Cuenta' }}
-            </button>
+          <ClickSpark spark-color="#133215" :spark-size="10" :spark-radius="25" :spark-count="12" :duration="600" @spark-click="emit('navigate', 'register')">
+            <button class="cta-btn cta-btn-primary" type="button">Crear Cuenta</button>
           </ClickSpark>
           <ClickSpark spark-color="#ffffff" :spark-size="10" :spark-radius="25" :spark-count="12" :duration="600" @spark-click="emit('navigate', 'login')">
             <button class="cta-btn cta-btn-secondary" type="button">Iniciar Sesión</button>
