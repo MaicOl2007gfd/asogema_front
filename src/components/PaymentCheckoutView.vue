@@ -266,6 +266,51 @@ onMounted(() => {
                 </div>
                 <span v-if="conSaldo" class="paycheckout-method-check">✓</span>
               </label>
+
+              <label class="paycheckout-method" :class="{ active: metodoPago === 'NEQUI' }">
+                <input v-model="metodoPago" type="radio" value="NEQUI" />
+                <div class="paycheckout-method-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                </div>
+                <div class="paycheckout-method-text">
+                  <strong>Nequi</strong>
+                  <span>Recibe la notificación en tu celular</span>
+                </div>
+                <span v-if="metodoPago === 'NEQUI'" class="paycheckout-method-check">✓</span>
+              </label>
+
+              <label class="paycheckout-method" :class="{ active: metodoPago === 'DAVIPLATA' }">
+                <input v-model="metodoPago" type="radio" value="DAVIPLATA" />
+                <div class="paycheckout-method-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 10h18M7 15h2m4 0h2m-4 4h.01M7 19h2"></path>
+                    <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                  </svg>
+                </div>
+                <div class="paycheckout-method-text">
+                  <strong>Daviplata</strong>
+                  <span>Recibe la notificación en tu celular</span>
+                </div>
+                <span v-if="metodoPago === 'DAVIPLATA'" class="paycheckout-method-check">✓</span>
+              </label>
+
+              <label class="paycheckout-method" :class="{ active: metodoPago === 'PSE' }">
+                <input v-model="metodoPago" type="radio" value="PSE" />
+                <div class="paycheckout-method-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18"></path>
+                    <path d="M5 21V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14"></path>
+                    <path d="M9 7v4m6-4v4"></path>
+                  </svg>
+                </div>
+                <div class="paycheckout-method-text">
+                  <strong>PSE</strong>
+                  <span>Paga desde tu banco</span>
+                </div>
+                <span v-if="metodoPago === 'PSE'" class="paycheckout-method-check">✓</span>
+              </label>
             </div>
 
             <div v-if="metodoPago === 'TARJETA'" class="paycheckout-cardtype"></div>

@@ -206,7 +206,7 @@ export function usePaymentCheckout() {
         if (result.estado === 'PAGADA') {
           stopPolling()
           clearCheckoutRequest()
-          window.location.href = `/payment/result?factura_id=${result.factura_id ?? facturaId}&status=APPROVED`
+          window.location.href = `/payment/result?factura_id=${result.factura_id ?? facturaId}&transaction_id=${transactionId}&status=APPROVED`
           return
         }
         if (['RECHAZADO', 'ANULADO', 'ERROR'].includes(result.estado)) {
@@ -221,7 +221,7 @@ export function usePaymentCheckout() {
       if (attempts >= MAX_ATTEMPTS) {
         stopPolling()
         waitingConfirmation.value = false
-        window.location.href = `/payment/result?factura_id=${facturaId}`
+        window.location.href = `/payment/result?factura_id=${facturaId}&transaction_id=${transactionId}`
       }
     }, 4000)
   }

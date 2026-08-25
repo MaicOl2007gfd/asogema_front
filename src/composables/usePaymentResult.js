@@ -124,7 +124,7 @@ export function usePaymentResult() {
     facturaId.value = rawFacturaId && /^\d+$/.test(rawFacturaId) ? rawFacturaId : null
     const rawStatus = params.get('status')
     wompiStatus.value = rawStatus?.toUpperCase() ?? null
-    wompiTransactionId.value = params.get('id') || null
+    wompiTransactionId.value = params.get('id') || params.get('transaction_id') || null
   }
 
   onMounted(async () => {

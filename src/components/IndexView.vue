@@ -87,19 +87,16 @@ onUnmounted(() => onUnmount())
       <ul class="nav-links" :class="{ open: mobileMenuOpen }">
         <!-- Mobile user info -->
         <li v-if="isLoggedIn && user" class="nav-mobile-user">
-          <div class="nav-user-avatar">{{ getUserInitials() }}</div>
+<div class="nav-user-avatar" @click="emit('navigate', 'profile')">{{ getUserInitials() }}</div>
           <span class="nav-user-greeting">Bienvenido</span>
           <strong class="nav-user-name">{{ user.name }}</strong>
         </li>
         <li><a href="#" @click.prevent="emit('navigate', 'index')">Inicio</a></li>
-        <li><a href="#nosotros" @click.prevent="scrollToSection('nosotros')">Club</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
         <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
         <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
-        <li><a href="#galeria" @click.prevent="scrollToSection('galeria')">Galería</a></li>
-        <li><a href="#historia" @click.prevent="scrollToSection('historia')">Historia</a></li>
         <li><a href="#contact" @click.prevent="scrollToSection('contact')">Contacto</a></li>
       </ul>
 
@@ -110,13 +107,7 @@ onUnmounted(() => onUnmount())
           <strong class="nav-user-name">{{ user.name }}</strong>
         </div>
         <div class="nav-user-avatar">{{ getUserInitials() }}</div>
-        <button class="nav-profile-btn" @click="emit('navigate', 'profile')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          Mi Perfil
-        </button>
+        
         <button v-if="isAdmin" class="nav-admin-link-btn" @click="emit('navigate', 'admin')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
