@@ -404,6 +404,32 @@
   color: #4a6b4a;
 }
 
+/* ── Indicador de campo requerido ── */
+.reviews-required {
+  color: #ff6b6b;
+}
+
+/* ── Error por campo ── */
+.reviews-field-error {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #ff6b6b;
+  line-height: 1.4;
+  animation: reviews-error-in 0.25s ease;
+}
+
+@keyframes reviews-error-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .reviews-stars-input {
   display: flex;
   align-items: center;
@@ -512,6 +538,23 @@
   box-shadow: 0 0 0 3px rgba(0, 206, 201, 0.08);
 }
 
+/* ── Estados de error y advertencia del textarea ── */
+.reviews-theme-dark .reviews-form-textarea--error {
+  border-color: rgba(255, 107, 107, 0.55);
+}
+
+.reviews-theme-light .reviews-form-textarea--error {
+  border-color: rgba(255, 107, 107, 0.6);
+}
+
+.reviews-theme-dark .reviews-form-textarea--warning {
+  border-color: rgba(255, 193, 7, 0.5);
+}
+
+.reviews-theme-light .reviews-form-textarea--warning {
+  border-color: rgba(255, 159, 28, 0.6);
+}
+
 .reviews-form-char-count {
   position: absolute;
   bottom: 8px;
@@ -526,6 +569,11 @@
 
 .reviews-theme-light .reviews-form-char-count {
   color: rgba(19, 50, 21, 0.2);
+}
+
+.reviews-form-char-count--warning {
+  color: #ff9f1c !important;
+  font-weight: 600;
 }
 
 /* ── Error ── */
@@ -572,6 +620,12 @@
 .reviews-form-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Formulario inválido tras interacción (aún permite clic para ver errores) */
+.reviews-form-submit--invalid {
+  opacity: 0.65;
+  filter: saturate(0.6);
 }
 
 .reviews-form-submit svg {
@@ -706,6 +760,92 @@
   color: #4a6b4a;
 }
 
+/* ── Meta (badge + estrellas) ── */
+.reviews-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.reviews-own-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0, 206, 201, 0.1);
+  border: 1px solid rgba(0, 206, 201, 0.2);
+  color: #00cec9;
+  white-space: nowrap;
+}
+
+.reviews-own-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ── Estado vacío ── */
+.reviews-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 44px 24px;
+  text-align: center;
+  border-radius: 16px;
+}
+
+.reviews-theme-dark .reviews-empty {
+  background: rgba(243, 232, 211, 0.03);
+  border: 1px dashed rgba(243, 232, 211, 0.08);
+}
+
+.reviews-theme-light .reviews-empty {
+  background: #ffffff;
+  border: 1px dashed rgba(19, 50, 21, 0.12);
+}
+
+.reviews-empty svg {
+  width: 42px;
+  height: 42px;
+  color: rgba(0, 206, 201, 0.4);
+}
+
+.reviews-empty p {
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 340px;
+}
+
+.reviews-theme-dark .reviews-empty p {
+  color: rgba(243, 232, 211, 0.5);
+}
+
+.reviews-theme-light .reviews-empty p {
+  color: #7a9a7a;
+}
+
+/* ── Animación de resaltado de nueva reseña ── */
+.reviews-card--pulse {
+  animation: reviews-card-pulse 1.2s ease;
+}
+
+@keyframes reviews-card-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 206, 201, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(0, 206, 201, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 206, 201, 0);
+  }
+}
+
 /* ----------------------------------------------------------
    RESPONSIVE — Tablet
    ---------------------------------------------------------- */
@@ -776,6 +916,12 @@
 
   .reviews-card-header {
     flex-wrap: wrap;
+  }
+
+  .reviews-card-meta {
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .reviews-card-stars {

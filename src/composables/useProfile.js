@@ -4,6 +4,13 @@ import { useQrCode } from './useQrCode.js'
 import { getUserInitials as utilsGetUserInitials } from './useUtils.js'
 import api from './useApi.js'
 
+// Permite que otras vistas (p. ej. tras una reserva exitosa)
+// abran el perfil directamente en una pestaña concreta, como "Mis Reservas".
+let requestedTab = 'cuenta'
+export function requestProfileTab(tab) {
+  requestedTab = tab
+}
+
 /**
  * Composable que maneja toda la lógica del Perfil / Ajustes de cuenta.
  * Incluye: actualizar datos del perfil, cambiar contraseña y verificación de email.
@@ -335,6 +342,12 @@ export function useProfile(emit) {
      LIFECYCLE
      ────────────────────────────────────────────────────────── */
   onMounted(() => {
+    // Si se solicitó abrir el perfil en una pestaña específica
+    // (p. ej. "Mis Reservas"), se aplica y se reinicia el valor.
+    if (requestedTab) {
+      activeTab.value = requestedTab
+      requestedTab = 'cuenta'
+    }
     loadProfile()
     requestAnimationFrame(() => {
       isVisible.value = true
