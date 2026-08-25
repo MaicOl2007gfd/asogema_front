@@ -48,7 +48,6 @@ const {
   closeCancelConfirm,
   confirmCancel,
   goBackToHome,
-  goBackToHotel,
   switchTab,
 } = useHotel()
 
@@ -100,10 +99,6 @@ function onGoHome() {
   goBackToHome(emit)
 }
 
-function onGoBackHotel() {
-  goBackToHotel(emit)
-}
-
 // Guarda la habitación seleccionada y navega a la vista de reserva.
 // La ruta 'hotel-reservation' se renderiza con BookingView (App.vue),
 // por lo que este botón redirige directamente a la pantalla de reserva.
@@ -145,7 +140,7 @@ onMounted(async () => {
 
       <ul class="hotel-nav-links" :class="{ open: mobileMenuOpen }">
         <li><a href="#" @click.prevent="onGoHome">Inicio</a></li>
-        <li><a href="#" class="active" @click.prevent>Hotel</a></li>
+        <li><a href="" class="active" @click.prevent>Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
       </ul>
@@ -679,7 +674,7 @@ onMounted(async () => {
           <h4>Enlaces</h4>
           <ul>
             <li><a href="#" @click.prevent="onGoHome">Inicio</a></li>
-            <li><a href="#" @click.prevent="onGoBackHotel">Hotel</a></li>
+            <li><a href="" @click.prevent>Hotel</a></li>
             <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
             <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
           </ul>

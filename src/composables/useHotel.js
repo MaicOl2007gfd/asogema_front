@@ -8,11 +8,11 @@ import { useHotelApi } from './useHotelApi.js'
  * Controla toda la experiencia del Hotel:
  *  1. Catálogo de habitaciones con filtros por fecha y ocupantes.
  *  2. Detalle de habitación (galería, servicios, tarifa).
- *  3. Reserva de habitación (consumida por ReservationView).
+ *  3. Reserva de habitación.
  *  4. Mis reservas de hotel (historial + cancelar).
  *
- * Como el estado vive a nivel de módulo, HotelView y ReservationView
- * comparten la misma selección de habitación al navegar entre vistas.
+ * Como el estado vive a nivel de módulo, las vistas comparten la
+ * misma selección de habitación al navegar entre vistas.
  */
 
 const { user, isLoggedIn } = useAuth()
@@ -92,7 +92,7 @@ const selectedRoomDetail = ref(null)
 const activeGalleryIndex = ref(0)
 
 /* ----------------------------------------------------------
-   BOOKING SELECTION (compartida con ReservationView)
+   BOOKING SELECTION
    ---------------------------------------------------------- */
 const selectedRoom = ref(null)
 const checkIn = ref('')

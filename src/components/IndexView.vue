@@ -99,8 +99,8 @@ onUnmounted(() => onUnmount())
           <strong class="nav-user-name">{{ user.name }}</strong>
         </li>
         <li><a href="#inicio" @click.prevent="scrollToSection('hero')">Inicio</a></li>
-        <li><a href="#nosotros" @click.prevent="scrollToSection('nosotros')">Club</a></li>
         <li><a href="#hotel" @click.prevent="scrollToSection('hotel')">Hotel</a></li>
+        <li><a href="#nosotros" @click.prevent="scrollToSection('nosotros')">Club</a></li>
         <li><a href="#restaurante" @click.prevent="scrollToSection('restaurante')">Restaurante</a></li>
         <li><a href="#eventos" @click.prevent="scrollToSection('eventos')">Eventos</a></li>
         <li><a href="#galeria" @click.prevent="scrollToSection('galeria')">Galería</a></li>
@@ -655,3 +655,4 @@ onUnmounted(() => onUnmount())
 <style>
 @import url('../Index.css');
 </style>
+
