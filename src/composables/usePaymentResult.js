@@ -33,6 +33,14 @@ export function usePaymentResult() {
 
   const displayStatus = computed(() => STATUS_MAP[status.value] || status.value)
 
+  /** Etiqueta del concepto según el tipo de pago (recarga, pedido o reserva). */
+  const conceptoLabel = computed(() => {
+    const t = paymentData.value?.tipo_reserva
+    if (t === 'RECARGA') return 'saldo'
+    if (t === 'RESTAURANTE') return 'pedido'
+    return 'reserva'
+  })
+
   function formatCurrency(amount) {
     return formatCop(amount)
   }
@@ -182,6 +190,7 @@ export function usePaymentResult() {
     pdfError,
     status,
     displayStatus,
+    conceptoLabel,
     formatCurrency,
     downloadInvoicePdf,
   }

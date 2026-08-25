@@ -184,7 +184,7 @@ export function usePaymentCheckout() {
           window.location.href = `/payment/result?factura_id=${result.factura_id ?? facturaId}&status=APPROVED`
           return
         }
-        if (result.estado === 'RECHAZADA' || result.estado === 'ANULADA' || result.estado === 'ERROR') {
+        if (['RECHAZADO', 'ANULADO', 'ERROR'].includes(result.estado)) {
           stopPolling()
           waitingConfirmation.value = false
           submitError.value = 'El pago fue rechazado. Intenta con otro método.'

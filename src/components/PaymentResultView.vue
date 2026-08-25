@@ -24,6 +24,7 @@ const {
   pdfError,
   status,
   displayStatus,
+  conceptoLabel,
   formatCurrency,
   downloadInvoicePdf,
 } = usePaymentResult()
@@ -112,7 +113,7 @@ function goHome() {
               </svg>
             </div>
             <h2 class="pr-title">Pago Confirmado</h2>
-            <p class="pr-subtitle">Tu pago ha sido procesado exitosamente. Recibirás un correo con los detalles de tu reserva.</p>
+            <p class="pr-subtitle">Tu pago ha sido procesado exitosamente. Recibirás un correo con los detalles de tu {{ conceptoLabel }}.</p>
           </template>
 
           <!-- Pending -->
@@ -124,7 +125,7 @@ function goHome() {
               </svg>
             </div>
             <h2 class="pr-title">Pago Pendiente</h2>
-            <p class="pr-subtitle">{{ isVerifying ? 'Estamos confirmando tu pago con el proveedor...' : 'Tu pago aún no ha sido confirmado. Si ya pagaste, verifica tu correo para conocer el estado de tu reserva.' }}</p>
+            <p class="pr-subtitle">{{ isVerifying ? 'Estamos confirmando tu pago con el proveedor...' : `Tu pago aún no ha sido confirmado. Si ya pagaste, verifica tu correo para conocer el estado de tu ${conceptoLabel}.` }}</p>
           </template>
 
           <!-- Declined / Error / Voided -->
@@ -283,7 +284,7 @@ function goHome() {
               <line x1="12" y1="16" x2="12" y2="12"></line>
               <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
-            Recibirás un correo con los detalles de tu reserva
+            Recibirás un correo con los detalles de tu {{ conceptoLabel }}
           </div>
         </div>
       </div>
