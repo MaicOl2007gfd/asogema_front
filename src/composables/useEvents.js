@@ -198,7 +198,7 @@ export function useEvents(emit) {
       basePrice: Number(salon.precio_base) || 0,
       price: formatPrice(Math.round(Number(salon.precio_base) || 0)),
       badge: `${salon.capacidad} puestos`,
-      image: `https://picsum.photos/seed/${slugify(salon.nombre)}/600/400`,
+      image: salon.imagen_url || `https://picsum.photos/seed/${slugify(salon.nombre)}/600/400`,
     }))
   }
 

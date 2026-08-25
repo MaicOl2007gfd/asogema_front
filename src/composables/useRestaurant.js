@@ -1,5 +1,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRestaurantApi } from './useRestaurantApi.js'
+import { setCheckoutRequest } from './useCheckout.js'
 
 /**
  * Composable que maneja toda la lógica de la vista del Restaurante.
@@ -59,7 +60,7 @@ export function useRestaurant(emit, isLoggedIn) {
           description: product.descripcion || 'Deliciosa preparación de nuestro restaurante.',
           price: formatPrice(Number(product.precio) || 0),
           category: catSlug,
-          image: `https://picsum.photos/seed/${slugify(product.nombre)}/400/300`,
+          image: product.imagen_url || `https://picsum.photos/seed/${slugify(product.nombre)}/400/300`,
           badge: cat.nombre,
         })
       }
@@ -358,22 +359,23 @@ export function useRestaurant(emit, isLoggedIn) {
   function confirmOrder() {
     if (order.value.length === 0) return
 
-    const itemsSummary = order.value
-      .map(item => `  \u2022 ${item.name} x${item.quantity} \u2014 ${formatPrice(parsePrice(item.price) * item.quantity)}`)
-      .join('\n')
+    const itemsPayload = order.value.map((item) => ({
+      id: item.id,
+      name: item.name,
+      price: parsePrice(item.price),
+      quantity: item.quantity,
+      image: item.image,
+    }))
 
-    alert(
-      '\u2705 Orden Confirmada\n\n' +
-      'Restaurante Asogema\n' +
-      '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n' +
-      itemsSummary + '\n' +
-      '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n' +
-      `Total: ${formatPrice(orderTotal.value)}\n\n` +
-      '\u00a1Gracias por tu orden! Tu pedido est\u00e1 siendo preparado.'
-    )
-
-    clearOrder()
-    goBackToHome()
+    setCheckoutRequest({
+      tipo: 'RESTAURANTE',
+      tipoPedido: 'PARA_LLEVAR',
+      items: itemsPayload,
+      origen: 'restaurant',
+    })
+    if (emit) {
+      emit('navigate', 'checkout')
+    }
   }
 
   function goBackToHome() {

@@ -3,7 +3,7 @@ import { useAuth } from './useAuth.js'
 import api from './useApi.js'
 
 export function useLogin(emit) {
-  const { login: authLogin, isAdmin } = useAuth()
+  const { login: authLogin, isAdmin, isEmployee } = useAuth()
   const email = ref('')
   const password = ref('')
   const remember = ref(false)
@@ -56,7 +56,13 @@ export function useLogin(emit) {
       isLoading.value = false
 
       if (emit) {
-        emit('navigate', isAdmin.value ? 'admin' : 'index')
+        if (isAdmin.value) {
+          emit('navigate', 'admin')
+        } else if (isEmployee.value) {
+          emit('navigate', 'employee')
+        } else {
+          emit('navigate', 'index')
+        }
       }
     } catch (err) {
       isLoading.value = false

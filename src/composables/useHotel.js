@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useAuth } from './useAuth.js'
 import { useHotelApi } from './useHotelApi.js'
+import { setCheckoutRequest } from './useCheckout.js'
 
 /**
  * Hotel Composable — estado singleton (module scope).
@@ -105,6 +106,7 @@ const specialRequests = ref('')
    ---------------------------------------------------------- */
 const isSubmitting = ref(false)
 const showSuccess = ref(false)
+const bookingResult = ref(null)
 const errors = ref({ checkIn: '', checkOut: '', guests: '' })
 
 /* ----------------------------------------------------------
@@ -182,6 +184,11 @@ function transformRoomData(apiRooms) {
       room.descripcion ||
       'Habitación cómoda y acogedora con todos los servicios para una estancia inolvidable.'
     const isSuite = String(label).toLowerCase().includes('suite')
+    const apiGallery = Array.isArray(room.imagenes) && room.imagenes.length
+      ? room.imagenes.map((img) => ({ src: img.url, alt: img.es_principal ? `Vista principal de ${label}` : `Vista de ${label}` }))
+      : room.imagen_url
+        ? [{ src: room.imagen_url, alt: `Vista principal de ${label}` }, ...roomGallery(index).slice(1)]
+        : roomGallery(index)
     return {
       value: `room_${room.id}`,
       id: room.id,
@@ -191,8 +198,8 @@ function transformRoomData(apiRooms) {
       capacity: tipo?.capacidad || 1,
       desc,
       fullDesc: desc,
-      image: roomGallery(index)[0].src,
-      gallery: roomGallery(index),
+      image: room.imagen_url || apiGallery[0]?.src || roomGallery(index)[0].src,
+      gallery: apiGallery,
       features: [
         isSuite ? 'Cama King' : 'Cama Queen',
         'WiFi Premium',
@@ -394,10 +401,24 @@ async function handleSubmit(emit) {
       observaciones: specialRequests.value || undefined,
     }
 
-    await hotelApi.createBooking(bookingData)
+    const result = await hotelApi.createBooking(bookingData)
+    bookingResult.value = result
 
     isSubmitting.value = false
-    showSuccess.value = true
+
+    // Anticipo 15% sobre la tarifa base (noches × precio), coherente
+    // con HOTEL_PORCENTAJE_INICIAL y el total que calcula el backend.
+    const anticipo = Math.round(Number(subtotal.value) * 0.15)
+
+    setCheckoutRequest({
+      tipo: 'HOTEL',
+      reserva_id: Number(result.id),
+      montoReferencia: anticipo,
+      origen: 'hotel',
+    })
+
+    // Ir a la pasarela de pago para confirmar el anticipo.
+    if (emit) emit('navigate', 'checkout')
     // Refrescar el historial de reservas para reflejar la nueva reserva.
     loadBookings()
   } catch (err) {
@@ -422,7 +443,15 @@ function resetForm() {
   checkOut.value = ''
   guests.value = 1
   specialRequests.value = ''
+  bookingResult.value = null
   errors.value = { checkIn: '', checkOut: '', guests: '' }
+}
+
+function goToPayment() {
+  const url = bookingResult.value?.payment?.checkout_url
+  if (url) {
+    window.location.href = url
+  }
 }
 
 /* ----------------------------------------------------------
@@ -522,6 +551,7 @@ export function useHotel(emit) {
     // Submit
     isSubmitting,
     showSuccess,
+    bookingResult,
     errors,
     // Computed
     nights,
@@ -564,6 +594,7 @@ export function useHotel(emit) {
     validateForm,
     handleSubmit,
     resetForm,
+    goToPayment,
     closeSuccess() {
       showSuccess.value = false
     },

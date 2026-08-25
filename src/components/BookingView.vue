@@ -46,6 +46,7 @@ const {
   decrementGuests,
   handleSubmit,
   resetForm,
+  goToPayment,
   closeSuccess,
   goBackToHotel,
   switchTab,
@@ -192,15 +193,15 @@ onMounted(async () => {
             </div>
           </div>
           <div class="bk-success-actions">
-            <button class="bk-btn bk-btn-primary" @click="goToMyBookings">
-              Ver Mis Reservas
+            <button class="bk-btn bk-btn-primary" @click="goToPayment">
+              Pagar Ahora
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
                 <polyline points="12 5 19 12 12 19"></polyline>
               </svg>
             </button>
-            <button class="bk-btn bk-btn-secondary" @click="onNewReservation">
-              Nueva Reserva
+            <button class="bk-btn bk-btn-secondary" @click="goToMyBookings">
+              Ver Mis Reservas
             </button>
           </div>
         </div>

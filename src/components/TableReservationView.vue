@@ -1,12 +1,15 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { isStaffUser, getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
 import { useAuth } from '../composables/useAuth.js'
 import { useTableReservation } from '../composables/useTableReservation.js'
 
 const emit = defineEmits(['navigate'])
 
-const { user, isLoggedIn, logout } = useAuth()
+const { user, isLoggedIn, logout, isAdmin } = useAuth()
 const mobileMenuOpen = ref(false)
+
+const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
 function toggleMobileMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
@@ -18,13 +21,7 @@ function handleLogout() {
 }
 
 function getUserInitials() {
-  if (!user.value) return '?'
-  return user.value.name
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  return utilsGetUserInitials(user.value)
 }
 
 const {
@@ -53,6 +50,7 @@ const {
   decrementGuests,
   handleSubmit,
   resetForm,
+  goToPayment,
   closeSuccess,
   goBackToHome,
   goBackToRestaurant,
@@ -76,6 +74,8 @@ const {
         <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
+        <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
+        <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
       </ul>
 
       <div class="nav-actions" :class="{ open: mobileMenuOpen }">
@@ -196,15 +196,12 @@ const {
             </div>
           </div>
           <div class="trsv-success-actions">
-            <button class="trsv-btn trsv-btn-primary" @click="goBackToRestaurant">
-              Volver al Restaurante
+            <button class="trsv-btn trsv-btn-primary" @click="goToPayment">
+              Pagar Ahora
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
                 <polyline points="12 5 19 12 12 19"></polyline>
               </svg>
-            </button>
-            <button class="trsv-btn trsv-btn-secondary" @click="resetForm">
-              Nueva Reserva
             </button>
             <button class="trsv-btn trsv-btn-secondary" @click="goToMyReservations">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -214,6 +211,9 @@ const {
                 <line x1="3" y1="10" x2="21" y2="10"></line>
               </svg>
               Ver Mis Reservas
+            </button>
+            <button class="trsv-btn trsv-btn-secondary" @click="resetForm">
+              Nueva Reserva
             </button>
           </div>
         </div>

@@ -15,6 +15,11 @@ const isAdmin = computed(() => {
   return user.value.rol_nombre === 'Administrador' || user.value.rol_id === 1
 })
 
+const isEmployee = computed(() => {
+  if (!user.value) return false
+  return user.value.rol_nombre === 'Empleado'
+})
+
 function storeTokens(accessToken, refreshTokenValue) {
   token.value = accessToken
   refreshToken.value = refreshTokenValue || null
@@ -77,6 +82,7 @@ export function useAuth() {
     token,
     isLoggedIn,
     isAdmin,
+    isEmployee,
     login,
     logout,
     setTokens,
