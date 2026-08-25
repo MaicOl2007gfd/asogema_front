@@ -77,7 +77,11 @@ export function usePaymentCheckout() {
 
   const datosIncompletos = computed(() => {
     if (metodoPago.value === 'NEQUI' || metodoPago.value === 'DAVIPLATA') {
-      return !/^\d{10}$/.test(phoneNumber.value)
+      return (
+        !/^\d{10}$/.test(phoneNumber.value) ||
+        !userLegalIdType.value ||
+        !/^\d{6,12}$/.test(userLegalId.value)
+      )
     }
     if (metodoPago.value === 'PSE') {
       return (
@@ -100,7 +104,11 @@ export function usePaymentCheckout() {
 
   const paymentData = computed(() => {
     if (metodoPago.value === 'NEQUI' || metodoPago.value === 'DAVIPLATA') {
-      return { phone_number: phoneNumber.value }
+      return {
+        phone_number: phoneNumber.value,
+        user_legal_id_type: userLegalIdType.value,
+        user_legal_id: userLegalId.value,
+      }
     }
     if (metodoPago.value === 'PSE') {
       return {

@@ -53,7 +53,11 @@ export function useWallet(emit) {
 
   const datosIncompletos = computed(() => {
     if (metodoRecarga.value === 'NEQUI' || metodoRecarga.value === 'DAVIPLATA') {
-      return !/^\d{10}$/.test(phoneNumber.value)
+      return (
+        !/^\d{10}$/.test(phoneNumber.value) ||
+        !userLegalIdType.value ||
+        !/^\d{6,12}$/.test(userLegalId.value)
+      )
     }
     if (metodoRecarga.value === 'PSE') {
       return (
@@ -76,7 +80,11 @@ export function useWallet(emit) {
 
   const paymentData = computed(() => {
     if (metodoRecarga.value === 'NEQUI' || metodoRecarga.value === 'DAVIPLATA') {
-      return { phone_number: phoneNumber.value }
+      return {
+        phone_number: phoneNumber.value,
+        user_legal_id_type: userLegalIdType.value,
+        user_legal_id: userLegalId.value,
+      }
     }
     if (metodoRecarga.value === 'PSE') {
       return {

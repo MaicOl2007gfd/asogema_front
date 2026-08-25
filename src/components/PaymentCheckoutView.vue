@@ -343,6 +343,28 @@ onMounted(() => {
                   @input="phoneNumber = phoneNumber.replace(/\D/g, '').slice(0, 10)"
                 />
               </label>
+              <div class="paycheckout-field-row">
+                <label class="paycheckout-field">
+                  <span>Tipo de documento</span>
+                  <select v-model="userLegalIdType">
+                    <option value="CC">Cédula de ciudadanía</option>
+                    <option value="CE">Cédula de extranjería</option>
+                    <option value="NIT">NIT</option>
+                    <option value="PP">Pasaporte</option>
+                  </select>
+                </label>
+                <label class="paycheckout-field">
+                  <span>Número de documento</span>
+                  <input
+                    v-model="userLegalId"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="12"
+                    placeholder="Ej: 1099888777"
+                    @input="userLegalId = userLegalId.replace(/\D/g, '').slice(0, 12)"
+                  />
+                </label>
+              </div>
               <p class="paycheckout-hint">Se enviará una notificación a tu celular para confirmar el pago.</p>
             </div>
 
@@ -364,7 +386,6 @@ onMounted(() => {
                     <option value="CC">Cédula de ciudadanía</option>
                     <option value="CE">Cédula de extranjería</option>
                     <option value="NIT">NIT</option>
-                    <option value="TI">Tarjeta de identidad</option>
                     <option value="PP">Pasaporte</option>
                   </select>
                 </label>
