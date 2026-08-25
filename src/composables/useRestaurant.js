@@ -59,6 +59,7 @@ export function useRestaurant(emit, isLoggedIn) {
           name: product.nombre,
           description: product.descripcion || 'Deliciosa preparación de nuestro restaurante.',
           price: formatPrice(Number(product.precio) || 0),
+          aplicaIva: product.aplica_iva !== false,
           category: catSlug,
           image: product.imagen_url || `https://picsum.photos/seed/${slugify(product.nombre)}/400/300`,
           badge: cat.nombre,
@@ -365,6 +366,7 @@ export function useRestaurant(emit, isLoggedIn) {
       price: parsePrice(item.price),
       quantity: item.quantity,
       image: item.image,
+      aplicaIva: item.aplicaIva !== false,
     }))
 
     setCheckoutRequest({

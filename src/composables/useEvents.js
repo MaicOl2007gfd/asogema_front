@@ -1,6 +1,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuth } from './useAuth.js'
 import { useEventsApi } from './useEventsApi.js'
+import { setCheckoutRequest } from './useCheckout.js'
 
 /**
  * Composable que maneja toda la lógica de la vista del Salón de Eventos.
@@ -345,9 +346,14 @@ export function useEvents(emit) {
   }
 
   function goToPayment() {
-    const url = bookingResult.value?.payment?.checkout_url
-    if (url) {
-      window.location.href = url
+    const reserva = bookingResult.value
+    if (reserva?.id) {
+      setCheckoutRequest({
+        tipo: 'EVENTO',
+        reserva_id: Number(reserva.id),
+        origen: 'events',
+      })
+      if (emit) emit('navigate', 'checkout')
     }
   }
 

@@ -59,9 +59,26 @@ export function usePaymentCheckout() {
 
   const baseGravable = computed(() => subtotal.value - descuento.value)
 
-  const impuestos = computed(() =>
-    request.value?.tipo === 'RECARGA' ? 0 : Math.round(baseGravable.value * IVA_RATE),
-  )
+  /** Base gravada con IVA: solo items con aplicaIva (restaurante) o el subtotal completo. */
+  const baseGravada = computed(() => {
+    if (request.value?.tipo !== 'RESTAURANTE' || items.value.length === 0) {
+      return subtotal.value
+    }
+    return items.value.reduce(
+      (acc, item) =>
+        item.aplicaIva !== false
+          ? acc + Number(item.precio ?? item.price) * item.quantity
+          : acc,
+      0,
+    )
+  })
+
+  const impuestos = computed(() => {
+    if (request.value?.tipo === 'RECARGA') return 0
+    // IVA del origen escalado por el descuento (baseGravable / subtotal).
+    const factor = subtotal.value > 0 ? baseGravable.value / subtotal.value : 0
+    return Math.round(baseGravada.value * IVA_RATE * factor)
+  })
 
   const total = computed(() => baseGravable.value + impuestos.value)
 

@@ -1387,7 +1387,10 @@
    ---------------------------------------------------------- */
 .order-panel-overlay {
   position: fixed;
-  inset: 0;
+  top: 70px;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 900;
   display: flex;
   justify-content: flex-end;
@@ -1488,6 +1491,7 @@
 /* --- Panel Items --- */
 .order-panel-items {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 16px 28px 16px;
   display: flex;
