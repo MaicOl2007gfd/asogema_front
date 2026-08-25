@@ -1,12 +1,15 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { isStaffUser, getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
 import { useAuth } from '../composables/useAuth.js'
 import { useMyRestaurantReservations } from '../composables/useMyRestaurantReservations.js'
 
 const emit = defineEmits(['navigate'])
 
-const { user, isLoggedIn, logout } = useAuth()
+const { user, isLoggedIn, logout, isAdmin } = useAuth()
 const mobileMenuOpen = ref(false)
+
+const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
 function toggleMobileMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
@@ -82,6 +85,8 @@ onMounted(() => {
         <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
+        <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
+        <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
       </ul>
 
       <div class="rrsv-nav-actions" :class="{ open: mobileMenuOpen }">

@@ -1,4 +1,5 @@
 import { ref, computed, watch } from 'vue'
+import { formatCop } from './useUtils.js'
 import api from './useApi.js'
 
 // ─── Loading & Error ────────────────────────────────────────
@@ -374,12 +375,7 @@ function timeOf(v) {
 
 function formatCurrency(value) {
   if (value == null) return '—'
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
+  return formatCop(value)
 }
 
 function statusBadgeClass(status) {

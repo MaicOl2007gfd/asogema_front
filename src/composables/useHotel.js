@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useAuth } from './useAuth.js'
 import { useHotelApi } from './useHotelApi.js'
+import { setCheckoutRequest } from './useCheckout.js'
 
 /**
  * Hotel Composable — estado singleton (module scope).
@@ -394,10 +395,23 @@ async function handleSubmit(emit) {
       observaciones: specialRequests.value || undefined,
     }
 
-    await hotelApi.createBooking(bookingData)
+    const reserva = await hotelApi.createBooking(bookingData)
 
     isSubmitting.value = false
-    showSuccess.value = true
+
+    // Anticipo 15% sobre la tarifa base (noches × precio), coherente
+    // con HOTEL_PORCENTAJE_INICIAL y el total que calcula el backend.
+    const anticipo = Math.round(Number(subtotal.value) * 0.15)
+
+    setCheckoutRequest({
+      tipo: 'HOTEL',
+      reserva_id: Number(reserva.id),
+      montoReferencia: anticipo,
+      origen: 'hotel',
+    })
+
+    // Ir a la pasarela de pago para confirmar el anticipo.
+    if (emit) emit('navigate', 'checkout')
     // Refrescar el historial de reservas para reflejar la nueva reserva.
     loadBookings()
   } catch (err) {
