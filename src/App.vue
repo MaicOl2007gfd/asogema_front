@@ -58,10 +58,6 @@ function navigate(view) {
     currentView.value = 'index'
     return
   }
-  if (view === 'wallet' && isStaff.value && !isAdmin.value) {
-    currentView.value = 'index'
-    return
-  }
   currentView.value = view
 }
 

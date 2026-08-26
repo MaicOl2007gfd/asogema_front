@@ -79,7 +79,7 @@ onUnmounted(() => onUnmount())
          NAVBAR
          ====================================================== -->
     <nav class="index-nav" :class="{ scrolled: isScrolled }">
-      <div class="nav-brand" @click="emit('navigate', 'index')">
+      <div class="nav-brand" @click="emit('navigate', 'profile')">
         <img src="/imagenes/Logo.png" alt="Asogema" class="nav-logo" />
         <span class="nav-brand-text">Asogema</span>
       </div>
