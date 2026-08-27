@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
+import { getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
 import { usePanelAdmin } from '../composables/usePanelAdmin.js'
 import { useEmployees } from '../composables/useEmployees.js'
 import { DOCUMENT_TYPES, DOC_TYPE_IDS, getDocTypeLabel } from '../composables/documentTypes.js'
+import AiAssistant from './AiAssistant.vue'
 
 const emit = defineEmits(['navigate'])
 const { user, isAdmin, logout } = useAuth()
@@ -30,6 +32,16 @@ const {
   members, selectedMemberId, selectedMember,
   memberSearch, memberPage, memberTotalPages, filteredMembers, paginatedMembers, MEMBERS_PER_PAGE,
   showMemberModal, openMemberModal, closeMemberModal,
+  // Miembros CRUD
+  showMemberForm, editingMember, newMember, memberFormError, memberFormSaving,
+  MEMBER_DOC_TYPES, openNewMember, openEditMember, closeMemberForm, createMember, updateMember, toggleMemberStatus,
+  // Reservas
+  allReservations, reservationsLoading, reservationsError,
+  reservationTypeFilter, reservationStatusFilter, reservationSearch, reservationPage,
+  RESERVATIONS_PER_PAGE, RESERVATION_STATUS_OPTIONS, reservationStatusOptions,
+  filteredReservations, paginatedReservations, reservationTotalPages,
+  changingReservationId, reservationActionError,
+  fetchAllReservations, changeReservationStatus, cancelAdminReservation,
   // Habitaciones
   rooms, roomTypes, roomsLoading, roomsError,
   showRoomForm, editingRoom, newRoom, roomFormError, roomFormSaving,
@@ -63,8 +75,7 @@ const todayDate = computed(() => {
 })
 
 function getUserInitials() {
-  if (!user.value) return '?'
-  return user.value.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  return utilsGetUserInitials(user.value)
 }
 
 function setModule(mod) {
@@ -321,6 +332,10 @@ onMounted(() => {
           <button class="lux-module-pill" :class="{ active: activeModule === 'salones' }" @click="setModule('salones')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11m2.66-1.66a2.83 2.83 0 114 4L15 11.66l-3.08 3.08a2.83 2.83 0 01-4-4l3.08-3.08z"></path><line x1="16" y1="8" x2="21" y2="13"></line><line x1="21" y1="16" x2="16" y2="21"></line></svg>
             <span>Salones</span>
+          </button>
+          <button class="lux-module-pill" :class="{ active: activeModule === 'reservas' }" @click="setModule('reservas')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>
+            <span>Reservas</span>
           </button>
         </nav>
 
@@ -674,6 +689,17 @@ onMounted(() => {
              ═══════════════════════════════════════════════ -->
         <template v-if="activeModule === 'socio'">
           <div class="lux-socio-page">
+            <div class="lux-section-header">
+              <div>
+                <h2 class="lux-section-title">Gestión de Miembros</h2>
+                <p class="lux-section-desc">Crea, edita y desactiva los miembros del club.</p>
+              </div>
+              <button class="lux-btn-primary" @click="openNewMember">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nuevo Miembro
+              </button>
+            </div>
+
             <div class="lux-socio-search">
               <svg class="lux-socio-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -688,7 +714,7 @@ onMounted(() => {
             <div class="lux-card lux-card-table">
               <table class="lux-table">
                 <thead>
-                  <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Membresía</th><th>Estado</th></tr>
+                  <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Membresía</th><th>Estado</th><th></th></tr>
                 </thead>
                 <tbody>
                   <tr v-for="m in paginatedMembers" :key="m.id" class="lux-socio-table-row" :class="{ active: selectedMemberId === m.id }" @click="openMemberModal(m.id)">
@@ -703,10 +729,21 @@ onMounted(() => {
                     <td>
                       <span class="lux-socio-membership-badge" :style="{ background: m.membershipColor + '20', color: m.membershipColor }">{{ m.membership }}</span>
                     </td>
-                    <td><span class="lux-status-badge lux-status-confirmed">Activo</span></td>
+                    <td>
+                      <span class="lux-status-badge" :class="m.activo ? 'lux-status-confirmed' : 'lux-status-cancelled'">{{ m.activo ? 'Activo' : 'Inactivo' }}</span>
+                    </td>
+                    <td class="lux-table-actions">
+                      <button class="lux-icon-btn" title="Editar miembro" @click.stop="openEditMember(m)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      </button>
+                      <button class="lux-icon-btn" :class="m.activo ? 'lux-icon-btn-danger' : ''" :title="m.activo ? 'Desactivar miembro' : 'Activar miembro'" @click.stop="toggleMemberStatus(m)">
+                        <svg v-if="m.activo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 11-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                      </button>
+                    </td>
                   </tr>
                   <tr v-if="paginatedMembers.length === 0">
-                    <td colspan="5" class="lux-empty-row">No se encontraron socios</td>
+                    <td colspan="6" class="lux-empty-row">No se encontraron socios</td>
                   </tr>
                 </tbody>
               </table>
@@ -1056,8 +1093,112 @@ onMounted(() => {
           </Teleport>
         </template>
 
+        <!-- ═══════════════════════════════════════════════
+             MODULE 8: RESERVAS
+             ═══════════════════════════════════════════════ -->
+        <template v-if="activeModule === 'reservas'">
+          <section class="lux-section">
+            <div class="lux-section-header">
+              <div>
+                <h2 class="lux-section-title">Gestión de Reservas</h2>
+                <p class="lux-section-desc">Listado completo de todas las reservas del club.</p>
+              </div>
+            </div>
+
+            <div class="lux-task-filters">
+              <select v-model="reservationTypeFilter" class="lux-task-filter-select">
+                <option value="all">Todos los servicios</option>
+                <option value="hotel">Hotel</option>
+                <option value="restaurante">Restaurante</option>
+                <option value="eventos">Eventos</option>
+              </select>
+              <select v-model="reservationStatusFilter" class="lux-task-filter-select">
+                <option value="all">Todos los estados</option>
+                <option v-for="opt in reservationStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+              <div class="lux-reservation-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input v-model="reservationSearch" type="text" placeholder="Buscar por cliente, detalle o Nº..." />
+              </div>
+            </div>
+
+            <div v-if="reservationActionError" class="lux-task-form-error" style="margin-bottom: 16px">{{ reservationActionError }}</div>
+
+            <div v-if="reservationsLoading" class="lux-panel-state">
+              <div class="lux-panel-spinner"></div>
+              <p>Cargando reservas…</p>
+            </div>
+
+            <div v-else-if="reservationsError" class="lux-panel-state lux-panel-error" role="alert">
+              <p>{{ reservationsError }}</p>
+              <button type="button" class="lux-btn-secondary" @click="fetchAllReservations">Reintentar</button>
+            </div>
+
+            <div v-else class="lux-card lux-card-table">
+              <table class="lux-table">
+                <thead>
+                  <tr><th>Nº</th><th>Cliente</th><th>Servicio</th><th>Detalle</th><th>Fecha</th><th>Hora</th><th>Personas</th><th>Estado</th><th></th></tr>
+                </thead>
+                <tbody>
+                  <tr v-for="r in paginatedReservations" :key="r.key">
+                    <td><span class="lux-time-badge">#{{ r.id }}</span></td>
+                    <td>
+                      <strong>{{ r.cliente }}</strong>
+                      <div class="lux-text-muted" style="font-size: 11px">{{ r.telefono }}</div>
+                    </td>
+                    <td>
+                      <span class="lux-reservation-type-badge" :class="'type-' + r.tipoKey">{{ r.tipo }}</span>
+                    </td>
+                    <td class="lux-text-muted">{{ r.detalle }}</td>
+                    <td>{{ r.fecha }}{{ r.fechaFin && r.fechaFin !== r.fecha ? ' → ' + r.fechaFin : '' }}</td>
+                    <td class="lux-text-muted">{{ r.hora }}</td>
+                    <td>{{ r.personas }}</td>
+                    <td>
+                      <select
+                        class="lux-reservation-status-select"
+                        :value="r.estado"
+                        :disabled="changingReservationId === r.key || r.estado === 'cancelada'"
+                        @change="changeReservationStatus(r, $event.target.value)"
+                      >
+                        <option v-for="opt in reservationStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                      </select>
+                    </td>
+                    <td class="lux-table-actions">
+                      <button
+                        class="lux-icon-btn lux-icon-btn-danger"
+                        title="Cancelar reserva"
+                        :disabled="r.estado === 'cancelada' || changingReservationId === r.key"
+                        @click="cancelAdminReservation(r)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr v-if="paginatedReservations.length === 0">
+                    <td colspan="9" class="lux-empty-row">No se encontraron reservas que coincidan con los filtros</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="lux-socio-pagination">
+              <span class="lux-socio-pagination-info">
+                Mostrando {{ filteredReservations.length === 0 ? 0 : (reservationPage - 1) * RESERVATIONS_PER_PAGE + 1 }}–{{ Math.min(reservationPage * RESERVATIONS_PER_PAGE, filteredReservations.length) }} de {{ filteredReservations.length }}
+              </span>
+              <div class="lux-socio-pagination-btns">
+                <button class="lux-socio-page-btn" :disabled="reservationPage <= 1" @click="reservationPage--">← Anterior</button>
+                <span class="lux-socio-page-num">{{ reservationPage }} / {{ reservationTotalPages }}</span>
+                <button class="lux-socio-page-btn" :disabled="reservationPage >= reservationTotalPages" @click="reservationPage++">Siguiente →</button>
+              </div>
+            </div>
+          </section>
+        </template>
+
       </template>
     </main>
+
+    <!-- Asistente IA -->
+    <AiAssistant />
 
     <!-- ═══════════════════ DAY OVERVIEW DRAWER ═══════════════════ -->
     <Teleport to="body">
@@ -1290,6 +1431,57 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ═══════════════════ MEMBER CREATE/EDIT MODAL ═══════════════════ -->
+    <Teleport to="body">
+      <div class="lux-modal-overlay" :class="{ active: showMemberForm }" @click.self="closeMemberForm">
+        <div class="lux-modal lux-modal-task" v-if="showMemberForm">
+          <button class="lux-modal-close" @click="closeMemberForm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+          <div class="lux-modal-body">
+            <h2 class="lux-modal-title">{{ editingMember ? 'Editar Miembro' : 'Nuevo Miembro' }}</h2>
+            <div v-if="memberFormError" class="lux-task-form-error">{{ memberFormError }}</div>
+            <form class="lux-task-form" @submit.prevent="editingMember ? updateMember() : createMember()">
+              <div class="lux-task-form-group">
+                <label>Nombre completo *</label>
+                <input v-model="newMember.nombre" type="text" placeholder="Ej: Carlos Andrés Gómez" required />
+              </div>
+              <div class="lux-task-form-group">
+                <label>Correo electrónico *</label>
+                <input v-model="newMember.correo" type="email" placeholder="correo@ejemplo.com" required />
+              </div>
+              <div class="lux-task-form-row">
+                <div class="lux-task-form-group">
+                  <label>Tipo de documento</label>
+                  <select v-model="newMember.tipo_documento">
+                    <option v-for="t in MEMBER_DOC_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
+                  </select>
+                </div>
+                <div class="lux-task-form-group">
+                  <label>N.º documento</label>
+                  <input v-model="newMember.numero_documento" type="text" placeholder="Ej: 123456789" />
+                </div>
+              </div>
+              <div class="lux-task-form-group">
+                <label>Teléfono</label>
+                <input v-model="newMember.telefono" type="text" placeholder="Ej: 3001234567" />
+              </div>
+              <div class="lux-task-form-group">
+                <label>{{ editingMember ? 'Nueva contraseña (opcional)' : 'Contraseña' }}</label>
+                <input v-model="newMember.password" type="password" :placeholder="editingMember ? 'Dejar en blanco para no cambiarla' : 'Mínimo 8 caracteres'" :required="!editingMember" />
+              </div>
+              <div class="lux-task-form-actions">
+                <div class="lux-task-form-actions-right">
+                  <button type="button" class="lux-btn-secondary" @click="closeMemberForm" :disabled="memberFormSaving">Cancelar</button>
+                  <button type="submit" class="lux-btn-primary" :disabled="memberFormSaving">{{ memberFormSaving ? 'Guardando...' : (editingMember ? 'Actualizar' : 'Crear') }}</button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       </div>

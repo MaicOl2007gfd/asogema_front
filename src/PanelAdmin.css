@@ -142,8 +142,31 @@
   align-items: center;
   gap: 4px;
   background: rgba(243, 232, 211, 0.05);
-  padding: 4px;
+  padding: 4px 4px 6px;
   border-radius: 50px;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 206, 201, 0.45) rgba(243, 232, 211, 0.08);
+}
+
+.lux-module-nav::-webkit-scrollbar {
+  height: 5px;
+}
+
+.lux-module-nav::-webkit-scrollbar-track {
+  background: rgba(243, 232, 211, 0.08);
+  border-radius: 10px;
+}
+
+.lux-module-nav::-webkit-scrollbar-thumb {
+  background: rgba(0, 206, 201, 0.45);
+  border-radius: 10px;
+}
+
+.lux-module-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 206, 201, 0.7);
 }
 
 .lux-module-pill {
@@ -3473,4 +3496,79 @@
   .lux-modal {
     width: 95%;
   }
+/* ==========================================================
+   RESERVATIONS MODULE
+   ========================================================== */
+.lux-reservation-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 220px;
+}
+
+.lux-reservation-search svg {
+  position: absolute;
+  left: 12px;
+  width: 15px;
+  height: 15px;
+  color: var(--lux-text-light);
+  pointer-events: none;
+}
+
+.lux-reservation-search input {
+  width: 100%;
+  padding: 10px 14px 10px 34px;
+  border: 1.5px solid var(--lux-border);
+  border-radius: var(--lux-radius-xs);
+  background: var(--lux-bg-light);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--lux-text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.lux-reservation-search input:focus {
+  border-color: var(--lux-accent);
+}
+
+.lux-reservation-type-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.lux-reservation-type-badge.type-hotel { background: rgba(0, 206, 201, 0.12); color: #00a8a3; border: 1px solid rgba(0, 206, 201, 0.2); }
+.lux-reservation-type-badge.type-restaurante { background: rgba(108, 92, 231, 0.12); color: #5a4bd1; border: 1px solid rgba(108, 92, 231, 0.2); }
+.lux-reservation-type-badge.type-eventos { background: rgba(253, 203, 110, 0.16); color: #c59400; border: 1px solid rgba(253, 203, 110, 0.25); }
+
+.lux-reservation-status-select {
+  padding: 6px 10px;
+  border: 1.5px solid var(--lux-border);
+  border-radius: var(--lux-radius-xs);
+  background: var(--lux-bg-light);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lux-text);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+  max-width: 140px;
+}
+
+.lux-reservation-status-select:focus {
+  border-color: var(--lux-accent);
+}
+
+.lux-reservation-status-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

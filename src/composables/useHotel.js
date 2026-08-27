@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useAuth } from './useAuth.js'
 import { useHotelApi } from './useHotelApi.js'
+import { setCheckoutRequest } from './useCheckout.js'
 
 /**
  * Hotel Composable — estado singleton (module scope).
@@ -8,11 +9,11 @@ import { useHotelApi } from './useHotelApi.js'
  * Controla toda la experiencia del Hotel:
  *  1. Catálogo de habitaciones con filtros por fecha y ocupantes.
  *  2. Detalle de habitación (galería, servicios, tarifa).
- *  3. Reserva de habitación (consumida por ReservationView).
+ *  3. Reserva de habitación.
  *  4. Mis reservas de hotel (historial + cancelar).
  *
- * Como el estado vive a nivel de módulo, HotelView y ReservationView
- * comparten la misma selección de habitación al navegar entre vistas.
+ * Como el estado vive a nivel de módulo, las vistas comparten la
+ * misma selección de habitación al navegar entre vistas.
  */
 
 const { user, isLoggedIn } = useAuth()
@@ -92,7 +93,7 @@ const selectedRoomDetail = ref(null)
 const activeGalleryIndex = ref(0)
 
 /* ----------------------------------------------------------
-   BOOKING SELECTION (compartida con ReservationView)
+   BOOKING SELECTION
    ---------------------------------------------------------- */
 const selectedRoom = ref(null)
 const checkIn = ref('')
@@ -404,7 +405,20 @@ async function handleSubmit(emit) {
     bookingResult.value = result
 
     isSubmitting.value = false
-    showSuccess.value = true
+
+    // Anticipo 15% sobre la tarifa base (noches × precio), coherente
+    // con HOTEL_PORCENTAJE_INICIAL y el total que calcula el backend.
+    const anticipo = Math.round(Number(subtotal.value) * 0.15)
+
+    setCheckoutRequest({
+      tipo: 'HOTEL',
+      reserva_id: Number(result.id),
+      montoReferencia: anticipo,
+      origen: 'hotel',
+    })
+
+    // Ir a la pasarela de pago para confirmar el anticipo.
+    if (emit) emit('navigate', 'checkout')
     // Refrescar el historial de reservas para reflejar la nueva reserva.
     loadBookings()
   } catch (err) {
