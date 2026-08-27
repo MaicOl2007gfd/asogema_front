@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
 import { usePanelAdmin } from '../composables/usePanelAdmin.js'
+import AiAssistant from './AiAssistant.vue'
 
 const emit = defineEmits(['navigate'])
 const { user, isAdmin, logout } = useAuth()
@@ -982,6 +983,9 @@ onMounted(() => {
 
       </template>
     </main>
+
+    <!-- Asistente IA -->
+    <AiAssistant />
 
     <!-- ═══════════════════ DAY OVERVIEW DRAWER ═══════════════════ -->
     <Teleport to="body">
