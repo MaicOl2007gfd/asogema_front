@@ -1,13 +1,16 @@
 import { ref, computed } from 'vue'
 import api from './useApi.js'
 import { useTasks } from './useTasks.js'
+import { useEmployees } from './useEmployees.js'
 
 const {
-  tasks, employees, selectedDate, showTaskModal, editingTask,
+  tasks, selectedDate, showTaskModal, editingTask,
   taskLoading, taskError, tasksForSelectedDate, tasksByDate,
-  fetchTasks, fetchEmployees, createTask, updateTask, deleteTask,
+  fetchTasks, createTask, updateTask, deleteTask,
   openTaskModal, openEditTaskModal, closeTaskModal,
 } = useTasks()
+
+const { employees, fetchEmployees } = useEmployees()
 
 // ─── Loading & Error ────────────────────────────────────────
 const loading = ref(false)

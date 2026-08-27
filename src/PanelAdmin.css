@@ -3228,3 +3228,249 @@
   background: rgba(214, 48, 49, 0.08) !important;
   color: #d63031 !important;
 }
+
+/* ── Admin task evidence ─────────────────────────────────── */
+.lux-admin-evidence {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: rgba(0,184,148,0.06);
+  border: 1px solid rgba(0,184,148,0.18);
+  border-radius: var(--lux-radius-sm, 12px);
+}
+
+.lux-admin-evidence-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #00b894;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.lux-admin-evidence-text {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--lux-text-muted);
+  white-space: pre-wrap;
+}
+
+.lux-admin-evidence-img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: var(--lux-radius-xs, 8px);
+  border: 1px solid var(--lux-border);
+}
+
+.lux-admin-evidence-date {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--lux-text-light);
+  font-weight: 500;
+}
+
+/* ── Segmented Control ──────────────────────────────────── */
+.lux-segmented-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.lux-segmented {
+  display: inline-flex;
+  background: rgba(19, 50, 21, 0.06);
+  border-radius: var(--lux-radius-xs, 8px);
+  padding: 3px;
+  gap: 2px;
+}
+
+.lux-seg-btn {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lux-text-muted);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.lux-seg-btn.active {
+  background: var(--lux-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(19, 50, 21, 0.18);
+}
+
+.lux-seg-btn:not(.active):hover {
+  color: var(--lux-primary);
+  background: rgba(19, 50, 21, 0.04);
+}
+
+/* ── Employee Modal ─────────────────────────────────────── */
+.lux-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.lux-modal {
+  background: var(--lux-bg-light, #fff8f0);
+  border-radius: var(--lux-radius, 20px);
+  width: 90%;
+  max-width: 580px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--lux-shadow-lg, 0 24px 64px rgba(19,50,21,0.15));
+  animation: slideUp 0.25s ease;
+}
+
+.lux-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+
+.lux-modal-header h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 20px;
+  color: var(--lux-primary);
+}
+
+.lux-modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(19, 50, 21, 0.06);
+  border-radius: 50%;
+  font-size: 18px;
+  color: var(--lux-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.lux-modal-close:hover {
+  background: rgba(19, 50, 21, 0.12);
+  color: var(--lux-primary);
+}
+
+.lux-modal-body {
+  padding: 20px 24px;
+}
+
+.lux-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 24px 20px;
+}
+
+.lux-form-error {
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: rgba(214, 48, 49, 0.08);
+  border: 1px solid rgba(214, 48, 49, 0.2);
+  border-radius: var(--lux-radius-xs, 8px);
+  color: #d63031;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.lux-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.lux-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lux-form-group--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.lux-form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lux-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.lux-form-group input,
+.lux-form-group select {
+  padding: 10px 12px;
+  border: 1px solid var(--lux-border, rgba(19,50,21,0.1));
+  border-radius: var(--lux-radius-xs, 8px);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--lux-text);
+  background: #fff;
+  transition: border-color 0.2s ease;
+  outline: none;
+}
+
+.lux-form-group input:focus,
+.lux-form-group select:focus {
+  border-color: var(--lux-accent, #00cec9);
+}
+
+.lux-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  .lux-segmented-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lux-segmented {
+    justify-content: center;
+  }
+  .lux-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .lux-modal {
+    width: 95%;
+  }
+}

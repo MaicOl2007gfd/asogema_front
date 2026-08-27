@@ -1,16 +1,6 @@
 import { ref, onMounted } from 'vue'
 import api from './useApi.js'
-
-const DOCUMENT_TYPES = [
-  { value: 'CC', label: 'Cédula de Ciudadanía' },
-  { value: 'CE', label: 'Cédula de Extranjería' },
-  { value: 'PAS', label: 'Pasaporte' },
-  { value: 'RC', label: 'Registro Civil' },
-  { value: 'NIT', label: 'NIT' },
-  { value: 'CD', label: 'Carné Diplomático' },
-]
-
-const DOC_TYPE_IDS = { CC: 1, CE: 2, PAS: 3, RC: 4, NIT: 5, CD: 6 }
+import { DOCUMENT_TYPES, DOC_TYPE_IDS } from './documentTypes.js'
 
 /**
  * Composable que maneja toda la lógica del formulario de registro.

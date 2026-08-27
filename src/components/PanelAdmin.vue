@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { usePanelAdmin } from '../composables/usePanelAdmin.js'
+import { useEmployees } from '../composables/useEmployees.js'
+import { DOCUMENT_TYPES, DOC_TYPE_IDS, getDocTypeLabel } from '../composables/documentTypes.js'
 
 const emit = defineEmits(['navigate'])
 const { user, isAdmin, logout } = useAuth()
@@ -45,6 +47,15 @@ const {
   showSalonForm, editingSalon, newSalon, salonFormError, salonFormSaving,
   fetchSalons, createSalon, updateSalon, deleteSalon, resetSalonForm, openEditSalon,
 } = usePanelAdmin()
+
+const {
+  employees: empList, loading: empLoading, error: empError,
+  showForm: showEmpForm, editingEmployee, formError: empFormError, formLoading: empFormLoading,
+  createEmployee, updateEmployee, deactivateEmployee,
+  openCreateForm, openEditForm, closeForm: closeEmpForm,
+} = useEmployees()
+
+const taskSection = ref('tareas')
 
 const todayDate = computed(() => {
   const d = new Date()
@@ -159,6 +170,103 @@ async function handleDeleteTask() {
     taskFormError.value = 'Error al eliminar la tarea.'
   } finally {
     taskFormSaving.value = false
+  }
+}
+
+// ─── Employee Form ──────────────────────────────────────────
+const empForm = ref({
+  nombre: '',
+  apellido: '',
+  tipo_documento_id: 1,
+  numero_documento: '',
+  telefono: '',
+  correo: '',
+  password: '',
+  confirmPassword: '',
+})
+
+watch(showEmpForm, (open) => {
+  if (open) {
+    if (editingEmployee.value) {
+      empForm.value = {
+        nombre: editingEmployee.value.nombre || '',
+        apellido: editingEmployee.value.apellido || '',
+        tipo_documento_id: editingEmployee.value.tipo_documento_id || 1,
+        numero_documento: editingEmployee.value.numero_documento || '',
+        telefono: editingEmployee.value.telefono || '',
+        correo: editingEmployee.value.correo || '',
+        password: '',
+        confirmPassword: '',
+      }
+    } else {
+      empForm.value = {
+        nombre: '',
+        apellido: '',
+        tipo_documento_id: 1,
+        numero_documento: '',
+        telefono: '',
+        correo: '',
+        password: '',
+        confirmPassword: '',
+      }
+    }
+  }
+})
+
+async function handleSaveEmployee() {
+  const f = empForm.value
+  if (!f.nombre.trim() || !f.apellido.trim()) {
+    empFormError.value = 'Nombre y apellido son obligatorios.'
+    return
+  }
+  if (!f.numero_documento.trim()) {
+    empFormError.value = 'El número de documento es obligatorio.'
+    return
+  }
+  if (!f.telefono.trim()) {
+    empFormError.value = 'El teléfono es obligatorio.'
+    return
+  }
+  if (!f.correo.trim()) {
+    empFormError.value = 'El correo es obligatorio.'
+    return
+  }
+  if (!editingEmployee.value && (!f.password || f.password.length < 6)) {
+    empFormError.value = 'La contraseña debe tener al menos 6 caracteres.'
+    return
+  }
+  if (f.password && f.password !== f.confirmPassword) {
+    empFormError.value = 'Las contraseñas no coinciden.'
+    return
+  }
+
+  const payload = {
+    nombre: f.nombre.trim(),
+    apellido: f.apellido.trim(),
+    tipo_documento_id: Number(f.tipo_documento_id),
+    numero_documento: f.numero_documento.trim(),
+    telefono: f.telefono.trim(),
+    correo: f.correo.trim(),
+  }
+  if (f.password) payload.password = f.password
+
+  try {
+    if (editingEmployee.value) {
+      await updateEmployee(editingEmployee.value.id, payload)
+    } else {
+      await createEmployee(payload)
+    }
+  } catch {
+    // formError ya viene del composable
+  }
+}
+
+async function handleDeactivateEmployee(emp) {
+  if (!confirm(`¿Desactivar a ${emp.nombre}?`)) return
+  try {
+    await deactivateEmployee(emp.id)
+  } catch {
+    // silently
   }
 }
 
@@ -390,70 +498,175 @@ onMounted(() => {
         </template>
 
         <!-- ═══════════════════════════════════════════════
-             MODULE 3: TAREAS
+             MODULE 3: TAREAS + EMPLEADOS
              ═══════════════════════════════════════════════ -->
         <template v-if="activeModule === 'tareas'">
           <section class="lux-section">
-            <div class="lux-section-header">
-              <h2>Gestión de Tareas</h2>
-              <button class="lux-btn-primary" @click="openNewTaskFromModule">
+            <div class="lux-segmented-row">
+              <div class="lux-segmented">
+                <button class="lux-seg-btn" :class="{ active: taskSection === 'tareas' }" @click="taskSection = 'tareas'">Tareas</button>
+                <button class="lux-seg-btn" :class="{ active: taskSection === 'empleados' }" @click="taskSection = 'empleados'">Empleados</button>
+              </div>
+              <button v-if="taskSection === 'tareas'" class="lux-btn-primary" @click="openNewTaskFromModule">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Nueva Tarea
               </button>
+              <button v-if="taskSection === 'empleados'" class="lux-btn-primary" @click="openCreateForm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nuevo Empleado
+              </button>
             </div>
 
-            <div class="lux-task-filters">
-              <select v-model="taskFilterEstado" class="lux-task-filter-select">
-                <option value="">Todos los estados</option>
-                <option value="PENDIENTE">Pendiente</option>
-                <option value="EN_PROGRESO">En Progreso</option>
-                <option value="COMPLETADA">Completada</option>
-                <option value="CANCELADA">Cancelada</option>
-              </select>
-              <select v-model="taskFilterPrioridad" class="lux-task-filter-select">
-                <option value="">Todas las prioridades</option>
-                <option value="URGENTE">Urgente</option>
-                <option value="ALTA">Alta</option>
-                <option value="MEDIA">Media</option>
-                <option value="BAJA">Baja</option>
-              </select>
-              <select v-model="taskFilterEmpleado" class="lux-task-filter-select">
-                <option value="">Todos los empleados</option>
-                <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
-              </select>
-            </div>
+            <!-- ── TAREAS SUB-VIEW ── -->
+            <template v-if="taskSection === 'tareas'">
+              <div class="lux-task-filters">
+                <select v-model="taskFilterEstado" class="lux-task-filter-select">
+                  <option value="">Todos los estados</option>
+                  <option value="PENDIENTE">Pendiente</option>
+                  <option value="EN_PROGRESO">En Progreso</option>
+                  <option value="COMPLETADA">Completada</option>
+                  <option value="CANCELADA">Cancelada</option>
+                </select>
+                <select v-model="taskFilterPrioridad" class="lux-task-filter-select">
+                  <option value="">Todas las prioridades</option>
+                  <option value="URGENTE">Urgente</option>
+                  <option value="ALTA">Alta</option>
+                  <option value="MEDIA">Media</option>
+                  <option value="BAJA">Baja</option>
+                </select>
+                <select v-model="taskFilterEmpleado" class="lux-task-filter-select">
+                  <option value="">Todos los empleados</option>
+                  <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
+                </select>
+              </div>
 
-            <div v-if="taskLoading" class="lux-panel-state">
-              <div class="lux-panel-spinner"></div>
-              <p>Cargando tareas…</p>
-            </div>
+              <div v-if="taskLoading" class="lux-panel-state">
+                <div class="lux-panel-spinner"></div>
+                <p>Cargando tareas…</p>
+              </div>
 
-            <div v-else class="lux-card lux-card-table">
-              <table class="lux-table">
-                <thead>
-                  <tr><th>Título</th><th>Fecha</th><th>Horario</th><th>Prioridad</th><th>Estado</th><th>Asignada a</th><th></th></tr>
-                </thead>
-                <tbody>
-                  <tr v-for="t in filteredTasks" :key="t.id" class="lux-task-row" @click="openEditTaskModal(t)">
-                    <td><strong>{{ t.titulo }}</strong></td>
-                    <td>{{ t.fecha }}</td>
-                    <td class="lux-text-muted">{{ t.hora_inicio || '—' }}{{ t.hora_fin ? ' - ' + t.hora_fin : '' }}</td>
-                    <td><span class="lux-task-priority-badge" :style="{ background: priorityColor(t.prioridad) + '20', color: priorityColor(t.prioridad) }">{{ priorityLabel(t.prioridad) }}</span></td>
-                    <td><span class="lux-task-estado-badge" :style="{ background: estadoColor(t.estado) + '20', color: estadoColor(t.estado) }">{{ estadoLabel(t.estado) }}</span></td>
-                    <td class="lux-text-muted">{{ t.asignado_a?.nombre || '—' }}</td>
-                    <td>
-                      <button class="lux-task-edit-btn" @click.stop="openEditTaskModal(t)" title="Editar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr v-if="!filteredTasks.length && !taskLoading">
-                    <td colspan="7" class="lux-empty-row">No hay tareas que coincidan con los filtros</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+              <div v-else class="lux-card lux-card-table">
+                <table class="lux-table">
+                  <thead>
+                    <tr><th>Título</th><th>Fecha</th><th>Horario</th><th>Prioridad</th><th>Estado</th><th>Asignada a</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="t in filteredTasks" :key="t.id" class="lux-task-row" @click="openEditTaskModal(t)">
+                      <td><strong>{{ t.titulo }}</strong></td>
+                      <td>{{ t.fecha }}</td>
+                      <td class="lux-text-muted">{{ t.hora_inicio || '—' }}{{ t.hora_fin ? ' - ' + t.hora_fin : '' }}</td>
+                      <td><span class="lux-task-priority-badge" :style="{ background: priorityColor(t.prioridad) + '20', color: priorityColor(t.prioridad) }">{{ priorityLabel(t.prioridad) }}</span></td>
+                      <td><span class="lux-task-estado-badge" :style="{ background: estadoColor(t.estado) + '20', color: estadoColor(t.estado) }">{{ estadoLabel(t.estado) }}</span></td>
+                      <td class="lux-text-muted">{{ t.asignado_a?.nombre || '—' }}</td>
+                      <td>
+                        <button class="lux-task-edit-btn" @click.stop="openEditTaskModal(t)" title="Editar">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr v-if="!filteredTasks.length && !taskLoading">
+                      <td colspan="7" class="lux-empty-row">No hay tareas que coincidan con los filtros</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
+
+            <!-- ── EMPLEADOS SUB-VIEW ── -->
+            <template v-if="taskSection === 'empleados'">
+              <div v-if="empLoading" class="lux-panel-state">
+                <div class="lux-panel-spinner"></div>
+                <p>Cargando empleados…</p>
+              </div>
+
+              <div v-else class="lux-card lux-card-table">
+                <table class="lux-table">
+                  <thead>
+                    <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="emp in employees" :key="emp.id" class="lux-task-row">
+                      <td><strong>{{ emp.nombre }}</strong></td>
+                      <td class="lux-text-muted">{{ emp.correo }}</td>
+                      <td class="lux-text-muted">{{ emp.telefono || '—' }}</td>
+                      <td><span class="lux-task-estado-badge" :style="{ background: emp.estado !== false ? '#00b89420' : '#d6303120', color: emp.estado !== false ? '#00b894' : '#d63031' }">{{ emp.estado !== false ? 'Activo' : 'Inactivo' }}</span></td>
+                      <td>
+                        <div style="display:flex;gap:6px">
+                          <button class="lux-task-edit-btn" @click="openEditForm(emp.id)" title="Editar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                          </button>
+                          <button class="lux-task-edit-btn" @click="handleDeactivateEmployee(emp)" title="Desactivar" style="color:#d63031">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr v-if="!employees.length && !empLoading">
+                      <td colspan="5" class="lux-empty-row">No hay empleados registrados</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
           </section>
+
+          <!-- ── EMPLOYEE FORM MODAL ── -->
+          <Teleport to="body">
+            <div v-if="showEmpForm" class="lux-modal-overlay" @click.self="closeEmpForm">
+              <div class="lux-modal">
+                <div class="lux-modal-header">
+                  <h3>{{ editingEmployee ? 'Editar Empleado' : 'Nuevo Empleado' }}</h3>
+                  <button class="lux-modal-close" @click="closeEmpForm">&times;</button>
+                </div>
+                <div class="lux-modal-body">
+                  <div v-if="empFormError" class="lux-form-error">{{ empFormError }}</div>
+                  <div class="lux-form-grid">
+                    <div class="lux-form-group">
+                      <label>Nombre *</label>
+                      <input v-model="empForm.nombre" type="text" maxlength="100" />
+                    </div>
+                    <div class="lux-form-group">
+                      <label>Apellido *</label>
+                      <input v-model="empForm.apellido" type="text" maxlength="100" />
+                    </div>
+                    <div class="lux-form-group">
+                      <label>Tipo de documento *</label>
+                      <select v-model="empForm.tipo_documento_id">
+                        <option v-for="dt in DOCUMENT_TYPES" :key="dt.value" :value="DOC_TYPE_IDS[dt.value]">{{ dt.label }}</option>
+                      </select>
+                    </div>
+                    <div class="lux-form-group">
+                      <label>N° de documento *</label>
+                      <input v-model="empForm.numero_documento" type="text" maxlength="20" />
+                    </div>
+                    <div class="lux-form-group">
+                      <label>Teléfono *</label>
+                      <input v-model="empForm.telefono" type="text" maxlength="20" />
+                    </div>
+                    <div class="lux-form-group">
+                      <label>Correo *</label>
+                      <input v-model="empForm.correo" type="email" maxlength="150" />
+                    </div>
+                    <div class="lux-form-group" :class="{ 'lux-form-group--disabled': editingEmployee }">
+                      <label>{{ editingEmployee ? 'Contraseña (dejar vacío para no cambiar)' : 'Contraseña *' }}</label>
+                      <input v-model="empForm.password" type="password" :minlength="editingEmployee ? 0 : 6" :placeholder="editingEmployee ? 'Sin cambios' : 'Mínimo 6 caracteres'" />
+                    </div>
+                    <div class="lux-form-group" :class="{ 'lux-form-group--disabled': !empForm.password }">
+                      <label>Confirmar contraseña</label>
+                      <input v-model="empForm.confirmPassword" type="password" :disabled="!empForm.password" :placeholder="empForm.password ? 'Repetir contraseña' : ''" />
+                    </div>
+                  </div>
+                </div>
+                <div class="lux-modal-footer">
+                  <button class="lux-btn-secondary" @click="closeEmpForm">Cancelar</button>
+                  <button class="lux-btn-primary" :disabled="empFormLoading" @click="handleSaveEmployee">
+                    <span v-if="empFormLoading" class="lux-btn-spinner"></span>
+                    {{ editingEmployee ? 'Guardar cambios' : 'Crear empleado' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Teleport>
         </template>
 
         <!-- ═══════════════════════════════════════════════
@@ -998,6 +1211,14 @@ onMounted(() => {
                 </div>
               </div>
             </form>
+            <div v-if="editingTask?.reporte" class="lux-admin-evidence">
+              <h4 class="lux-admin-evidence-title">Reporte del empleado</h4>
+              <p class="lux-admin-evidence-text">{{ editingTask.reporte }}</p>
+              <img v-if="editingTask.reporte_imagen_url" :src="editingTask.reporte_imagen_url" alt="Evidencia" class="lux-admin-evidence-img" />
+              <span v-if="editingTask.reporte_at" class="lux-admin-evidence-date">
+                {{ new Date(editingTask.reporte_at).toLocaleString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
