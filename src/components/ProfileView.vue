@@ -18,6 +18,7 @@ const {
   firstName,
   lastName,
   phone,
+  birthDate,
   email,
   typingFirstName,
   typingLastName,
@@ -365,6 +366,28 @@ onMounted(() => {
                     autocomplete="tel"
                     @focus="typingPhone = true"
                     @blur="typingPhone = false"
+                    placeholder=" "
+                  />
+                </div>
+              </div>
+
+              <div class="input-group static-label" :class="{ filled: birthDate }">
+                <label class="field-label" for="profile-birth-date">Fecha de nacimiento</label>
+                <div class="input-control">
+                  <div class="input-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                  </div>
+                  <input
+                    id="profile-birth-date"
+                    v-model="birthDate"
+                    type="date"
+                    :max="new Date().toISOString().split('T')[0]"
+                    autocomplete="bday"
                     placeholder=" "
                   />
                 </div>

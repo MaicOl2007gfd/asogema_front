@@ -46,6 +46,8 @@ export function useProfile(emit) {
   const lastName = ref('')
   const phone = ref('')
   const email = ref('')
+  const birthDate = ref('')
+  const originalBirthDate = ref('')
 
   /* Valores originales (para detectar cambios reales antes de habilitar "Guardar") */
   const originalFirstName = ref('')
@@ -137,6 +139,14 @@ export function useProfile(emit) {
     return fallback
   }
 
+  /** Convierte una fecha ISO (o Date) a "yyyy-mm-dd" para el input type="date". */
+  function toDateInput(iso) {
+    if (!iso) return ''
+    const value = String(iso)
+    const [date] = value.split('T')
+    return date || ''
+  }
+
   /**
    * Sincroniza el estado local de autenticación + localStorage
    * tras una actualización de perfil, para que la navbar refleje el nuevo nombre.
@@ -147,6 +157,7 @@ export function useProfile(emit) {
     user.value.apellido = updated.apellido ?? user.value.apellido
     user.value.telefono = updated.telefono ?? user.value.telefono
     user.value.correo = updated.correo ?? user.value.correo
+    user.value.fecha_nacimiento = updated.fecha_nacimiento ?? user.value.fecha_nacimiento
     user.value.email = updated.correo ?? user.value.correo ?? user.value.email
     user.value.name = `${user.value.nombre || ''} ${user.value.apellido || ''}`.trim()
       || user.value.name
@@ -164,6 +175,7 @@ export function useProfile(emit) {
     lastName.value = user.value?.apellido || ''
     phone.value = user.value?.telefono || ''
     email.value = user.value?.correo || user.value?.email || ''
+    birthDate.value = toDateInput(user.value?.fecha_nacimiento)
     syncOriginalProfile()
   }
 
@@ -172,6 +184,7 @@ export function useProfile(emit) {
     originalFirstName.value = firstName.value
     originalLastName.value = lastName.value
     originalPhone.value = phone.value
+    originalBirthDate.value = birthDate.value
   }
 
   /* True mientras existan cambios reales respecto a los datos originales. */
@@ -180,7 +193,8 @@ export function useProfile(emit) {
     return (
       clean(firstName.value) !== clean(originalFirstName.value) ||
       clean(lastName.value) !== clean(originalLastName.value) ||
-      clean(phone.value) !== clean(originalPhone.value)
+      clean(phone.value) !== clean(originalPhone.value) ||
+      birthDate.value !== originalBirthDate.value
     )
   })
 
@@ -190,6 +204,19 @@ export function useProfile(emit) {
     if (!firstName.value.trim()) {
       profileError.value = 'El nombre es obligatorio'
       return false
+    }
+    if (birthDate.value) {
+      const date = new Date(birthDate.value)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (Number.isNaN(date.getTime())) {
+        profileError.value = 'La fecha de nacimiento no es válida'
+        return false
+      }
+      if (date > today) {
+        profileError.value = 'La fecha de nacimiento no puede ser futura'
+        return false
+      }
     }
     return true
   }
@@ -204,6 +231,7 @@ export function useProfile(emit) {
         nombre: firstName.value.trim(),
         apellido: lastName.value.trim() || undefined,
         telefono: phone.value.trim() || undefined,
+        fecha_nacimiento: birthDate.value || undefined,
       })
       syncLocalUser(data)
       profileSuccess.value = 'Tus datos se actualizaron correctamente'
@@ -367,6 +395,7 @@ export function useProfile(emit) {
     firstName,
     lastName,
     phone,
+    birthDate,
     email,
     typingFirstName,
     typingLastName,

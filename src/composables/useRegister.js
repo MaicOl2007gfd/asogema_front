@@ -19,6 +19,7 @@ export function useRegister(emit) {
   const email = ref('')
   const password = ref('')
   const confirmPassword = ref('')
+  const birthDate = ref('')
   const acceptTerms = ref(false)
   const showPassword = ref(false)
   const showConfirmPassword = ref(false)
@@ -35,6 +36,7 @@ export function useRegister(emit) {
   const emailError = ref('')
   const passwordError = ref('')
   const confirmPasswordError = ref('')
+  const birthDateError = ref('')
   const termsError = ref('')
   const errorMessage = ref('')
 
@@ -47,6 +49,7 @@ export function useRegister(emit) {
   const typingEmail = ref(false)
   const typingPassword = ref(false)
   const typingConfirmPassword = ref(false)
+  const typingBirthDate = ref(false)
 
   function togglePasswordVisibility() {
     showPassword.value = !showPassword.value
@@ -68,6 +71,7 @@ export function useRegister(emit) {
     emailError.value = ''
     passwordError.value = ''
     confirmPasswordError.value = ''
+    birthDateError.value = ''
     termsError.value = ''
 
     // Primer nombre (required)
@@ -130,6 +134,23 @@ export function useRegister(emit) {
       isValid = false
     }
 
+    // Fecha de nacimiento (required para poder pagar)
+    if (!birthDate.value) {
+      birthDateError.value = 'Obligatorio'
+      isValid = false
+    } else {
+      const date = new Date(birthDate.value)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (Number.isNaN(date.getTime())) {
+        birthDateError.value = 'Fecha inválida'
+        isValid = false
+      } else if (date > today) {
+        birthDateError.value = 'La fecha no puede ser futura'
+        isValid = false
+      }
+    }
+
     // Términos
     if (!acceptTerms.value) {
       termsError.value = 'Debes aceptar los términos'
@@ -154,6 +175,7 @@ export function useRegister(emit) {
         correo: email.value,
         password: password.value,
         telefono: phone.value || undefined,
+        fecha_nacimiento: birthDate.value,
       })
 
       isLoading.value = false
@@ -198,6 +220,7 @@ export function useRegister(emit) {
     email,
     password,
     confirmPassword,
+    birthDate,
     acceptTerms,
     showPassword,
     showConfirmPassword,
@@ -214,6 +237,7 @@ export function useRegister(emit) {
     emailError,
     passwordError,
     confirmPasswordError,
+    birthDateError,
     termsError,
     errorMessage,
     // Typing flags
@@ -226,6 +250,7 @@ export function useRegister(emit) {
     typingEmail,
     typingPassword,
     typingConfirmPassword,
+    typingBirthDate,
     // Methods
     togglePasswordVisibility,
     toggleConfirmPasswordVisibility,
