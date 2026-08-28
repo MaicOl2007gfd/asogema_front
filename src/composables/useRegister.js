@@ -1,6 +1,7 @@
 import { ref, onMounted } from 'vue'
 import api from './useApi.js'
 import { DOCUMENT_TYPES, DOC_TYPE_IDS } from './documentTypes.js'
+import { resolveError } from './useErrorMessage.js'
 
 /**
  * Composable que maneja toda la lógica del formulario de registro.
@@ -164,16 +165,16 @@ export function useRegister(emit) {
       }
     } catch (err) {
       isLoading.value = false
-      if (err.response?.status === 409) {
-        errorMessage.value = 'Este correo ya está registrado'
-      } else if (err.response?.data?.message) {
-        errorMessage.value = Array.isArray(err.response.data.message)
-          ? err.response.data.message[0]
-          : err.response.data.message
-      } else {
-        errorMessage.value = 'Error de conexión. Intenta de nuevo.'
-      }
 
+      const { field, message } = resolveError(err)
+
+      if (field === 'email') {
+        emailError.value = message
+      } else if (field === 'docNumber') {
+        docNumberError.value = message
+      } else {
+        errorMessage.value = message
+      }
     }
   }
 
