@@ -2,13 +2,16 @@ import { ref, computed, watch } from 'vue'
 import { formatCop } from './useUtils.js'
 import api from './useApi.js'
 import { useTasks } from './useTasks.js'
+import { useEmployees } from './useEmployees.js'
 
 const {
-  tasks, employees, selectedDate, showTaskModal, editingTask,
+  tasks, selectedDate, showTaskModal, editingTask,
   taskLoading, taskError, tasksForSelectedDate, tasksByDate,
-  fetchTasks, fetchEmployees, createTask, updateTask, deleteTask,
+  fetchTasks, createTask, updateTask, deleteTask,
   openTaskModal, openEditTaskModal, closeTaskModal,
 } = useTasks()
+
+const { employees, fetchEmployees } = useEmployees()
 
 // ─── Loading & Error ────────────────────────────────────────
 const loading = ref(false)
@@ -121,6 +124,7 @@ async function fetchMembers() {
     name: m.nombre,
     email: m.correo,
     telefono: m.telefono,
+    activo: m.activo !== false,
     membership: 'Cliente',
     membershipColor: memberColors[i % memberColors.length],
     initials: getInitials(m.nombre),
@@ -191,6 +195,260 @@ async function loadMemberDetail(id) {
 vueWatch(selectedMemberId, (id) => {
   if (id != null) loadMemberDetail(id)
 })
+
+// ─── Miembros: Crear / Editar / Desactivar ─────────────────
+const showMemberForm = ref(false)
+const editingMember = ref(null)
+const newMember = ref({ nombre: '', correo: '', telefono: '', tipo_documento: 'CC', numero_documento: '', password: '' })
+const memberFormError = ref('')
+const memberFormSaving = ref(false)
+
+const MEMBER_DOC_TYPES = [
+  { value: 'CC', label: 'Cédula de Ciudadanía' },
+  { value: 'CE', label: 'Cédula de Extranjería' },
+  { value: 'PAS', label: 'Pasaporte' },
+  { value: 'RC', label: 'Registro Civil' },
+  { value: 'NIT', label: 'NIT' },
+  { value: 'CD', label: 'Carné Diplomático' },
+]
+
+function openNewMember() {
+  editingMember.value = null
+  newMember.value = { nombre: '', correo: '', telefono: '', tipo_documento: 'CC', numero_documento: '', password: '' }
+  memberFormError.value = ''
+  showMemberForm.value = true
+}
+
+function openEditMember(m) {
+  editingMember.value = { ...m }
+  newMember.value = {
+    nombre: m.nombre || '',
+    correo: m.correo || '',
+    telefono: m.telefono || '',
+    tipo_documento: m.tipo_documento || 'CC',
+    numero_documento: m.numero_documento || '',
+    password: '',
+  }
+  memberFormError.value = ''
+  showMemberForm.value = true
+}
+
+function closeMemberForm() {
+  showMemberForm.value = false
+  editingMember.value = null
+}
+
+async function createMember() {
+  memberFormSaving.value = true
+  memberFormError.value = ''
+  try {
+    await api.post('/admin/members', {
+      nombre: newMember.value.nombre.trim(),
+      correo: newMember.value.correo.trim(),
+      telefono: newMember.value.telefono.trim() || null,
+      tipo_documento: newMember.value.tipo_documento,
+      numero_documento: newMember.value.numero_documento.trim() || null,
+      password: newMember.value.password || null,
+    })
+    closeMemberForm()
+    await fetchMembers()
+  } catch (e) {
+    memberFormError.value = e?.response?.data?.message || 'Error al crear el miembro.'
+  } finally {
+    memberFormSaving.value = false
+  }
+}
+
+async function updateMember() {
+  memberFormSaving.value = true
+  memberFormError.value = ''
+  try {
+    const payload = {
+      nombre: newMember.value.nombre.trim(),
+      correo: newMember.value.correo.trim(),
+      telefono: newMember.value.telefono.trim() || null,
+      tipo_documento: newMember.value.tipo_documento,
+      numero_documento: newMember.value.numero_documento.trim() || null,
+    }
+    if (newMember.value.password) payload.password = newMember.value.password
+    await api.patch(`/admin/members/${editingMember.value.id}`, payload)
+    closeMemberForm()
+    await fetchMembers()
+    if (selectedMemberId.value != null) await loadMemberDetail(selectedMemberId.value)
+  } catch (e) {
+    memberFormError.value = e?.response?.data?.message || 'Error al actualizar el miembro.'
+  } finally {
+    memberFormSaving.value = false
+  }
+}
+
+async function toggleMemberStatus(m) {
+  const action = m.activo ? 'desactivar' : 'activar'
+  if (!confirm(`¿Estás seguro de ${action} a ${m.name}?`)) return
+  try {
+    await api.patch(`/admin/members/${m.id}/status`, { activo: !m.activo })
+    m.activo = !m.activo
+  } catch (e) {
+    alert(e?.response?.data?.message || `No se pudo ${action} al miembro.`)
+  }
+}
+
+// ─── Reservas: listado completo + gestión ────────────────────
+const allReservations = ref([])
+const reservationsLoading = ref(false)
+const reservationsError = ref(null)
+const reservationTypeFilter = ref('all')
+const reservationStatusFilter = ref('all')
+const reservationSearch = ref('')
+const reservationPage = ref(1)
+const RESERVATIONS_PER_PAGE = 15
+const changingReservationId = ref(null)
+const reservationActionError = ref('')
+
+const RESERVATION_STATUS_OPTIONS = [
+  { value: 'pendiente', label: 'Pendiente' },
+  { value: 'confirmada', label: 'Confirmada' },
+  { value: 'check-in', label: 'Check-In' },
+  { value: 'check-out', label: 'Check-Out' },
+  { value: 'completada', label: 'Completada' },
+  { value: 'cancelada', label: 'Cancelada' },
+]
+
+const reservationStatusOptions = computed(() => {
+  const known = new Set(RESERVATION_STATUS_OPTIONS.map(o => o.value))
+  const extra = []
+  allReservations.value.forEach(r => {
+    if (r.estado && r.estado !== '—' && !known.has(r.estado)) {
+      known.add(r.estado)
+      extra.push({ value: r.estado, label: r.estado.charAt(0).toUpperCase() + r.estado.slice(1) })
+    }
+  })
+  return [...RESERVATION_STATUS_OPTIONS, ...extra]
+})
+
+function normalizeAdminReservation(tipo, r) {
+  const base = {
+    id: r.id,
+    cliente: r.cliente || r.nombre || '—',
+    telefono: r.telefono ?? '—',
+    personas: r.personas ?? r.cantidad_personas ?? r.cantidad_huespedes ?? 1,
+    estadoRaw: r.estado,
+    estado: normalizeStatus(r.estado),
+  }
+  if (tipo === 'hotel') {
+    return {
+      ...base,
+      key: `hotel-${r.id}`,
+      tipoKey: 'hotel',
+      tipo: 'Hotel',
+      fecha: dateOf(r.entrada || r.fecha_entrada),
+      fechaFin: dateOf(r.salida || r.fecha_salida),
+      hora: '—',
+      detalle: r.habitacion ? `Hab ${r.habitacion}` : (r.tipo_habitacion ? r.tipo_habitacion : '—'),
+    }
+  }
+  if (tipo === 'restaurante') {
+    return {
+      ...base,
+      key: `rest-${r.id}`,
+      tipoKey: 'restaurante',
+      tipo: 'Restaurante',
+      fecha: dateOf(r.fecha),
+      fechaFin: '',
+      hora: timeOf(r.hora),
+      detalle: r.mesa ? `Mesa ${r.mesa}` : '—',
+    }
+  }
+  return {
+    ...base,
+    key: `evento-${r.id}`,
+    tipoKey: 'eventos',
+    tipo: 'Evento',
+    fecha: dateOf(r.fecha),
+    fechaFin: '',
+    hora: timeOf(r.hora_inicio),
+    detalle: r.salon || '—',
+  }
+}
+
+async function fetchAllReservations() {
+  reservationsLoading.value = true
+  reservationsError.value = null
+  try {
+    const { data } = await api.get('/admin/reservations')
+    const rows = []
+    ;(data.hotel || []).forEach(r => rows.push(normalizeAdminReservation('hotel', r)))
+    ;(data.restaurante || []).forEach(r => rows.push(normalizeAdminReservation('restaurante', r)))
+    ;(data.eventos || []).forEach(r => rows.push(normalizeAdminReservation('eventos', r)))
+    rows.sort((a, b) => {
+      if (a.estado === 'cancelada' && b.estado !== 'cancelada') return 1
+      if (a.estado !== 'cancelada' && b.estado === 'cancelada') return -1
+      const d = (b.fecha || '').localeCompare(a.fecha || '')
+      return d || (b.hora || '').localeCompare(a.hora || '')
+    })
+    allReservations.value = rows
+  } catch {
+    reservationsError.value = 'No se pudieron cargar las reservas.'
+  } finally {
+    reservationsLoading.value = false
+  }
+}
+
+const filteredReservations = computed(() => {
+  let list = allReservations.value
+  if (reservationTypeFilter.value !== 'all') {
+    list = list.filter(r => r.tipoKey === reservationTypeFilter.value)
+  }
+  if (reservationStatusFilter.value !== 'all') {
+    list = list.filter(r => r.estado === reservationStatusFilter.value)
+  }
+  const q = reservationSearch.value.trim().toLowerCase()
+  if (q) {
+    list = list.filter(r =>
+      (r.cliente || '').toLowerCase().includes(q) ||
+      (r.detalle || '').toLowerCase().includes(q) ||
+      String(r.id).includes(q)
+    )
+  }
+  return list
+})
+
+const reservationTotalPages = computed(() => Math.max(1, Math.ceil(filteredReservations.value.length / RESERVATIONS_PER_PAGE)))
+
+const paginatedReservations = computed(() => {
+  const start = (reservationPage.value - 1) * RESERVATIONS_PER_PAGE
+  return filteredReservations.value.slice(start, start + RESERVATIONS_PER_PAGE)
+})
+
+vueWatch(reservationSearch, () => { reservationPage.value = 1 })
+
+async function changeReservationStatus(r, estado) {
+  if (estado === r.estado) return
+  changingReservationId.value = r.key
+  reservationActionError.value = ''
+  try {
+    const { data } = await api.patch(`/admin/reservations/${r.tipoKey}/${r.id}/status`, { estado: String(estado).toUpperCase() })
+    r.estado = normalizeStatus(data?.estado ?? estado)
+  } catch (e) {
+    reservationActionError.value = e?.response?.data?.message || 'No se pudo cambiar el estado de la reserva.'
+  } finally {
+    changingReservationId.value = null
+  }
+}
+
+async function cancelAdminReservation(r) {
+  if (!confirm(`¿Cancelar la reserva de ${r.cliente} (${r.tipo})?`)) return
+  changingReservationId.value = r.key
+  reservationActionError.value = ''
+  try {
+    await api.patch(`/admin/reservations/${r.tipoKey}/${r.id}/cancel`)
+    r.estado = 'cancelada'
+  } catch (e) {
+    reservationActionError.value = e?.response?.data?.message || 'No se pudo cancelar la reserva.'
+  } finally {
+    changingReservationId.value = null
+  }
+}
 
 // ─── Day Overview (Calendar click → emergent screen) ────────
 const showDayOverview = ref(false)
@@ -1044,6 +1302,7 @@ const moduleContextMessages = {
   habitaciones: 'Habitaciones — Gestiona las habitaciones individuales del hotel.',
   menu: 'Menú — Administra las categorías y productos del restaurante.',
   salones: 'Salones — Gestiona los salones de eventos disponibles para reservar.',
+  reservas: 'Reservas — Gestiona el listado completo de reservas del club, cambia estados y cancela.',
 }
 
 const contextMessage = computed(() => moduleContextMessages[activeModule.value])
@@ -1065,6 +1324,7 @@ async function loadAll() {
     fetchRooms(),
     fetchProducts(),
     fetchSalons(),
+    fetchAllReservations(),
   ])
   if (results.some(r => r.status === 'rejected')) {
     error.value = 'No se pudieron cargar algunos datos del panel. Revisa tu conexión e inténtalo de nuevo.'
@@ -1100,6 +1360,14 @@ export function usePanelAdmin() {
     members, selectedMemberId, selectedMember,
     memberSearch, memberPage, memberTotalPages, filteredMembers, paginatedMembers, MEMBERS_PER_PAGE,
     showMemberModal, openMemberModal, closeMemberModal,
+    showMemberForm, editingMember, newMember, memberFormError, memberFormSaving,
+    MEMBER_DOC_TYPES, openNewMember, openEditMember, closeMemberForm, createMember, updateMember, toggleMemberStatus,
+    allReservations, reservationsLoading, reservationsError,
+    reservationTypeFilter, reservationStatusFilter, reservationSearch, reservationPage,
+    RESERVATIONS_PER_PAGE, RESERVATION_STATUS_OPTIONS, reservationStatusOptions,
+    filteredReservations, paginatedReservations, reservationTotalPages,
+    changingReservationId, reservationActionError,
+    fetchAllReservations, changeReservationStatus, cancelAdminReservation,
     rooms, roomTypes, roomsLoading, roomsError,
     showRoomForm, editingRoom, newRoom, roomFormError, roomFormSaving,
     fetchRooms, createRoom, updateRoom, deleteRoom, resetRoomForm, openEditRoom, onTipoChange,

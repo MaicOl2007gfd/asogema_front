@@ -1,6 +1,10 @@
 import { ref, onMounted } from 'vue'
 import { useAuth } from './useAuth.js'
 import api from './useApi.js'
+import { resolveError } from './useErrorMessage.js'
+
+// Clave usada por App.vue para notificar un error del callback OAuth
+const OAUTH_ERROR_KEY = 'asogema_oauth_error'
 
 export function useLogin(emit) {
   const { login: authLogin, isAdmin, isEmployee } = useAuth()
@@ -69,26 +73,33 @@ export function useLogin(emit) {
 
       if (
         err.response?.status === 403 &&
-        /verific/i.test(err.response?.data?.message || '')
+        err.response?.data?.code === 'AUTH_EMAIL_NOT_VERIFIED'
       ) {
         localStorage.setItem('asogema_pending_verify', email.value)
         if (emit) emit('navigate', 'verify-email')
         return
       }
 
-      if (err.response?.status === 401) {
-        emailError.value = 'Correo o contraseña incorrectos'
-      } else if (err.response?.data?.message) {
-        emailError.value = Array.isArray(err.response.data.message)
-          ? err.response.data.message[0]
-          : err.response.data.message
+      const { field, message } = resolveError(err)
+
+      if (field === 'email') {
+        emailError.value = message
+      } else if (field === 'password') {
+        passwordError.value = message
       } else {
-        emailError.value = 'Error de conexión. Intenta de nuevo.'
+        errorMessage.value = message
       }
     }
   }
 
   onMounted(() => {
+    // Mostrar un error del login social (si App.vue lo dejó pendiente)
+    const oauthError = localStorage.getItem(OAUTH_ERROR_KEY)
+    if (oauthError) {
+      errorMessage.value = oauthError
+      localStorage.removeItem(OAUTH_ERROR_KEY)
+    }
+  
     requestAnimationFrame(() => {
       isVisible.value = true
     })

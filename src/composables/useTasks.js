@@ -1,9 +1,12 @@
 import { ref, computed } from 'vue'
 import api from './useApi.js'
+import { useEmployees } from './useEmployees.js'
+
+// ─── Shared employee state ─────────────────────────────────
+const { employees } = useEmployees()
 
 // ─── State ──────────────────────────────────────────────────
 const tasks = ref([])
-const employees = ref([])
 const selectedDate = ref(null)
 const showTaskModal = ref(false)
 const editingTask = ref(null)
@@ -46,29 +49,18 @@ async function fetchTasks(filters = {}) {
       hora_fin: t.hora_fin,
       estado: t.estado,
       prioridad: t.prioridad,
+      reporte: t.reporte,
+      reporte_imagen_url: t.reporte_imagen_url,
+      reporte_at: t.reporte_at,
       asignado_a: t.asignado_a,
       asignado_por: t.asignado_por,
       created_at: t.created_at,
       updated_at: t.updated_at,
     }))
-  } catch (e) {
+  } catch {
     taskError.value = 'No se pudieron cargar las tareas.'
   } finally {
     taskLoading.value = false
-  }
-}
-
-async function fetchEmployees() {
-  try {
-    const { data } = await api.get('/admin/employees')
-    employees.value = (data || []).map(e => ({
-      id: e.id,
-      nombre: e.nombre,
-      correo: e.correo,
-      telefono: e.telefono,
-    }))
-  } catch {
-    // Silencioso — los empleados se cargan bajo demanda
   }
 }
 
@@ -83,6 +75,9 @@ async function createTask(taskData) {
     hora_fin: data.hora_fin,
     estado: data.estado,
     prioridad: data.prioridad,
+    reporte: data.reporte,
+    reporte_imagen_url: data.reporte_imagen_url,
+    reporte_at: data.reporte_at,
     asignado_a: data.asignado_a,
     asignado_por: data.asignado_por,
     created_at: data.created_at,
@@ -105,6 +100,9 @@ async function updateTask(id, taskData) {
       hora_fin: data.hora_fin,
       estado: data.estado,
       prioridad: data.prioridad,
+      reporte: data.reporte,
+      reporte_imagen_url: data.reporte_imagen_url,
+      reporte_at: data.reporte_at,
       asignado_a: data.asignado_a,
       asignado_por: data.asignado_por,
       created_at: data.created_at,
@@ -150,7 +148,6 @@ export function useTasks() {
     tasksForSelectedDate,
     tasksByDate,
     fetchTasks,
-    fetchEmployees,
     createTask,
     updateTask,
     deleteTask,

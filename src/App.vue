@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { restoreSession, logout, useAuth } from './composables/useAuth.js'
-import { isStaffUser } from './composables/useUtils.js'
+import { applyOAuthCallback } from './composables/useSocialAuth.js'
 import api from './composables/useApi.js'
 import IndexView from './components/IndexView.vue'
 import LoginView from './components/LoginView.vue'
@@ -22,7 +22,7 @@ import PaymentResultView from './components/PaymentResultView.vue'
 import PaymentCheckoutView from './components/PaymentCheckoutView.vue'
 import WalletView from './components/WalletView.vue'
 import QrReaderView from './components/QrReaderView.vue'
-
+import { isStaffUser } from './composables/useUtils.js'
 const currentView = ref('index')
 
 const { isLoggedIn, isAdmin, isEmployee, user } = useAuth()
@@ -30,9 +30,6 @@ const { isLoggedIn, isAdmin, isEmployee, user } = useAuth()
 const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
 // Secciones que requieren sesión iniciada
-// Nota: 'hotel-reservation' no está en la lista para que al pulsar
-// "Seleccionar" en el catálogo se pueda ver la pantalla de reserva;
-// la confirmación final sigue exigiendo iniciar sesión (useHotel).
 const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'employee', 'profile', 'wallet', 'qr-reader']
 
 const sessionReady = ref(false)
@@ -73,6 +70,16 @@ function goToLogin() {
 }
 
 onMounted(async () => {
+  // Procesar callback OAuth (Google / Facebook) si el backend redirigió con tokens.
+  // Se ejecuta antes de restoreSession para no sobrescribir la sesión recién creada.
+  const oauth = applyOAuthCallback()
+  if (oauth?.success) {
+    currentView.value = isAdmin.value ? 'admin' : 'index'
+  } else if (oauth?.error) {
+    localStorage.setItem('asogema_oauth_error', oauth.error)
+    currentView.value = 'login'
+  }
+
   const params = new URLSearchParams(window.location.search)
   if (params.get('factura_id')) {
     currentView.value = 'payment-result'

@@ -51,7 +51,7 @@ export function useIndex(emit) {
   ]
 
   /* ----------------------------------------------------------
-     EXPERIENCIAS DATA (Modelo) — Hotel · Restaurante · Eventos
+      EXPERIENCIAS DATA (Modelo) — Hotel · Restaurante · Eventos
      ---------------------------------------------------------- */
   const experiencias = [
     {
