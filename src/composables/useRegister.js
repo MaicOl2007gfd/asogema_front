@@ -59,6 +59,64 @@ export function useRegister(emit) {
     showConfirmPassword.value = !showConfirmPassword.value
   }
 
+  /** Formatea la fecha como DD/MM/AAAA mientras se escribe. */
+  function formatBirthDateInput(e) {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 8)
+    let formatted = digits
+    if (digits.length > 4) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+    } else if (digits.length > 2) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`
+    }
+    birthDate.value = formatted
+  }
+
+  /** Convierte "DD/MM/AAAA" a "AAAA-MM-DD" (ISO) para la API. */
+  function birthDateToISO(value) {
+    if (!value) return ''
+    const parts = value.split('/')
+    if (parts.length !== 3) return ''
+    const [dd, mm, yyyy] = parts
+    return `${yyyy}-${mm}-${dd}`
+  }
+
+  const MIN_BIRTH_YEAR = 1900
+
+  /** Valida la fecha de nacimiento en formato "DD/MM/AAAA".
+   *  Devuelve un mensaje de error o null si es válida. */
+  function validateBirthDate(value) {
+    if (!value) return 'Obligatorio'
+
+    const parts = value.split('/')
+    if (parts.length !== 3) return 'Formato inválido (DD/MM/AAAA)'
+
+    const [ddStr, mmStr, yyyyStr] = parts
+    if (ddStr.length !== 2 || mmStr.length !== 2 || yyyyStr.length !== 4) {
+      return 'Formato inválido (DD/MM/AAAA)'
+    }
+
+    const dd = Number(ddStr)
+    const mm = Number(mmStr)
+    const yyyy = Number(yyyyStr)
+    if (Number.isNaN(dd) || Number.isNaN(mm) || Number.isNaN(yyyy)) {
+      return 'Fecha inválida'
+    }
+
+    if (mm < 1 || mm > 12) return 'Mes inválido'
+
+    if (yyyy < MIN_BIRTH_YEAR) return `El año debe ser ${MIN_BIRTH_YEAR} o posterior`
+
+    const daysInMonth = new Date(yyyy, mm, 0).getDate()
+    if (dd < 1 || dd > daysInMonth) return 'Día inválido para ese mes'
+
+    const date = new Date(yyyy, mm - 1, dd)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (date > today) return 'La fecha no puede ser futura'
+
+    return null
+  }
+
   function validateForm() {
     let isValid = true
     firstNameError.value = ''
@@ -135,22 +193,12 @@ export function useRegister(emit) {
     }
 
     // Fecha de nacimiento (required para poder pagar)
-    if (!birthDate.value) {
-      birthDateError.value = 'Obligatorio'
+    const birthError = validateBirthDate(birthDate.value)
+    if (birthError) {
+      birthDateError.value = birthError
       isValid = false
-    } else {
-      const date = new Date(birthDate.value)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      if (Number.isNaN(date.getTime())) {
-        birthDateError.value = 'Fecha inválida'
-        isValid = false
-      } else if (date > today) {
-        birthDateError.value = 'La fecha no puede ser futura'
-        isValid = false
-      }
     }
-
+    
     // Términos
     if (!acceptTerms.value) {
       termsError.value = 'Debes aceptar los términos'
@@ -175,7 +223,7 @@ export function useRegister(emit) {
         correo: email.value,
         password: password.value,
         telefono: phone.value || undefined,
-        fecha_nacimiento: birthDate.value,
+        fecha_nacimiento: birthDateToISO(birthDate.value),
       })
 
       isLoading.value = false
@@ -254,6 +302,7 @@ export function useRegister(emit) {
     // Methods
     togglePasswordVisibility,
     toggleConfirmPasswordVisibility,
+    formatBirthDateInput,
     handleSubmit,
   }
 }

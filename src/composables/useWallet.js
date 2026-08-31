@@ -197,7 +197,7 @@ export function useWallet(emit) {
       const result = await createRecharge(
         Number(monto.value),
         metodoRecarga.value,
-        metodoRecarga.value === 'TARJETA' ? tipoTarjetaRecarga.value : undefined,
+        undefined,
         paymentData.value,
       )
 
