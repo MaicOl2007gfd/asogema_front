@@ -493,14 +493,21 @@ async function fetchDayOverview(dateStr) {
     const reservations = []
     if (reservationsRes.status === 'fulfilled') {
       const data = reservationsRes.value.data
-      ;(data.hotel || []).forEach(r => reservations.push({
-        id: `hotel-${r.id}`,
-        tipo: 'Hotel',
-        cliente: r.cliente,
-        hora: r.habitacion ? `Hab ${r.habitacion}` : '—',
-        personas: r.personas,
-        estado: r.estado,
-      }))
+      ;(data.hotel || []).forEach(r => {
+        let dayType = 'occupied'
+        if (dateStr === r.fecha_entrada && dateStr === r.fecha_salida) dayType = 'both'
+        else if (dateStr === r.fecha_entrada) dayType = 'check-in'
+        else if (dateStr === r.fecha_salida) dayType = 'check-out'
+        reservations.push({
+          id: `hotel-${r.id}`,
+          tipo: 'Hotel',
+          cliente: r.cliente,
+          hora: r.habitacion ? `Hab ${r.habitacion}` : '—',
+          personas: r.personas,
+          estado: r.estado,
+          dayType,
+        })
+      })
       ;(data.restaurante || []).forEach(r => reservations.push({
         id: `rest-${r.id}`,
         tipo: 'Restaurante',
@@ -577,6 +584,7 @@ async function fetchCalendarEvents() {
     location: e.location,
     category: e.category,
     color: e.color,
+    type: e.type,
   }))
 }
 
@@ -744,6 +752,22 @@ function timeOf(v) {
 function formatCurrency(value) {
   if (value == null) return '—'
   return formatCop(value)
+}
+
+function hotelDayLabel(dayType) {
+  const map = {
+    'check-in': 'Check-in',
+    occupied: 'Habitación ocupada',
+    'check-out': 'Check-out',
+    both: 'Check-in / Check-out',
+  }
+  return map[dayType] || dayType
+}
+
+function hotelDayBadgeClass(dayType) {
+  if (dayType === 'occupied') return 'lux-status-occupied'
+  if (dayType === 'both') return 'lux-status-checkin'
+  return statusBadgeClass(dayType)
 }
 
 function statusBadgeClass(status) {
@@ -1348,6 +1372,7 @@ export function usePanelAdmin() {
     hotelOccupancy,
     monthNames,
     formatCurrency, statusBadgeClass, normalizeStatus, getBarHeight,
+    hotelDayLabel, hotelDayBadgeClass,
     showDayOverview, selectedDayDate, dayOverviewLoading, dayOverviewData,
     openDayOverview, closeDayOverview, fetchDayOverview,
     tasks, employees, selectedDate, showTaskModal, editingTask,

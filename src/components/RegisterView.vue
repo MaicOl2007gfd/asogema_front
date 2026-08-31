@@ -47,6 +47,7 @@ const {
   typingBirthDate,
   togglePasswordVisibility,
   toggleConfirmPasswordVisibility,
+  formatBirthDateInput,
   handleSubmit,
 } = useRegister(emit)
 </script>
@@ -298,12 +299,14 @@ const {
           <input
             id="reg-birth-date"
             v-model="birthDate"
-            type="date"
-            :max="new Date().toISOString().split('T')[0]"
+            type="text"
+            inputmode="numeric"
+            maxlength="10"
             autocomplete="bday"
+            @input="formatBirthDateInput"
             @focus="typingBirthDate = true"
             @blur="typingBirthDate = false"
-            placeholder="Fecha de nacimiento"
+            placeholder="DD/MM/AAAA"
           />
           <label for="reg-birth-date">Fecha de nacimiento</label>
           <span v-if="birthDateError" class="error-message">{{ birthDateError }}</span>

@@ -703,6 +703,7 @@
 .lux-status-checkout  { background: rgba(108, 92, 231, 0.1); color: #5a4bd1; border: 1px solid rgba(108, 92, 231, 0.15); }
 .lux-status-pending   { background: rgba(253, 203, 110, 0.12); color: #c59400; border: 1px solid rgba(253, 203, 110, 0.18); }
 .lux-status-cancelled { background: rgba(231, 76, 60, 0.1); color: #c0392b; border: 1px solid rgba(231, 76, 60, 0.12); }
+.lux-status-occupied  { background: rgba(253, 203, 110, 0.12); color: #c59400; border: 1px solid rgba(253, 203, 110, 0.18); }
 
 /* ==========================================================
    PERIOD SELECTOR

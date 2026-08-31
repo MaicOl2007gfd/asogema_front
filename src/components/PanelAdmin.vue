@@ -20,6 +20,7 @@ const {
   topServices,
   hotelOccupancy,
   formatCurrency, statusBadgeClass, normalizeStatus, getBarHeight,
+  hotelDayLabel, hotelDayBadgeClass,
   showDayOverview, selectedDayDate, dayOverviewLoading, dayOverviewData,
   openDayOverview, closeDayOverview,
   tasks, employees, selectedDate, showTaskModal, editingTask,
@@ -1256,7 +1257,8 @@ onMounted(() => {
                           <span class="lux-drawer-item-desc">{{ r.hora }} · {{ r.personas }} pers.</span>
                         </div>
                       </div>
-                      <span class="lux-status-badge" :class="statusBadgeClass(normalizeStatus(r.estado))">{{ normalizeStatus(r.estado) }}</span>
+                      <span v-if="r.tipo === 'Hotel'" class="lux-status-badge" :class="hotelDayBadgeClass(r.dayType)">{{ hotelDayLabel(r.dayType) }}</span>
+                      <span v-else class="lux-status-badge" :class="statusBadgeClass(normalizeStatus(r.estado))">{{ normalizeStatus(r.estado) }}</span>
                     </div>
                   </div>
                 </div>

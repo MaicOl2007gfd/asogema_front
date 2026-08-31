@@ -345,10 +345,13 @@ body {
 
 /* Contenedor que agrupa los dos campos en un solo bloque */
 .fields-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   background: #fff8f0;
   border: 1.5px solid rgba(19, 50, 21, 0.16);
   border-radius: 14px;
-  padding: 4px;
+  padding: 8px;
   margin-bottom: 22px;
   overflow: hidden;
   transition:
@@ -362,6 +365,7 @@ body {
 }
 
 .fields-group .input-group {
+  background: #ffffff;
   margin-bottom: 0;
   border-radius: 10px;
   transition: background var(--transition);
@@ -373,11 +377,6 @@ body {
 
 .fields-group .input-group.error {
   background: rgba(255, 107, 107, 0.06);
-}
-
-/* Separador sutil entre correo y contraseña */
-.fields-group .input-group + .input-group {
-  border-top: 1px solid rgba(19, 50, 21, 0.12);
 }
 
 /* Inputs sin borde individual dentro del grupo */
