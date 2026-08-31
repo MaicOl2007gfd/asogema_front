@@ -30,7 +30,7 @@ const { isLoggedIn, isAdmin, isEmployee, user } = useAuth()
 const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
 // Secciones que requieren sesión iniciada
-const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'employee', 'profile', 'wallet', 'qr-reader']
+const protectedViews = ['table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'employee', 'profile', 'wallet', 'qr-reader']
 
 const sessionReady = ref(false)
 const showLoginAlert = ref(false)
