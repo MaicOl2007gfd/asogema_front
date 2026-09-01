@@ -123,7 +123,6 @@ const isCancelling = ref(false)
    UI STATE
    ---------------------------------------------------------- */
 const isVisible = ref(false)
-const activeTab = ref('catalog')
 
 /* ----------------------------------------------------------
    COMPUTED
@@ -517,10 +516,6 @@ function goBackToHotel(emit) {
   if (emit) emit('navigate', 'hotel')
 }
 
-function switchTab(tab) {
-  activeTab.value = tab
-}
-
 /* ----------------------------------------------------------
    EXPORT
    ---------------------------------------------------------- */
@@ -570,7 +565,6 @@ export function useHotel(emit) {
     isCancelling,
     // UI
     isVisible,
-    activeTab,
     // Helpers
     formatDate,
     formatCurrency,
@@ -606,6 +600,5 @@ export function useHotel(emit) {
     // Navigation
     goBackToHome,
     goBackToHotel,
-    switchTab,
   }
 }

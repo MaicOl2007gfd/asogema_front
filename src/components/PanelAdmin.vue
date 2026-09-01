@@ -341,7 +341,16 @@ onMounted(() => {
         </nav>
 
         <div class="lux-header-right">
-          <div class="lux-user-mini">
+          <div
+            class="lux-user-mini"
+            role="button"
+            tabindex="0"
+            title="Ver mi perfil"
+            aria-label="Ver mi perfil"
+            @click="emit('navigate', 'profile')"
+            @keydown.enter="emit('navigate', 'profile')"
+            @keydown.space.prevent="emit('navigate', 'profile')"
+          >
             <span class="lux-user-name">{{ user?.name || 'Admin' }}</span>
             <div class="lux-user-avatar">{{ getUserInitials() }}</div>
           </div>

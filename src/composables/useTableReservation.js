@@ -197,7 +197,7 @@ export function useTableReservation(emit) {
   }
 
   function goToMyReservations() {
-    if (emit) emit('navigate', 'restaurant-reservations')
+    if (emit) emit('navigate', 'profile')
   }
 
   /* ----------------------------------------------------------

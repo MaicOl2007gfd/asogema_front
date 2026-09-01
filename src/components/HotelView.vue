@@ -20,19 +20,10 @@ const {
   showRoomDetail,
   selectedRoomDetail,
   activeGalleryIndex,
-  bookings,
-  bookingsLoading,
-  bookingsError,
-  bookingToCancel,
-  showCancelConfirm,
-  isCancelling,
   isVisible,
-  activeTab,
-  formatDate,
   formatCurrency,
   getToday,
   loadRooms,
-  loadBookings,
   applyFilters,
   clearFilters,
   incrementFilterGuests,
@@ -43,38 +34,10 @@ const {
   prevGalleryImage,
   setGalleryImage,
   startReservation,
-  requestCancel,
-  closeCancelConfirm,
-  confirmCancel,
   goBackToHome,
-  switchTab,
 } = useHotel()
 
 const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
-
-const statusLabels = {
-  confirmada: 'Confirmada',
-  pendiente: 'Pendiente',
-  'check-in': 'Check-In',
-  'check-out': 'Check-Out',
-  cancelada: 'Cancelada',
-  completada: 'Completada',
-}
-
-function statusLabel(s) {
-  return statusLabels[s] || s
-}
-
-// Conteo de reservas activas y total invertido (para el resumen)
-const activeBookings = computed(
-  () =>
-    bookings.value.filter(
-      (b) => !['cancelada', 'completada', 'check-out'].includes(b.status),
-    ).length,
-)
-const totalSpent = computed(() =>
-  bookings.value.reduce((sum, b) => sum + (Number(b.total) || 0), 0),
-)
 
 function getUserInitials() {
   return utilsGetUserInitials(user.value)
@@ -101,16 +64,11 @@ function onStartReservation(room) {
   startReservation(room, emit)
 }
 
-function switchTabAndScroll(tab) {
-  switchTab(tab)
+function scrollToCatalog() {
   requestAnimationFrame(() => {
-    const el = document.querySelector('.hotel-tabs')
+    const el = document.querySelector('.hotel-catalog')
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   })
-}
-
-function canCancel(booking) {
-  return !['cancelada', 'completada', 'check-out'].includes(booking.status)
 }
 
 onMounted(async () => {
@@ -118,7 +76,6 @@ onMounted(async () => {
     isVisible.value = true
   })
   if (rooms.value.length === 0) await loadRooms()
-  if (bookings.value.length === 0) await loadBookings()
 })
 </script>
 
@@ -190,46 +147,19 @@ onMounted(async () => {
             privacidad y un servicio de clase mundial que hará de tu estadía una experiencia inolvidable.
           </p>
           <div class="hotel-hero-actions">
-            <button class="hotel-hero-btn hotel-hero-btn-primary" @click="switchTabAndScroll('catalog')">
+            <button class="hotel-hero-btn hotel-hero-btn-primary" @click="scrollToCatalog">
               Explorar Habitaciones
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
                 <polyline points="12 5 19 12 12 19"></polyline>
               </svg>
             </button>
-            <button class="hotel-hero-btn hotel-hero-btn-secondary" @click="switchTabAndScroll('bookings')">
-              Mis Reservas
-            </button>
           </div>
         </div>
       </section>
 
-      <!-- ── TABS ── -->
-      <div class="hotel-tabs">
-        <button class="hotel-tab" :class="{ active: activeTab === 'catalog' }" @click="switchTabAndScroll('catalog')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 21h18"></path>
-            <path d="M3 10h18"></path>
-            <path d="M5 6l7-3 7 3"></path>
-            <path d="M4 10v11"></path>
-            <path d="M20 10v11"></path>
-          </svg>
-          Catálogo de Habitaciones
-        </button>
-        <button class="hotel-tab" :class="{ active: activeTab === 'bookings' }" @click="switchTabAndScroll('bookings')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          Mis Reservas
-          <span v-if="bookings.length" class="hotel-tab-badge">{{ bookings.length }}</span>
-        </button>
-      </div>
-
       <!-- ── CATALOG ── -->
-      <section v-if="activeTab === 'catalog'" class="hotel-catalog">
+      <section class="hotel-catalog">
         <div class="hotel-section-head">
           <h2>Nuestras Habitaciones</h2>
           <p>Filtra por fechas y número de ocupantes para ver la disponibilidad real.</p>
@@ -376,146 +306,6 @@ onMounted(async () => {
         </div>
       </section>
 
-      <!-- ── MY BOOKINGS ── -->
-      <section v-else class="hotel-bookings">
-        <div class="hotel-section-head">
-          <span class="hotel-section-eyebrow">Historial y gestión</span>
-          <h2>Mis Reservas de Hotel</h2>
-          <p>Consulta el historial de tus reservas y cancela cuando lo necesites.</p>
-        </div>
-
-        <!-- Resumen de estadísticas de reservas -->
-        <div v-if="bookings.length" class="hotel-bookings-summary">
-          <div>
-            <strong>{{ bookings.length }}</strong>
-            <span>Reservas</span>
-          </div>
-          <div>
-            <strong>{{ activeBookings }}</strong>
-            <span>Activas</span>
-          </div>
-          <div>
-            <strong>{{ formatCurrency(totalSpent) }}</strong>
-            <span>Total invertido</span>
-          </div>
-        </div>
-
-        <div v-if="!isLoggedIn" class="hotel-state hotel-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0110 0v4"></path>
-          </svg>
-          <h3>Inicia sesión para ver tus reservas</h3>
-          <p>Para consultar tu historial y gestionar tus reservas de hotel necesitas iniciar sesión.</p>
-          <button class="hotel-state-btn" @click="emit('navigate', 'login')">Iniciar Sesión</button>
-        </div>
-
-        <template v-else>
-        <div v-if="bookingsLoading" class="hotel-state hotel-loading" role="status" aria-live="polite">
-          <span class="hotel-spinner"></span>
-          <p>Cargando tus reservas…</p>
-        </div>
-
-        <div v-else-if="bookingsError" class="hotel-state hotel-empty" role="alert">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <h3>No pudimos cargar tus reservas</h3>
-          <p>{{ bookingsError }}</p>
-          <button class="hotel-state-btn" @click="loadBookings">Reintentar</button>
-        </div>
-
-        <div v-else-if="bookings.length === 0" class="hotel-state hotel-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          <h3>Aún no tienes reservas</h3>
-          <p>Explora el catálogo de habitaciones y reserva tu próxima estadía en Hotel Asogema.</p>
-          <button class="hotel-state-btn" @click="switchTabAndScroll('catalog')">Ver Habitaciones</button>
-        </div>
-
-        <div v-else class="hotel-bookings-list">
-          <article
-            v-for="booking in bookings"
-            :key="booking.id"
-            class="hotel-booking-card"
-            :class="`hotel-booking-${booking.status}`"
-          >
-            <!-- Cabecera: habitación + estado -->
-            <div class="hotel-booking-head">
-              <div class="hotel-booking-room">
-                <span class="hotel-booking-room-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 21h18"></path>
-                    <path d="M3 10h18"></path>
-                    <path d="M5 6l7-3 7 3"></path>
-                    <path d="M4 10v11"></path>
-                    <path d="M20 10v11"></path>
-                  </svg>
-                </span>
-                <span class="hotel-booking-room-txt">
-                  <small>Reserva #{{ booking.id }}</small>
-                  <h3>{{ booking.roomName }}</h3>
-                </span>
-              </div>
-              <span class="hotel-booking-status">
-                <i class="hotel-booking-status-dot"></i>
-                {{ statusLabel(booking.status) }}
-              </span>
-            </div>
-
-            <!-- Detalles de la estadía -->
-            <div class="hotel-booking-meta">
-              <span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                {{ formatDate(booking.checkIn) }} → {{ formatDate(booking.checkOut) }}
-              </span>
-              <span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 00-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 010 7.75"></path>
-                </svg>
-                {{ booking.guests }} {{ booking.guests === 1 ? 'huésped' : 'huéspedes' }}
-              </span>
-            </div>
-
-            <p v-if="booking.observaciones" class="hotel-booking-notes">Notas: {{ booking.observaciones }}</p>
-
-            <!-- Pie: total de la reserva + acción -->
-            <div class="hotel-booking-foot">
-              <div class="hotel-booking-total">
-                <small>Total de la reserva</small>
-                <strong>{{ formatCurrency(booking.total) }}</strong>
-              </div>
-              <button
-                v-if="canCancel(booking)"
-                class="hotel-booking-cancel"
-                @click="requestCancel(booking)"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-                Cancelar Reserva
-              </button>
-              <span v-else class="hotel-booking-finished">Reserva finalizada</span>
-            </div>
-          </article>
-        </div>
-        </template>
-      </section>
     </main>
 
     <!-- ======================================================
@@ -619,41 +409,6 @@ onMounted(async () => {
             </button>
             <button class="hotel-detail-btn hotel-detail-btn-secondary" @click="closeRoomDetail">Cerrar</button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======================================================
-         CANCEL CONFIRMATION MODAL
-         ====================================================== -->
-    <div
-      class="hotel-cancel-overlay"
-      :class="{ active: showCancelConfirm }"
-      @click.self="closeCancelConfirm"
-    >
-      <div class="hotel-cancel-modal" v-if="bookingToCancel">
-        <div class="hotel-cancel-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-          </svg>
-        </div>
-        <h3>¿Cancelar esta reserva?</h3>
-        <p>
-          Vas a cancelar tu reserva de <strong>{{ bookingToCancel.roomName }}</strong> del
-          {{ formatDate(bookingToCancel.checkIn) }} al {{ formatDate(bookingToCancel.checkOut) }}.
-          Esta acción no se puede deshacer.
-        </p>
-        <div class="hotel-cancel-actions">
-          <button class="hotel-cancel-btn hotel-cancel-btn-danger" @click="confirmCancel" :disabled="isCancelling">
-            <template v-if="isCancelling">
-              <span class="hotel-spinner"></span>
-              Cancelando…
-            </template>
-            <template v-else>Sí, cancelar reserva</template>
-          </button>
-          <button class="hotel-cancel-btn hotel-cancel-btn-secondary" @click="closeCancelConfirm">Volver</button>
         </div>
       </div>
     </div>
