@@ -86,8 +86,18 @@ onUnmounted(() => onUnmount())
 
       <ul class="nav-links" :class="{ open: mobileMenuOpen }">
         <!-- Mobile user info -->
-        <li v-if="isLoggedIn && user" class="nav-mobile-user">
-<div class="nav-user-avatar" @click="emit('navigate', 'profile')">{{ getUserInitials() }}</div>
+        <li
+          v-if="isLoggedIn && user"
+          class="nav-mobile-user"
+          role="button"
+          tabindex="0"
+          title="Ver mi perfil"
+          aria-label="Ver mi perfil"
+          @click="emit('navigate', 'profile')"
+          @keydown.enter="emit('navigate', 'profile')"
+          @keydown.space.prevent="emit('navigate', 'profile')"
+        >
+          <div class="nav-user-avatar">{{ getUserInitials() }}</div>
           <span class="nav-user-greeting">Bienvenido</span>
           <strong class="nav-user-name">{{ user.name }}</strong>
         </li>
@@ -102,11 +112,29 @@ onUnmounted(() => onUnmount())
 
       <!-- Logged-in user section -->
       <div v-if="isLoggedIn && user" class="nav-actions" :class="{ open: mobileMenuOpen }">
-        <div class="nav-user-info">
+        <div
+          class="nav-user-info"
+          role="button"
+          tabindex="0"
+          title="Ver mi perfil"
+          aria-label="Ver mi perfil"
+          @click="emit('navigate', 'profile')"
+          @keydown.enter="emit('navigate', 'profile')"
+          @keydown.space.prevent="emit('navigate', 'profile')"
+        >
           <span class="nav-user-greeting">Bienvenido</span>
           <strong class="nav-user-name">{{ user.name }}</strong>
         </div>
-        <div class="nav-user-avatar">{{ getUserInitials() }}</div>
+        <div
+          class="nav-user-avatar"
+          role="button"
+          tabindex="0"
+          title="Ver mi perfil"
+          aria-label="Ver mi perfil"
+          @click="emit('navigate', 'profile')"
+          @keydown.enter="emit('navigate', 'profile')"
+          @keydown.space.prevent="emit('navigate', 'profile')"
+        >{{ getUserInitials() }}</div>
         
         <button v-if="isAdmin" class="nav-admin-link-btn" @click="emit('navigate', 'admin')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

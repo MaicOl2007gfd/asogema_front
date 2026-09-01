@@ -15,7 +15,6 @@ import RestaurantView from './components/RestaurantView.vue'
 import DashboardView from './components/DashboardView.vue'
 import EventsView from './components/EventsView.vue'
 import TableReservationView from './components/TableReservationView.vue'
-import RestaurantReservationsView from './components/RestaurantReservationsView.vue'
 import PanelAdmin from './components/PanelAdmin.vue'
 import PanelEmpleado from './components/PanelEmpleado.vue'
 import PaymentResultView from './components/PaymentResultView.vue'
@@ -30,7 +29,7 @@ const { isLoggedIn, isAdmin, isEmployee, user } = useAuth()
 const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
 // Secciones que requieren sesión iniciada
-const protectedViews = ['table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'employee', 'profile', 'wallet', 'qr-reader']
+const protectedViews = ['table-reservation', 'dashboard', 'admin', 'employee', 'profile', 'wallet', 'qr-reader']
 
 const sessionReady = ref(false)
 const showLoginAlert = ref(false)
@@ -118,7 +117,6 @@ onMounted(async () => {
     <RestaurantView v-else-if="currentView === 'restaurant'" key="restaurant" @navigate="navigate" />
     <EventsView v-else-if="currentView === 'events'" key="events" @navigate="navigate" />
     <TableReservationView v-else-if="currentView === 'table-reservation'" key="table-reservation" @navigate="navigate" />
-    <RestaurantReservationsView v-else-if="currentView === 'restaurant-reservations'" key="restaurant-reservations" @navigate="navigate" />
     <DashboardView v-else-if="currentView === 'dashboard'" key="dashboard" @navigate="navigate" />
     <PanelAdmin v-else-if="currentView === 'admin'" key="admin" @navigate="navigate" />
     <PanelEmpleado v-else-if="currentView === 'employee'" key="employee" @navigate="navigate" />

@@ -643,7 +643,7 @@
   border-radius: 50px;
   background: rgba(0, 206, 201, 0.15);
   border: 1px solid rgba(0, 206, 201, 0.2);
-  color: #F3E8D3;
+  color: #0a0a0a;
   font-size: 12px;
   font-weight: 600;
   font-family: inherit;
@@ -1659,7 +1659,7 @@
 }
 
 .inner-nav-links a:hover {
-  color: #F3E8D3;
+  color: #000000;
 }
 
 .inner-nav-links a:hover::after {

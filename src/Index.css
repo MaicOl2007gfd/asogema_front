@@ -321,6 +321,15 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 1px;
+  cursor: pointer;
+  padding: 4px 10px;
+  margin-right: -10px;
+  border-radius: 10px;
+  transition: background var(--idx-transition);
+}
+
+.nav-user-info:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .nav-user-greeting {
@@ -352,6 +361,20 @@
   color: var(--idx-primary-dark);
   flex-shrink: 0;
   box-shadow: 0 2px 10px rgba(200, 169, 106, 0.3);
+  cursor: pointer;
+  transition: transform var(--idx-transition), box-shadow var(--idx-transition);
+}
+
+.nav-user-avatar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(200, 169, 106, 0.45);
+}
+
+.nav-user-info:focus-visible,
+.nav-user-avatar:focus-visible,
+.nav-mobile-user:focus-visible {
+  outline: 2px solid var(--idx-gold);
+  outline-offset: 2px;
 }
 
 .nav-btn-logout {
@@ -376,6 +399,7 @@
 /* Mobile user — hidden on desktop, visible in mobile menu */
 .nav-mobile-user {
   display: none;
+  cursor: pointer;
 }
 
 /* Mobile toggle */
