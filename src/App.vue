@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { restoreSession, logout, useAuth } from './composables/useAuth.js'
+import { restoreSession, logout, useAuth, homeViewForRole } from './composables/useAuth.js'
 import { applyOAuthCallback } from './composables/useSocialAuth.js'
 import api from './composables/useApi.js'
 import IndexView from './components/IndexView.vue'
@@ -18,6 +18,7 @@ import TableReservationView from './components/TableReservationView.vue'
 import RestaurantReservationsView from './components/RestaurantReservationsView.vue'
 import PanelAdmin from './components/PanelAdmin.vue'
 import PanelEmpleado from './components/PanelEmpleado.vue'
+import ComandaView from './components/ComandaView.vue'
 import PaymentResultView from './components/PaymentResultView.vue'
 import PaymentCheckoutView from './components/PaymentCheckoutView.vue'
 import WalletView from './components/WalletView.vue'
@@ -25,12 +26,12 @@ import QrReaderView from './components/QrReaderView.vue'
 import { isStaffUser } from './composables/useUtils.js'
 const currentView = ref('index')
 
-const { isLoggedIn, isAdmin, isEmployee, user } = useAuth()
+const { isLoggedIn, isAdmin, isEmployee, isMesero, isComanda, user } = useAuth()
 
 const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
 // Secciones que requieren sesión iniciada
-const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'employee', 'profile', 'wallet', 'qr-reader']
+const protectedViews = ['hotel', 'restaurant', 'events', 'table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'employee', 'profile', 'wallet', 'qr-reader', 'comanda']
 
 const sessionReady = ref(false)
 const showLoginAlert = ref(false)
@@ -48,6 +49,10 @@ function navigate(view) {
     return
   }
   if (view === 'employee' && !isEmployee.value) {
+    currentView.value = 'index'
+    return
+  }
+  if (view === 'comanda' && !(isMesero.value || isComanda.value || isEmployee.value)) {
     currentView.value = 'index'
     return
   }
@@ -74,7 +79,7 @@ onMounted(async () => {
   // Se ejecuta antes de restoreSession para no sobrescribir la sesión recién creada.
   const oauth = applyOAuthCallback()
   if (oauth?.success) {
-    currentView.value = isAdmin.value ? 'admin' : 'index'
+    currentView.value = homeViewForRole(user.value?.rol_nombre)
   } else if (oauth?.error) {
     localStorage.setItem('asogema_oauth_error', oauth.error)
     currentView.value = 'login'
@@ -87,19 +92,25 @@ onMounted(async () => {
 
   restoreSession()
 
-  if (localStorage.getItem('asogema_token')) {
+  if (sessionStorage.getItem('asogema_token')) {
     try {
       const { data } = await api.get('/auth/users/me')
-      const stored = JSON.parse(localStorage.getItem('asogema_user') || '{}')
+      const stored = JSON.parse(sessionStorage.getItem('asogema_user') || '{}')
       stored.nombre = data.nombre || stored.nombre
       stored.apellido = data.apellido || stored.apellido
       stored.correo = data.correo || stored.correo
       stored.name = `${stored.nombre || ''} ${stored.apellido || ''}`.trim() || stored.name || 'Usuario'
       user.value = stored
-      localStorage.setItem('asogema_user', JSON.stringify(stored))
+      sessionStorage.setItem('asogema_user', JSON.stringify(stored))
     } catch {
       logout()
     }
+  }
+
+  // Redirigir al apartado según rol tras un refresh (si no venimos de un pago).
+  const hasFactura = new URLSearchParams(window.location.search).get('factura_id')
+  if (!hasFactura && currentView.value === 'index') {
+    currentView.value = homeViewForRole(user.value?.rol_nombre)
   }
   sessionReady.value = true
 })
@@ -122,6 +133,7 @@ onMounted(async () => {
     <DashboardView v-else-if="currentView === 'dashboard'" key="dashboard" @navigate="navigate" />
     <PanelAdmin v-else-if="currentView === 'admin'" key="admin" @navigate="navigate" />
     <PanelEmpleado v-else-if="currentView === 'employee'" key="employee" @navigate="navigate" />
+    <ComandaView v-else-if="currentView === 'comanda'" key="comanda" @navigate="navigate" />
     <PaymentResultView v-else-if="currentView === 'payment-result'" key="payment-result" @navigate="navigate" />
     <PaymentCheckoutView v-else-if="currentView === 'checkout'" key="checkout" @navigate="navigate" />
     <WalletView v-else-if="currentView === 'wallet'" key="wallet" @navigate="navigate" />

@@ -225,7 +225,9 @@ export function useRestaurant(emit, isLoggedIn) {
   }
 
   function formatPrice(num) {
-    return '$' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    const value = Number(num)
+    if (!Number.isFinite(value)) return '$0'
+    return '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
   }
 
   /* ----------------------------------------------------------

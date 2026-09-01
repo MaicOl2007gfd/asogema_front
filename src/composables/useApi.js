@@ -9,7 +9,7 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('asogema_token')
+  const token = sessionStorage.getItem('asogema_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -25,7 +25,7 @@ function onRefreshed(newToken) {
 }
 
 async function refreshTokens() {
-  const refresh = localStorage.getItem('asogema_refresh')
+  const refresh = sessionStorage.getItem('asogema_refresh')
   if (!refresh) return null
 
   const raw = axios.create({
@@ -67,7 +67,7 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    if (!localStorage.getItem('asogema_refresh')) {
+    if (!sessionStorage.getItem('asogema_refresh')) {
       handleSessionExpired()
       return Promise.reject(error)
     }

@@ -8,9 +8,11 @@ import ClickSpark from './ClickSpark.vue'
 
 const emit = defineEmits(['navigate'])
 
-const { user, isLoggedIn, isAdmin, logout } = useAuth()
+const { user, isLoggedIn, isAdmin, isMesero, isComanda, isEmployee, logout } = useAuth()
 
 const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
+
+const isComandaUser = computed(() => isMesero.value || isComanda.value || isEmployee.value)
 
 const {
   slides,
@@ -91,13 +93,19 @@ onUnmounted(() => onUnmount())
           <span class="nav-user-greeting">Bienvenido</span>
           <strong class="nav-user-name">{{ user.name }}</strong>
         </li>
-        <li><a href="#" @click.prevent="emit('navigate', 'index')">Inicio</a></li>
-        <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
-        <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
-        <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
-        <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
-        <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
-        <li><a href="#contact" @click.prevent="scrollToSection('contact')">Contacto</a></li>
+        <template v-if="isComandaUser">
+          <li><a href="#" @click.prevent="emit('navigate', 'comanda')">Comanda</a></li>
+          <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
+        </template>
+        <template v-else>
+          <li><a href="#" @click.prevent="emit('navigate', 'index')">Inicio</a></li>
+          <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
+          <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
+          <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
+          <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
+          <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
+          <li><a href="#contact" @click.prevent="scrollToSection('contact')">Contacto</a></li>
+        </template>
       </ul>
 
       <!-- Logged-in user section -->
