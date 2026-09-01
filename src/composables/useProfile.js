@@ -131,7 +131,7 @@ export function useProfile(emit) {
     user.value.name = `${user.value.nombre || ''} ${user.value.apellido || ''}`.trim()
       || user.value.name
       || 'Usuario'
-    localStorage.setItem('asogema_user', JSON.stringify(user.value))
+    sessionStorage.setItem('asogema_user', JSON.stringify(user.value))
   }
 
   /* ──────────────────────────────────────────────────────────

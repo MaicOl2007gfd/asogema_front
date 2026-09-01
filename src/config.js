@@ -2,6 +2,10 @@ export const API_URL = import.meta.env.PROD
   ? 'https://api.clubasogema.com'
   : 'http://localhost:3000'
 
+export const WS_URL = import.meta.env.PROD
+  ? 'wss://api.clubasogema.com'
+  : 'ws://localhost:3000'
+
 /**
  * Configuración del login social (Google / Facebook).
  *
