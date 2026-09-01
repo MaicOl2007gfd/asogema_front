@@ -325,12 +325,6 @@ export function useRestaurant(emit, isLoggedIn) {
     }
   }
 
-  function goToMyReservations() {
-    if (emit) {
-      emit('navigate', 'restaurant-reservations')
-    }
-  }
-
   /**
    * Cierra el modal de detalle y el panel de orden con la tecla Escape.
    */
@@ -457,7 +451,6 @@ export function useRestaurant(emit, isLoggedIn) {
     decrementDetailQty,
     goToLogin,
     goToReservation,
-    goToMyReservations,
     handleReserveClick,
     confirmOrder,
     goBackToHome,

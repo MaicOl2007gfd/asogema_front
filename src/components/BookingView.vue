@@ -49,7 +49,6 @@ const {
   goToPayment,
   closeSuccess,
   goBackToHotel,
-  switchTab,
   loadRooms,
 } = useHotel()
 
@@ -117,10 +116,9 @@ function onNewReservation() {
 
 function goToMyBookings() {
   showSuccess.value = false
-  // Abrir el Hotel directamente en la pestaña "Mis Reservas" para que
-  // el usuario vea su reserva recién creada sin tener que buscarla.
-  switchTab('bookings')
-  emit('navigate', 'hotel')
+  // Abrir el Perfil directamente en "Mis Reservas" para que el usuario
+  // vea su reserva recién creada (Hotel + Restaurante + Eventos).
+  emit('navigate', 'profile')
 }
 
 onMounted(async () => {

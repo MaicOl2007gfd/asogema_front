@@ -87,11 +87,30 @@ const {
           </svg>
           <span>Admin</span>
         </div>
-        <div class="nav-user-greeting" v-if="user">
+        <div
+          class="nav-user-greeting"
+          v-if="user"
+          role="button"
+          tabindex="0"
+          title="Ver mi perfil"
+          aria-label="Ver mi perfil"
+          @click="emit('navigate', 'profile')"
+          @keydown.enter="emit('navigate', 'profile')"
+          @keydown.space.prevent="emit('navigate', 'profile')"
+        >
           <small>Bienvenido</small>
           <strong>{{ user.name }}</strong>
         </div>
-        <div class="nav-user-avatar">{{ getUserInitials() }}</div>
+        <div
+          class="nav-user-avatar"
+          role="button"
+          tabindex="0"
+          title="Ver mi perfil"
+          aria-label="Ver mi perfil"
+          @click="emit('navigate', 'profile')"
+          @keydown.enter="emit('navigate', 'profile')"
+          @keydown.space.prevent="emit('navigate', 'profile')"
+        >{{ getUserInitials() }}</div>
         <button class="nav-profile-btn" @click="emit('navigate', 'profile')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
