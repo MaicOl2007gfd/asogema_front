@@ -2408,3 +2408,128 @@
     height: 18px;
   }
 }
+
+/* =============================================================
+   WHATSAPP FLOATING BUTTON
+   ============================================================= */
+.wa-float-btn {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  z-index: 9997;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2ad47a, #1dbe5e);
+  color: #ffffff;
+  box-shadow: 0 10px 30px rgba(37, 211, 102, 0.4);
+  text-decoration: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: waFloatIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Anillo pulsante */
+.wa-float-btn::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(37, 211, 102, 0.5);
+  animation: waPulse 2.2s ease-out infinite;
+}
+
+.wa-float-btn svg {
+  width: 30px;
+  height: 30px;
+  position: relative;
+  z-index: 1;
+}
+
+.wa-float-btn:hover {
+  transform: translateY(-4px) scale(1.06);
+  box-shadow: 0 16px 44px rgba(37, 211, 102, 0.55);
+}
+
+.wa-float-btn:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+/* Tooltip (escritorio) */
+.wa-float-tooltip {
+  position: absolute;
+  right: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #0d2c17;
+  color: #eafff1;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.wa-float-btn:hover .wa-float-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+@keyframes waFloatIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes waPulse {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+/* El botón de admin sube para no superponerse con WhatsApp */
+.admin-float-btn {
+  bottom: 116px;
+}
+
+@media (max-width: 768px) {
+  .wa-float-btn {
+    right: 20px;
+    bottom: 20px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .wa-float-btn svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .wa-float-tooltip {
+    display: none;
+  }
+
+  .admin-float-btn {
+    bottom: 96px;
+  }
+}
