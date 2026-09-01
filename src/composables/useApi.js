@@ -62,7 +62,9 @@ api.interceptors.response.use(
     const isAuthEndpoint =
       url.includes('/auth/tokens') ||
       url.includes('/auth/refresh') ||
-      url.includes('/auth/logout')
+      url.includes('/auth/logout') ||
+      url.includes('/auth/forgot-password') ||
+      url.includes('/auth/reset-password')
     if (isAuthEndpoint) {
       return Promise.reject(error)
     }
