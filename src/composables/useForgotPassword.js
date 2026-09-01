@@ -1,17 +1,15 @@
 import { ref, onMounted } from 'vue'
 import api from './useApi.js'
+import { getErrorMessage } from './useUtils.js'
 
 /**
  * Composable que maneja la recuperación de contraseña ("¿Olvidaste tu contraseña?").
  *
- * ⚠️ PENDIENTE BACKEND — No existen endpoints de recuperación de contraseña en el
- * backend (asogema-back). La UI ya está lista y llama a los endpoints propuestos:
+ * Flujo con backend (asogema-back):
  *
  *   1. POST /auth/forgot-password  → { correo }  — envía el código de recuperación por email.
  *   2. POST /auth/reset-password   → { correo, codigo, new_password } — valida el código
  *      y guarda la nueva contraseña.
- *
- * Mientras no existan, los envíos fallarán y se mostrará un mensaje informativo.
  *
  * @param {Function} emit - Función emit del componente para navegación
  * @returns {object} Estado reactivo y métodos del formulario
@@ -61,7 +59,7 @@ export function useForgotPassword(emit) {
 
   /**
    * Paso 1: solicitar el código de recuperación.
-   * PENDIENTE BACKEND: POST /auth/forgot-password
+   * POST /auth/forgot-password
    */
   async function requestCode() {
     if (!validateEmail()) return
@@ -71,8 +69,8 @@ export function useForgotPassword(emit) {
       await api.post('/auth/forgot-password', { correo: email.value.trim() })
       successMessage.value = 'Si el correo está registrado, recibirás un código de recuperación.'
       step.value = 2
-    } catch {
-      errorMessage.value = 'La recuperación de contraseña estará disponible próximamente (requiere backend)'
+    } catch (err) {
+      errorMessage.value = getErrorMessage(err)
     } finally {
       isLoading.value = false
     }
@@ -98,7 +96,7 @@ export function useForgotPassword(emit) {
 
   /**
    * Paso 2: validar código y guardar la nueva contraseña.
-   * PENDIENTE BACKEND: POST /auth/reset-password
+   * POST /auth/reset-password
    */
   async function resetPassword() {
     if (!validateReset()) return
@@ -112,8 +110,8 @@ export function useForgotPassword(emit) {
       })
       successMessage.value = 'Tu contraseña fue restablecida correctamente. Ya puedes iniciar sesión.'
       setTimeout(() => goToLogin(), 1600)
-    } catch {
-      errorMessage.value = 'El restablecimiento de contraseña estará disponible próximamente (requiere backend)'
+    } catch (err) {
+      errorMessage.value = getErrorMessage(err)
     } finally {
       isLoading.value = false
     }
