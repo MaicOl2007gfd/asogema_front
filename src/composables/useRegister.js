@@ -1,16 +1,7 @@
 import { ref, onMounted } from 'vue'
 import api from './useApi.js'
-
-const DOCUMENT_TYPES = [
-  { value: 'CC', label: 'Cédula de Ciudadanía' },
-  { value: 'CE', label: 'Cédula de Extranjería' },
-  { value: 'PAS', label: 'Pasaporte' },
-  { value: 'RC', label: 'Registro Civil' },
-  { value: 'NIT', label: 'NIT' },
-  { value: 'CD', label: 'Carné Diplomático' },
-]
-
-const DOC_TYPE_IDS = { CC: 1, CE: 2, PAS: 3, RC: 4, NIT: 5, CD: 6 }
+import { DOCUMENT_TYPES, DOC_TYPE_IDS } from './documentTypes.js'
+import { resolveError } from './useErrorMessage.js'
 
 /**
  * Composable que maneja toda la lógica del formulario de registro.
@@ -28,6 +19,7 @@ export function useRegister(emit) {
   const email = ref('')
   const password = ref('')
   const confirmPassword = ref('')
+  const birthDate = ref('')
   const acceptTerms = ref(false)
   const showPassword = ref(false)
   const showConfirmPassword = ref(false)
@@ -44,6 +36,7 @@ export function useRegister(emit) {
   const emailError = ref('')
   const passwordError = ref('')
   const confirmPasswordError = ref('')
+  const birthDateError = ref('')
   const termsError = ref('')
   const errorMessage = ref('')
 
@@ -56,6 +49,7 @@ export function useRegister(emit) {
   const typingEmail = ref(false)
   const typingPassword = ref(false)
   const typingConfirmPassword = ref(false)
+  const typingBirthDate = ref(false)
 
   function togglePasswordVisibility() {
     showPassword.value = !showPassword.value
@@ -63,6 +57,64 @@ export function useRegister(emit) {
 
   function toggleConfirmPasswordVisibility() {
     showConfirmPassword.value = !showConfirmPassword.value
+  }
+
+  /** Formatea la fecha como DD/MM/AAAA mientras se escribe. */
+  function formatBirthDateInput(e) {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 8)
+    let formatted = digits
+    if (digits.length > 4) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+    } else if (digits.length > 2) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`
+    }
+    birthDate.value = formatted
+  }
+
+  /** Convierte "DD/MM/AAAA" a "AAAA-MM-DD" (ISO) para la API. */
+  function birthDateToISO(value) {
+    if (!value) return ''
+    const parts = value.split('/')
+    if (parts.length !== 3) return ''
+    const [dd, mm, yyyy] = parts
+    return `${yyyy}-${mm}-${dd}`
+  }
+
+  const MIN_BIRTH_YEAR = 1900
+
+  /** Valida la fecha de nacimiento en formato "DD/MM/AAAA".
+   *  Devuelve un mensaje de error o null si es válida. */
+  function validateBirthDate(value) {
+    if (!value) return 'Obligatorio'
+
+    const parts = value.split('/')
+    if (parts.length !== 3) return 'Formato inválido (DD/MM/AAAA)'
+
+    const [ddStr, mmStr, yyyyStr] = parts
+    if (ddStr.length !== 2 || mmStr.length !== 2 || yyyyStr.length !== 4) {
+      return 'Formato inválido (DD/MM/AAAA)'
+    }
+
+    const dd = Number(ddStr)
+    const mm = Number(mmStr)
+    const yyyy = Number(yyyyStr)
+    if (Number.isNaN(dd) || Number.isNaN(mm) || Number.isNaN(yyyy)) {
+      return 'Fecha inválida'
+    }
+
+    if (mm < 1 || mm > 12) return 'Mes inválido'
+
+    if (yyyy < MIN_BIRTH_YEAR) return `El año debe ser ${MIN_BIRTH_YEAR} o posterior`
+
+    const daysInMonth = new Date(yyyy, mm, 0).getDate()
+    if (dd < 1 || dd > daysInMonth) return 'Día inválido para ese mes'
+
+    const date = new Date(yyyy, mm - 1, dd)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (date > today) return 'La fecha no puede ser futura'
+
+    return null
   }
 
   function validateForm() {
@@ -77,6 +129,7 @@ export function useRegister(emit) {
     emailError.value = ''
     passwordError.value = ''
     confirmPasswordError.value = ''
+    birthDateError.value = ''
     termsError.value = ''
 
     // Primer nombre (required)
@@ -139,6 +192,13 @@ export function useRegister(emit) {
       isValid = false
     }
 
+    // Fecha de nacimiento (required para poder pagar)
+    const birthError = validateBirthDate(birthDate.value)
+    if (birthError) {
+      birthDateError.value = birthError
+      isValid = false
+    }
+    
     // Términos
     if (!acceptTerms.value) {
       termsError.value = 'Debes aceptar los términos'
@@ -163,6 +223,7 @@ export function useRegister(emit) {
         correo: email.value,
         password: password.value,
         telefono: phone.value || undefined,
+        fecha_nacimiento: birthDateToISO(birthDate.value),
       })
 
       isLoading.value = false
@@ -174,16 +235,16 @@ export function useRegister(emit) {
       }
     } catch (err) {
       isLoading.value = false
-      if (err.response?.status === 409) {
-        errorMessage.value = 'Este correo ya está registrado'
-      } else if (err.response?.data?.message) {
-        errorMessage.value = Array.isArray(err.response.data.message)
-          ? err.response.data.message[0]
-          : err.response.data.message
-      } else {
-        errorMessage.value = 'Error de conexión. Intenta de nuevo.'
-      }
 
+      const { field, message } = resolveError(err)
+
+      if (field === 'email') {
+        emailError.value = message
+      } else if (field === 'docNumber') {
+        docNumberError.value = message
+      } else {
+        errorMessage.value = message
+      }
     }
   }
 
@@ -207,6 +268,7 @@ export function useRegister(emit) {
     email,
     password,
     confirmPassword,
+    birthDate,
     acceptTerms,
     showPassword,
     showConfirmPassword,
@@ -223,6 +285,7 @@ export function useRegister(emit) {
     emailError,
     passwordError,
     confirmPasswordError,
+    birthDateError,
     termsError,
     errorMessage,
     // Typing flags
@@ -235,9 +298,11 @@ export function useRegister(emit) {
     typingEmail,
     typingPassword,
     typingConfirmPassword,
+    typingBirthDate,
     // Methods
     togglePasswordVisibility,
     toggleConfirmPasswordVisibility,
+    formatBirthDateInput,
     handleSubmit,
   }
 }

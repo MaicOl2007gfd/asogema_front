@@ -6,7 +6,7 @@
  * libre (10k–2M), historial de recargas y saldo disponible.
  * Tema claro coherente con Index (crema + verde bosque).
  */
-import { onMounted, watch, onUnmounted } from 'vue'
+import { watch, onUnmounted } from 'vue'
 import { useWallet } from '../composables/useWallet.js'
 
 const emit = defineEmits(['navigate'])
@@ -46,30 +46,12 @@ watch(metodoRecarga, (metodo) => {
   if (metodo === 'PSE') loadInstitutions()
 })
 
-// Limpiar estados cuando el usuario navega a otra vista o recarga la página
-// reseteamos monto y método al desmontar para evitar que el endpoint se quede colgado
-let cleanupWatch = null
-
-onMounted(() => {
-  cleanupWatch = watch(
-    () => ({
-      monto: Number(monto.value || 0),
-      metodo: metodoRecarga.value,
-    }),
-    (newVal, oldVal) => {
-      // Si el usuario navega fuera y vuelve, resetear campos
-      if (newVal.metodo !== oldVal.metodo) {
-        metodoRecarga.value = 'TARJETA'
-        monto.value = ''
-        error.value = ''
-      }
-    },
-    { immediate: true, deep: true }
-  )
-})
-
+// Al salir de Mi Saldo, reseteamos monto y método para que la próxima
+// visita arranque limpia (sin dejar el pago anterior a medias).
 onUnmounted(() => {
-  if (cleanupWatch) cleanupWatch()
+  monto.value = ''
+  metodoRecarga.value = 'TARJETA'
+  error.value = ''
 })
 </script>
 
@@ -157,8 +139,6 @@ onUnmounted(() => {
                 <span>{{ m.hint }}</span>
               </button>
             </div>
-
-            <div v-if="metodoRecarga === 'TARJETA'" class="wallet-cardtype"></div>
 
             <!-- Campos Tarjeta (transacción directa) -->
             <div v-if="metodoRecarga === 'TARJETA'" class="wallet-fields">

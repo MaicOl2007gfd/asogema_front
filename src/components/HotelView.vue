@@ -46,7 +46,7 @@ const {
   requestCancel,
   closeCancelConfirm,
   confirmCancel,
-  goBackToHotel,
+  goBackToHome,
   switchTab,
 } = useHotel()
 
@@ -90,8 +90,8 @@ function handleLogout() {
   emit('navigate', 'index')
 }
 
-function onGoBackHotel() {
-  goBackToHotel(emit)
+function onGoHome() {
+  goBackToHome(emit)
 }
 
 // Guarda la habitación seleccionada y navega a la vista de reserva.
@@ -134,8 +134,8 @@ onMounted(async () => {
       </div>
 
       <ul class="hotel-nav-links" :class="{ open: mobileMenuOpen }">
-        <li><a href="#" @click.prevent="emit('navigate', 'index')">Inicio</a></li>
-        <li><a href="#" class="active" @click.prevent>Hotel</a></li>
+        <li><a href="#" @click.prevent="onGoHome">Inicio</a></li>
+        <li><a href="" class="active" @click.prevent>Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
         <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
@@ -671,7 +671,7 @@ onMounted(async () => {
           <h4>Enlaces</h4>
           <ul>
             <li><a href="#" @click.prevent="onGoHome">Inicio</a></li>
-            <li><a href="#" @click.prevent="onGoBackHotel">Hotel</a></li>
+            <li><a href="" @click.prevent>Hotel</a></li>
             <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
             <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
           </ul>

@@ -16,6 +16,7 @@ const {
   email,
   password,
   confirmPassword,
+  birthDate,
   acceptTerms,
   showPassword,
   showConfirmPassword,
@@ -31,6 +32,7 @@ const {
   emailError,
   passwordError,
   confirmPasswordError,
+  birthDateError,
   termsError,
   errorMessage,
   typingFirstName,
@@ -42,8 +44,10 @@ const {
   typingEmail,
   typingPassword,
   typingConfirmPassword,
+  typingBirthDate,
   togglePasswordVisibility,
   toggleConfirmPasswordVisibility,
+  formatBirthDateInput,
   handleSubmit,
 } = useRegister(emit)
 </script>
@@ -280,6 +284,32 @@ const {
           />
           <label for="reg-phone">Teléfono</label>
           <span v-if="phoneError" class="error-message">{{ phoneError }}</span>
+        </div>
+
+        <!-- Fecha de nacimiento -->
+        <div class="input-group" :class="{ focused: typingBirthDate, filled: birthDate, error: birthDateError }">
+          <div class="input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <input
+            id="reg-birth-date"
+            v-model="birthDate"
+            type="text"
+            inputmode="numeric"
+            maxlength="10"
+            autocomplete="bday"
+            @input="formatBirthDateInput"
+            @focus="typingBirthDate = true"
+            @blur="typingBirthDate = false"
+            placeholder="DD/MM/AAAA"
+          />
+          <label for="reg-birth-date">Fecha de nacimiento</label>
+          <span v-if="birthDateError" class="error-message">{{ birthDateError }}</span>
         </div>
 
         <!-- Email -->

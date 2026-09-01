@@ -1,4 +1,4 @@
- *,
+*,
 *::before,
 *::after {
   margin: 0;
@@ -303,6 +303,7 @@ body {
   z-index: 3;
   width: 100%;
   max-width: 420px;
+  max-height: calc(100vh - 60px);
   padding: 48px 40px 40px;
   background: #F3E8D3;
   backdrop-filter: blur(24px) saturate(1.4);
@@ -313,6 +314,9 @@ body {
     0 32px 64px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(243, 232, 211, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(19, 50, 21, 0.2) transparent;
   opacity: 0;
   transform: translateY(30px) scale(0.96);
   transition:
@@ -320,9 +324,73 @@ body {
     transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Scrollbar sutil para el card (evita recortar los botones sociales) */
+.login-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.login-card::-webkit-scrollbar-thumb {
+  background: rgba(19, 50, 21, 0.2);
+  border-radius: 3px;
+}
+
 .login-card.visible {
   opacity: 1;
   transform: translateY(0) scale(1);
+}
+
+/* ============================================================
+   Campos agrupados (Correo + Contraseña)
+   ============================================================ */
+
+/* Contenedor que agrupa los dos campos en un solo bloque */
+.fields-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff8f0;
+  border: 1.5px solid rgba(19, 50, 21, 0.16);
+  border-radius: 14px;
+  padding: 8px;
+  margin-bottom: 22px;
+  overflow: hidden;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.fields-group:focus-within {
+  border-color: rgba(19, 50, 21, 0.45);
+  box-shadow: 0 0 0 4px rgba(19, 50, 21, 0.08);
+}
+
+.fields-group .input-group {
+  background: #ffffff;
+  margin-bottom: 0;
+  border-radius: 10px;
+  transition: background var(--transition);
+}
+
+.fields-group .input-group.focused {
+  background: rgba(19, 50, 21, 0.05);
+}
+
+.fields-group .input-group.error {
+  background: rgba(255, 107, 107, 0.06);
+}
+
+/* Inputs sin borde individual dentro del grupo */
+.fields-group .input-group input {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.fields-group .input-group input:focus {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 /* Back Arrow — go back to the index */
@@ -505,25 +573,33 @@ body {
 /* Toggle Password */
 .toggle-password {
   position: absolute;
-  right: 14px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
   color: var(--color-text-muted);
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color var(--transition);
+  border-radius: 8px;
+  transition:
+    color var(--transition),
+    background var(--transition);
   z-index: 2;
 }
 
 .toggle-password:hover {
-  color: var(--color-white);
+  background: rgba(19, 50, 21, 0.08);
+  color: var(--color-primary);
+}
+
+.toggle-password:active {
+  background: rgba(19, 50, 21, 0.14);
 }
 
 .toggle-password svg {
@@ -721,6 +797,130 @@ body {
   }
   100% {
     stroke-dashoffset: 100;
+  }
+}
+
+/* ============================================================
+   LOGIN VIEW — Social Login (Google / Facebook)
+   ============================================================ */
+
+/* Divider "o continúa con" */
+.social-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 24px 0 18px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.social-divider::before,
+.social-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(19, 50, 21, 0.15);
+}
+
+/* Contenedor de los botones sociales */
+.social-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Botón social base */
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid transparent;
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition),
+    background var(--transition),
+    border-color var(--transition);
+}
+
+.social-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.social-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.social-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.social-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Google */
+.social-btn-google {
+  background: #ffffff;
+  border-color: rgba(19, 50, 21, 0.25);
+  color: #133215;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.social-btn-google:hover:not(:disabled) {
+  background: #fafaf8;
+  border-color: rgba(19, 50, 21, 0.4);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+/* Facebook */
+.social-btn-facebook {
+  background: #1877f2;
+  border-color: #1877f2;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(24, 119, 242, 0.3);
+}
+
+.social-btn-facebook:hover:not(:disabled) {
+  background: #0f6fe0;
+  border-color: #0f6fe0;
+  box-shadow: 0 6px 18px rgba(24, 119, 242, 0.4);
+}
+
+/* Loader de los botones sociales */
+.social-btn-loader {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.social-btn-loader .spinner {
+  width: 20px;
+  height: 20px;
+}
+
+/* En el botón de Google (fondo blanco) el spinner debe ser oscuro */
+.social-btn-google .spinner-path {
+  stroke: #133215;
+}
+
+/* Responsive: apilar botones en pantallas pequeñas */
+@media (max-width: 480px) {
+  .social-buttons {
+    grid-template-columns: 1fr;
   }
 }
 

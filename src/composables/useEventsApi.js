@@ -33,8 +33,29 @@ export function useEventsApi() {
     return data
   }
 
+  /**
+   * Fetch current user's event bookings
+   * @returns {Promise<Array>} Array of user's bookings with salon details
+   */
+  async function fetchMyBookings() {
+    const { data } = await api.get('/events/bookings/mine')
+    return data
+  }
+
+  /**
+   * Cancel an event booking (changes its estado to CANCELADA)
+   * @param {number} bookingId - Booking ID (from reservas_eventos.id)
+   * @returns {Promise<Object>} Updated booking response
+   */
+  async function cancelBooking(bookingId) {
+    const { data } = await api.patch(`/events/bookings/${bookingId}/cancel`)
+    return data
+  }
+
   return {
     fetchEvents,
     createBooking,
+    fetchMyBookings,
+    cancelBooking,
   }
 }

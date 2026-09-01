@@ -359,6 +359,10 @@ export function useRestaurant(emit, isLoggedIn) {
 
   function confirmOrder() {
     if (order.value.length === 0) return
+    if (!isLoggedIn.value) {
+      if (emit) emit('navigate', 'login')
+      return
+    }
 
     const itemsPayload = order.value.map((item) => ({
       id: item.id,

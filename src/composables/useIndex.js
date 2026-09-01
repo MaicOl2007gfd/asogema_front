@@ -1,4 +1,5 @@
 import { ref, nextTick } from 'vue'
+import { useAuth } from './useAuth.js'
 
 /**
  * Composable que maneja la lógica de la página de inicio (Index).
@@ -11,6 +12,7 @@ import { ref, nextTick } from 'vue'
  * @returns {object} Estado reactivo y métodos del Index
  */
 export function useIndex(emit) {
+  const { isLoggedIn } = useAuth()
   /* ----------------------------------------------------------
      SLIDES DATA (Modelo) — Hero carousel
      ---------------------------------------------------------- */
@@ -23,7 +25,7 @@ export function useIndex(emit) {
       primaryBtn: 'Ver Hotel',
       primaryAction: 'scroll-hotel',
       secondaryBtn: 'Reservar Ahora',
-      secondaryAction: 'register',
+      secondaryAction: 'reservar',
       image: 'https://picsum.photos/id/1044/1600/900'
     },
     {
@@ -34,7 +36,7 @@ export function useIndex(emit) {
       primaryBtn: 'Ver Restaurante',
       primaryAction: 'scroll-restaurante',
       secondaryBtn: 'Hacer Reserva',
-      secondaryAction: 'register',
+      secondaryAction: 'reservar',
       image: 'https://picsum.photos/id/292/1600/900'
     },
     {
@@ -51,7 +53,7 @@ export function useIndex(emit) {
   ]
 
   /* ----------------------------------------------------------
-     EXPERIENCIAS DATA (Modelo) — Hotel · Restaurante · Eventos
+      EXPERIENCIAS DATA (Modelo) — Hotel · Restaurante · Eventos
      ---------------------------------------------------------- */
   const experiencias = [
     {
@@ -191,10 +193,12 @@ export function useIndex(emit) {
 
   function handleSlideAction(action) {
     if (!emit) return
-    if (action === 'register') {
-      emit('navigate', 'register')
-    } else if (action === 'login') {
-      emit('navigate', 'login')
+    if (action === 'reservar') {
+      if (isLoggedIn.value) {
+        emit('navigate', 'dashboard')
+      } else {
+        emit('navigate', 'login')
+      }
     } else if (action === 'events') {
       emit('navigate', 'events')
     } else if (action.startsWith('scroll-')) {
