@@ -15,6 +15,16 @@ const isAdmin = computed(() => {
   return user.value.rol_nombre === 'Administrador' || user.value.rol_id === 1
 })
 
+const isMesero = computed(() => {
+  if (!user.value) return false
+  return user.value.rol_nombre === 'Mesero'
+})
+
+const isComanda = computed(() => {
+  if (!user.value) return false
+  return user.value.rol_nombre === 'Comanda'
+})
+
 const isEmployee = computed(() => {
   if (!user.value) return false
   return user.value.rol_nombre === 'Empleado'
@@ -23,11 +33,11 @@ const isEmployee = computed(() => {
 function storeTokens(accessToken, refreshTokenValue) {
   token.value = accessToken
   refreshToken.value = refreshTokenValue || null
-  localStorage.setItem(TOKEN_KEY, accessToken || '')
+  sessionStorage.setItem(TOKEN_KEY, accessToken || '')
   if (refreshTokenValue) {
-    localStorage.setItem(REFRESH_KEY, refreshTokenValue)
+    sessionStorage.setItem(REFRESH_KEY, refreshTokenValue)
   } else {
-    localStorage.removeItem(REFRESH_KEY)
+    sessionStorage.removeItem(REFRESH_KEY)
   }
 }
 
@@ -38,7 +48,7 @@ export function login(userData, accessToken, refreshTokenValue) {
     email: userData.correo || userData.email || '',
     ...userData,
   }
-  localStorage.setItem(USER_KEY, JSON.stringify(user.value))
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user.value))
 }
 
 export function setTokens(accessToken, refreshTokenValue) {
@@ -46,7 +56,7 @@ export function setTokens(accessToken, refreshTokenValue) {
 }
 
 export async function logout() {
-  const refresh = refreshToken.value || localStorage.getItem(REFRESH_KEY)
+  const refresh = refreshToken.value || sessionStorage.getItem(REFRESH_KEY)
   if (refresh) {
     const { default: api } = await import('./useApi.js')
     api.post('/auth/logout', { refresh_token: refresh }).catch(() => {})
@@ -54,25 +64,25 @@ export async function logout() {
   user.value = null
   token.value = null
   refreshToken.value = null
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(REFRESH_KEY)
-  localStorage.removeItem(USER_KEY)
+  sessionStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(REFRESH_KEY)
+  sessionStorage.removeItem(USER_KEY)
 }
 
 export function restoreSession() {
   try {
-    const storedToken = localStorage.getItem(TOKEN_KEY)
-    const storedRefresh = localStorage.getItem(REFRESH_KEY)
-    const storedUser = localStorage.getItem(USER_KEY)
+    const storedToken = sessionStorage.getItem(TOKEN_KEY)
+    const storedRefresh = sessionStorage.getItem(REFRESH_KEY)
+    const storedUser = sessionStorage.getItem(USER_KEY)
     if (storedToken && storedUser) {
       token.value = storedToken
       refreshToken.value = storedRefresh || null
       user.value = JSON.parse(storedUser)
     }
   } catch {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(REFRESH_KEY)
-    localStorage.removeItem(USER_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(REFRESH_KEY)
+    sessionStorage.removeItem(USER_KEY)
   }
 }
 
@@ -83,9 +93,23 @@ export function useAuth() {
     isLoggedIn,
     isAdmin,
     isEmployee,
+    isMesero,
+    isComanda,
+    homeViewForRole,
     login,
     logout,
     setTokens,
     restoreSession,
   }
+}
+
+/**
+ * Devuelve la vista inicial según el rol del usuario logueado.
+ * Es la única fuente de verdad para el redirect post-login.
+ */
+export function homeViewForRole(rolNombre) {
+  if (rolNombre === 'Administrador' || rolNombre === 'Admin') return 'admin'
+  if (rolNombre === 'Mesero' || rolNombre === 'Comanda') return 'comanda'
+  if (rolNombre === 'Empleado') return 'employee'
+  return 'index'
 }

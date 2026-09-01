@@ -1,5 +1,5 @@
 import { ref, onMounted } from 'vue'
-import { useAuth } from './useAuth.js'
+import { useAuth, homeViewForRole } from './useAuth.js'
 import api from './useApi.js'
 import { resolveError } from './useErrorMessage.js'
 
@@ -7,7 +7,7 @@ import { resolveError } from './useErrorMessage.js'
 const OAUTH_ERROR_KEY = 'asogema_oauth_error'
 
 export function useLogin(emit) {
-  const { login: authLogin, isAdmin, isEmployee } = useAuth()
+  const { login: authLogin } = useAuth()
   const email = ref('')
   const password = ref('')
   const remember = ref(false)
@@ -60,13 +60,7 @@ export function useLogin(emit) {
       isLoading.value = false
 
       if (emit) {
-        if (isAdmin.value) {
-          emit('navigate', 'admin')
-        } else if (isEmployee.value) {
-          emit('navigate', 'employee')
-        } else {
-          emit('navigate', 'index')
-        }
+        emit('navigate', homeViewForRole(data.usuario?.rol_nombre))
       }
     } catch (err) {
       isLoading.value = false

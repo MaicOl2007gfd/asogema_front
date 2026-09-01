@@ -1,0 +1,808 @@
+/* ============================================================
+   COMANDA VIEW — Mesero / Comanda (tablet-first)
+   Paleta: crema + verde bosque + acento teal (Asogema)
+   ============================================================ */
+
+.cda-page {
+  min-height: 100vh;
+  background: #f3e8d3;
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  color: #133215;
+}
+
+/* ─────────────── HEADER ─────────────── */
+.cda-header {
+  background: rgba(255, 248, 240, 0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(19, 50, 21, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.cda-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cda-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cda-logo {
+  height: 42px;
+  width: 42px;
+  object-fit: contain;
+}
+
+.cda-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.cda-brand-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #133215;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.cda-brand-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a6b4a;
+  letter-spacing: 0.3px;
+}
+
+.cda-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cda-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #133215;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.cda-user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  text-align: right;
+}
+
+.cda-user-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #133215;
+}
+
+.cda-user-role {
+  font-size: 12px;
+  color: #7a9a7a;
+}
+
+.cda-logout {
+  border: none;
+  background: none;
+  color: #7a9a7a;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.cda-logout svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cda-logout:hover {
+  background: rgba(176, 58, 46, 0.1);
+  color: #b03a2e;
+}
+
+/* ─────────────── MAIN ─────────────── */
+.cda-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px 100px;
+}
+
+.cda-container {
+  width: 100%;
+}
+
+.cda-alert {
+  background: rgba(176, 58, 46, 0.1);
+  color: #b03a2e;
+  border: 1px solid rgba(176, 58, 46, 0.25);
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.cda-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 0;
+  color: #4a6b4a;
+}
+
+.cda-spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid rgba(19, 50, 21, 0.15);
+  border-top-color: #133215;
+  border-radius: 50%;
+  animation: cda-spin 0.8s linear infinite;
+}
+
+@keyframes cda-spin {
+  to { transform: rotate(360deg); }
+}
+
+.cda-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #7a9a7a;
+  background: rgba(255, 248, 240, 0.6);
+  border: 1px dashed rgba(19, 50, 21, 0.2);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.cda-empty p {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* ─────────────── TOOLBAR ─────────────── */
+.cda-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cda-title {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 30px;
+  color: #133215;
+}
+
+.cda-title--sm {
+  font-size: 22px;
+}
+
+.cda-count {
+  background: #133215;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.cda-block {
+  margin-top: 32px;
+}
+
+/* ─────────────── CARDS ─────────────── */
+.cda-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.cda-card {
+  background: #fff8f0;
+  border: 1px solid rgba(19, 50, 21, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(19, 50, 21, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.cda-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(19, 50, 21, 0.12);
+}
+
+.cda-card--listo {
+  border-color: rgba(19, 50, 21, 0.4);
+  box-shadow: 0 0 0 3px rgba(19, 50, 21, 0.14);
+}
+
+.cda-card.atencion {
+  border-color: rgba(200, 169, 106, 0.6);
+  box-shadow: 0 0 0 3px rgba(200, 169, 106, 0.16);
+}
+
+.cda-card.urgente {
+  border-color: rgba(176, 58, 46, 0.55);
+  box-shadow: 0 0 0 3px rgba(176, 58, 46, 0.14);
+  background: linear-gradient(180deg, #fff8f0, #fdecea);
+}
+
+.cda-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(19, 50, 21, 0.08);
+}
+
+.cda-card-id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cda-numero {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #133215;
+}
+
+.cda-badge {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.cda-badge.pend {
+  background: rgba(200, 169, 106, 0.2);
+  color: #8a6d2f;
+}
+
+.cda-badge.ok {
+  background: rgba(19, 50, 21, 0.12);
+  color: #133215;
+}
+
+.cda-badge.entregado {
+  background: rgba(122, 154, 122, 0.2);
+  color: #4a6b4a;
+}
+
+.cda-tipo {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(19, 50, 21, 0.08);
+  color: #133215;
+}
+
+.cda-mesero {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a6b4a;
+}
+
+.cda-wait {
+  font-size: 14px;
+  font-weight: 600;
+  color: #7a9a7a;
+  white-space: nowrap;
+}
+
+.cda-next {
+  display: block;
+  background: #00cec9;
+  color: #06312f;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 6px 12px;
+}
+
+/* ─────────────── ITEMS ─────────────── */
+.cda-items {
+  list-style: none;
+  margin: 0;
+  padding: 12px 18px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cda-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.cda-item-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: rgba(19, 50, 21, 0.06);
+  flex-shrink: 0;
+}
+
+.cda-item-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cda-item-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #133215;
+}
+
+.cda-item-price {
+  font-size: 13px;
+  color: #7a9a7a;
+}
+
+.cda-item-qty {
+  font-size: 16px;
+  font-weight: 700;
+  color: #133215;
+  min-width: 36px;
+  text-align: right;
+}
+
+.cda-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(19, 50, 21, 0.08);
+}
+
+.cda-total {
+  font-size: 16px;
+  font-weight: 700;
+  color: #133215;
+}
+
+.cda-en-cocina {
+  font-size: 13px;
+  font-weight: 600;
+  color: #7a9a7a;
+  font-style: italic;
+}
+
+/* ─────────────── BOTONES ─────────────── */
+.cda-btn {
+  border: none;
+  cursor: pointer;
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 16px 28px;
+  border-radius: 14px;
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.cda-btn--primary {
+  background: #133215;
+  color: #fff;
+}
+
+.cda-btn--primary:hover:not(:disabled) {
+  background: #1f4a22;
+}
+
+.cda-btn--listo {
+  background: #133215;
+  color: #fff;
+}
+
+.cda-btn--listo:hover {
+  background: #1f4a22;
+}
+
+.cda-btn--entregar {
+  background: #00cec9;
+  color: #06312f;
+}
+
+.cda-btn--entregar:hover {
+  filter: brightness(1.05);
+}
+
+.cda-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─────────────── LISTA COMPACTA (listos/historial) ─────────────── */
+.cda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cda-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: #fff8f0;
+  border: 1px solid rgba(19, 50, 21, 0.08);
+  border-radius: 14px;
+  font-size: 15px;
+}
+
+.cda-row-num {
+  font-weight: 700;
+  color: #133215;
+  min-width: 48px;
+}
+
+.cda-row-tipo {
+  color: #4a6b4a;
+  font-size: 13px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.cda-row-mesero {
+  flex: 1;
+  color: #4a6b4a;
+}
+
+.cda-row-time {
+  color: #7a9a7a;
+  margin-left: auto;
+}
+
+.cda-row-total {
+  font-weight: 700;
+  color: #133215;
+  min-width: 90px;
+  text-align: right;
+}
+
+/* ─────────────── HISTORIAL ─────────────── */
+.cda-history {
+  margin-top: 32px;
+  border-top: 1px solid rgba(19, 50, 21, 0.1);
+  padding-top: 20px;
+}
+
+.cda-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 6px 0;
+}
+
+.cda-history-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cda-history-title h2 {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  color: #133215;
+}
+
+.cda-history-toggle {
+  font-size: 18px;
+  color: #7a9a7a;
+  transition: transform 0.2s ease;
+}
+
+.cda-history-toggle.open {
+  transform: rotate(180deg);
+}
+
+.cda-history-body {
+  margin-top: 16px;
+}
+
+.cda-history-empty {
+  color: #7a9a7a;
+  font-size: 14px;
+  padding: 12px 0;
+}
+
+/* ─────────────── FAB ─────────────── */
+.cda-fab {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 900;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: #133215;
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(19, 50, 21, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.cda-fab:hover {
+  transform: translateY(-3px) scale(1.04);
+  background: #1f4a22;
+}
+
+.cda-fab-icon {
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* ─────────────── MODAL ─────────────── */
+.cda-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 31, 13, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.cda-modal-card {
+  background: #fff8f0;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 720px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 28px 72px rgba(19, 50, 21, 0.3);
+}
+
+.cda-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(19, 50, 21, 0.1);
+}
+
+.cda-modal-head h2 {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 24px;
+  color: #133215;
+}
+
+.cda-modal-close {
+  border: none;
+  background: none;
+  font-size: 30px;
+  line-height: 1;
+  color: #7a9a7a;
+  cursor: pointer;
+}
+
+.cda-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.cda-menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.cda-menu-item {
+  border: 1px solid rgba(19, 50, 21, 0.1);
+  background: #fff8f0;
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Manrope', sans-serif;
+  position: relative;
+}
+
+.cda-menu-item:hover {
+  border-color: #133215;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(19, 50, 21, 0.1);
+}
+
+.cda-menu-img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: rgba(19, 50, 21, 0.06);
+}
+
+.cda-menu-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.cda-menu-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #133215;
+}
+
+.cda-menu-price {
+  font-size: 13px;
+  color: #7a9a7a;
+}
+
+.cda-menu-add {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #133215;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Carrito del modal */
+.cda-modal-foot {
+  padding: 20px 24px;
+  border-top: 1px solid rgba(19, 50, 21, 0.1);
+  background: #fff8f0;
+}
+
+.cda-cart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.cda-cart-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.cda-cart-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.cda-cart-name {
+  flex: 1;
+  color: #133215;
+  font-weight: 600;
+}
+
+.cda-cart-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cda-cart-ctrl button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(19, 50, 21, 0.15);
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #133215;
+  font-size: 16px;
+}
+
+.cda-cart-price {
+  min-width: 80px;
+  text-align: right;
+  color: #4a6b4a;
+  font-weight: 600;
+}
+
+.cda-cart-remove {
+  border: none;
+  background: none;
+  color: #7a9a7a;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.cda-modal-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cda-modal-total strong {
+  font-size: 18px;
+  color: #133215;
+}
+
+/* ─────────────── RESPONSIVE ─────────────── */
+@media (max-width: 640px) {
+  .cda-main {
+    padding: 20px 16px 100px;
+  }
+  .cda-user-info {
+    display: none;
+  }
+  .cda-grid {
+    grid-template-columns: 1fr;
+  }
+}
