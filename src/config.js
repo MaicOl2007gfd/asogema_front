@@ -27,3 +27,12 @@ export const SOCIAL_AUTH = {
  * con la ruta `/u/<id>`.
  */
 export const PROFILE_BASE_URL = ''
+
+/**
+ * WhatsApp — botón flotante del index.
+ * `WHATSAPP_NUMBER`: número en formato internacional SIN "+" ni espacios
+ * (código de país + número, p. ej. Colombia: "573001234567").
+ * `WHATSAPP_MESSAGE`: mensaje precargado que se envía al abrir el chat.
+ */
+export const WHATSAPP_NUMBER = '573161596416'
+export const WHATSAPP_MESSAGE = 'Hola Asogema, quiero más información.'
