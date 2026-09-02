@@ -44,17 +44,17 @@ const {
   changingReservationId, reservationActionError,
   fetchAllReservations, changeReservationStatus, cancelAdminReservation,
   // Habitaciones
-  rooms, roomTypes, roomsLoading, roomsError,
+  rooms, roomTypes, roomsLoading, roomsError, showInactiveRooms,
   showRoomForm, editingRoom, newRoom, roomFormError, roomFormSaving,
-  fetchRooms, createRoom, updateRoom, deleteRoom, resetRoomForm, openEditRoom, onTipoChange,
+  fetchRooms, createRoom, updateRoom, deleteRoom, reactivateRoom, resetRoomForm, openEditRoom, onTipoChange,
   // Subida de imágenes
   imageUploading, formGallery,
   onSalonGalleryChange, onProductGalleryChange, onRoomGalleryChange,
   markGalleryPrincipal, removeGalleryImage,
   // Menú
-  products, menuCategories, productsLoading, productsError,
+  products, menuCategories, productsLoading, productsError, showInactiveProducts,
   showProductForm, editingProduct, newProduct, productFormError, productFormSaving,
-  fetchProducts, createProduct, updateProduct, deleteProduct, resetProductForm, openEditProduct,
+  fetchProducts, createProduct, updateProduct, deleteProduct, reactivateProduct, reactivateCategory, resetProductForm, openEditProduct,
   // Salones
   salons, salonsLoading, salonsError,
   showSalonForm, editingSalon, newSalon, salonFormError, salonFormSaving,
@@ -778,10 +778,15 @@ onMounted(() => {
         <template v-if="activeModule === 'habitaciones'">
           <div class="lux-section-header">
             <h2 class="lux-section-title">Habitaciones</h2>
-            <button class="lux-btn-primary" @click="showRoomForm = true; editingRoom = null; resetRoomForm()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              Nueva Habitación
-            </button>
+            <div class="lux-section-actions">
+              <button class="lux-btn-secondary" @click="showInactiveRooms = !showInactiveRooms; fetchRooms()">
+                {{ showInactiveRooms ? 'Ocultar eliminados' : 'Ver eliminados' }}
+              </button>
+              <button class="lux-btn-primary" @click="showRoomForm = true; editingRoom = null; resetRoomForm()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nueva Habitación
+              </button>
+            </div>
           </div>
 
           <div v-if="roomsLoading" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando habitaciones...</p></div>
@@ -801,10 +806,13 @@ onMounted(() => {
                     <td>{{ formatCurrency(room.tipos_habitacion?.precio_noche) }}</td>
                     <td><span class="lux-status-badge" :class="room.disponible ? 'lux-status-confirmed' : 'lux-status-cancelled'">{{ room.disponible ? 'Disponible' : 'Ocupada' }}</span></td>
                     <td class="lux-table-actions">
-                      <button class="lux-icon-btn" @click="openEditRoom(room)" title="Editar">
+                      <button v-if="room.activo === false" class="lux-icon-btn lux-icon-btn-success" @click="reactivateRoom(room.id)" title="Reactivar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg>
+                      </button>
+                      <button v-else class="lux-icon-btn" @click="openEditRoom(room)" title="Editar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                       </button>
-                      <button class="lux-icon-btn lux-icon-btn-danger" @click="deleteRoom(room.id)" title="Eliminar">
+                      <button v-if="room.activo !== false" class="lux-icon-btn lux-icon-btn-danger" @click="deleteRoom(room.id)" title="Eliminar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5-3h4a1 1 0 011 1v1H9V4a1 1 0 011-1z"></path></svg>
                       </button>
                     </td>
@@ -895,10 +903,15 @@ onMounted(() => {
         <template v-if="activeModule === 'menu'">
           <div class="lux-section-header">
             <h2 class="lux-section-title">Menú</h2>
-            <button class="lux-btn-primary" @click="showProductForm = true; editingProduct = null; resetProductForm()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              Nuevo Producto
-            </button>
+            <div class="lux-section-actions">
+              <button class="lux-btn-secondary" @click="showInactiveProducts = !showInactiveProducts; fetchProducts()">
+                {{ showInactiveProducts ? 'Ocultar eliminados' : 'Ver eliminados' }}
+              </button>
+              <button class="lux-btn-primary" @click="showProductForm = true; editingProduct = null; resetProductForm()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nuevo Producto
+              </button>
+            </div>
           </div>
 
           <div v-if="productsLoading" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando productos...</p></div>
@@ -916,10 +929,13 @@ onMounted(() => {
                     <td>{{ formatCurrency(p.precio) }}</td>
                     <td :class="{ 'lux-text-muted': p.stock === 0 }">{{ p.stock }}</td>
                     <td class="lux-table-actions">
-                      <button class="lux-icon-btn" @click="openEditProduct(p)" title="Editar">
+                      <button v-if="p.activo === false" class="lux-icon-btn lux-icon-btn-success" @click="reactivateProduct(p.id)" title="Reactivar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg>
+                      </button>
+                      <button v-else class="lux-icon-btn" @click="openEditProduct(p)" title="Editar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                       </button>
-                      <button class="lux-icon-btn lux-icon-btn-danger" @click="deleteProduct(p.id)" title="Eliminar">
+                      <button v-if="p.activo !== false" class="lux-icon-btn lux-icon-btn-danger" @click="deleteProduct(p.id)" title="Eliminar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5-3h4a1 1 0 011 1v1H9V4a1 1 0 011-1z"></path></svg>
                       </button>
                     </td>
