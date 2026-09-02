@@ -440,6 +440,13 @@
   margin: 0;
 }
 
+.lux-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .lux-section-desc {
   font-size: 13px;
   color: var(--lux-text-muted);
@@ -3087,6 +3094,11 @@
 .lux-icon-btn-danger:hover {
   background: rgba(214, 48, 49, 0.08);
   color: #d63031;
+}
+
+.lux-icon-btn-success:hover {
+  background: rgba(36, 167, 94, 0.1);
+  color: #24a75e;
 }
 
 /* ==========================================================

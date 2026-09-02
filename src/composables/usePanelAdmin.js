@@ -838,6 +838,7 @@ const rooms = ref([])
 const roomTypes = ref([])
 const roomsLoading = ref(false)
 const roomsError = ref(null)
+const showInactiveRooms = ref(false)
 const showRoomForm = ref(false)
 const editingRoom = ref(null)
 const newRoom = ref({ numero: '', tipo_id: '', piso: '', capacidad: '', precio_noche: '', imagen_url: '' })
@@ -849,7 +850,7 @@ async function fetchRooms() {
   roomsError.value = null
   try {
     const [roomsRes, typesRes] = await Promise.all([
-      api.get('/admin/rooms'),
+      api.get('/admin/rooms', { params: { incluir_inactivos: showInactiveRooms.value ? 'true' : undefined } }),
       api.get('/admin/room-types'),
     ])
     rooms.value = roomsRes.data || []
@@ -858,6 +859,15 @@ async function fetchRooms() {
     roomsError.value = 'No se pudieron cargar las habitaciones.'
   } finally {
     roomsLoading.value = false
+  }
+}
+
+async function reactivateRoom(id) {
+  try {
+    await api.patch(`/admin/rooms/${id}/reactivate`)
+    await fetchRooms()
+  } catch (e) {
+    roomsError.value = e?.response?.data?.message || 'Error al reactivar la habitación.'
   }
 }
 
@@ -960,6 +970,7 @@ const products = ref([])
 const menuCategories = ref([])
 const productsLoading = ref(false)
 const productsError = ref(null)
+const showInactiveProducts = ref(false)
 const showProductForm = ref(false)
 const editingProduct = ref(null)
 const newProduct = ref({ nombre: '', categoria_id: '', precio: '', stock: '', descripcion: '', imagen_url: '' })
@@ -971,8 +982,8 @@ async function fetchProducts() {
   productsError.value = null
   try {
     const [productsRes, catsRes] = await Promise.all([
-      api.get('/admin/menu/products'),
-      api.get('/admin/menu/categories'),
+      api.get('/admin/menu/products', { params: { incluir_inactivos: showInactiveProducts.value ? 'true' : undefined } }),
+      api.get('/admin/menu/categories', { params: { incluir_inactivos: showInactiveProducts.value ? 'true' : undefined } }),
     ])
     products.value = productsRes.data || []
     menuCategories.value = catsRes.data || []
@@ -980,6 +991,24 @@ async function fetchProducts() {
     productsError.value = 'No se pudieron cargar los productos del menú.'
   } finally {
     productsLoading.value = false
+  }
+}
+
+async function reactivateProduct(id) {
+  try {
+    await api.patch(`/admin/menu/products/${id}/reactivate`)
+    await fetchProducts()
+  } catch (e) {
+    productsError.value = e?.response?.data?.message || 'Error al reactivar el producto.'
+  }
+}
+
+async function reactivateCategory(id) {
+  try {
+    await api.patch(`/admin/menu/categories/${id}/reactivate`)
+    await fetchProducts()
+  } catch (e) {
+    productsError.value = e?.response?.data?.message || 'Error al reactivar la categoría.'
   }
 }
 
@@ -1393,15 +1422,15 @@ export function usePanelAdmin() {
     filteredReservations, paginatedReservations, reservationTotalPages,
     changingReservationId, reservationActionError,
     fetchAllReservations, changeReservationStatus, cancelAdminReservation,
-    rooms, roomTypes, roomsLoading, roomsError,
+    rooms, roomTypes, roomsLoading, roomsError, showInactiveRooms,
     showRoomForm, editingRoom, newRoom, roomFormError, roomFormSaving,
-    fetchRooms, createRoom, updateRoom, deleteRoom, resetRoomForm, openEditRoom, onTipoChange,
+    fetchRooms, createRoom, updateRoom, deleteRoom, reactivateRoom, resetRoomForm, openEditRoom, onTipoChange,
     imageUploading, formGallery,
     onSalonGalleryChange, onProductGalleryChange, onRoomGalleryChange,
     markGalleryPrincipal, removeGalleryImage,
-    products, menuCategories, productsLoading, productsError,
+    products, menuCategories, productsLoading, productsError, showInactiveProducts,
     showProductForm, editingProduct, newProduct, productFormError, productFormSaving,
-    fetchProducts, createProduct, updateProduct, deleteProduct, resetProductForm, openEditProduct,
+    fetchProducts, createProduct, updateProduct, deleteProduct, reactivateProduct, reactivateCategory, resetProductForm, openEditProduct,
     salons, salonsLoading, salonsError,
     showSalonForm, editingSalon, newSalon, salonFormError, salonFormSaving,
     fetchSalons, createSalon, updateSalon, deleteSalon, resetSalonForm, openEditSalon,
