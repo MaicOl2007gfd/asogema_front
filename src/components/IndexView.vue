@@ -133,7 +133,6 @@ onUnmounted(() => onUnmount())
           <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
         </template>
         <template v-else>
-          <li><a href="#" @click.prevent="emit('navigate', 'index')">Inicio</a></li>
           <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
           <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
           <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
@@ -226,10 +225,6 @@ onUnmounted(() => onUnmount())
           </div>
 
           <div class="slide-content">
-            <div class="slide-badge">
-              <span class="slide-badge-dot"></span>
-              {{ slide.badge }}
-            </div>
             <h1 class="slide-title" v-html="slide.title"></h1>
             <p class="slide-subtitle">{{ slide.subtitle }}</p>
             <div class="slide-actions">
@@ -272,11 +267,6 @@ onUnmounted(() => onUnmount())
           @click="goToSlide(i)"
           :aria-label="'Ir al slide ' + (i + 1)"
         ></button>
-      </div>
-
-      <div class="scroll-indicator" aria-hidden="true">
-        <span>Descubre</span>
-        <div class="scroll-line"></div>
       </div>
 
       <div class="hero-curve" aria-hidden="true">
