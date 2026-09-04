@@ -447,10 +447,16 @@ function resetForm() {
 }
 
 function goToPayment() {
-  const url = bookingResult.value?.payment?.checkout_url
-  if (url) {
-    window.location.href = url
-  }
+  const reserva = bookingResult.value
+  if (!reserva?.id) return
+  const anticipo = Math.round(Number(subtotal.value) * 0.15)
+  setCheckoutRequest({
+    tipo: 'HOTEL',
+    reserva_id: Number(reserva.id),
+    montoReferencia: anticipo,
+    origen: 'hotel',
+  })
+  if (emit) emit('navigate', 'checkout')
 }
 
 /* ----------------------------------------------------------
