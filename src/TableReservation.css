@@ -833,34 +833,6 @@
   color: rgba(243, 232, 211, 0.25);
 }
 
-.trsv-footer-socials {
-  display: flex;
-  gap: 12px;
-}
-
-.trsv-footer-socials a {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid rgba(243, 232, 211, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(243, 232, 211, 0.25);
-  transition: all 0.3s ease;
-}
-
-.trsv-footer-socials a:hover {
-  border-color: rgba(243, 232, 211, 0.2);
-  color: #F3E8D3;
-  transform: translateY(-2px);
-}
-
-.trsv-footer-socials svg {
-  width: 14px;
-  height: 14px;
-}
-
 /* ----------------------------------------------------------
    RESPONSIVE
    ---------------------------------------------------------- */
