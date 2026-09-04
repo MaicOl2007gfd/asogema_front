@@ -23,19 +23,20 @@ const {
   hotelDayLabel, hotelDayBadgeClass,
   showDayOverview, selectedDayDate, dayOverviewLoading, dayOverviewData,
   openDayOverview, closeDayOverview,
-  tasks, employees, selectedDate, showTaskModal, editingTask,
+  tasks, selectedDate, showTaskModal, editingTask,
   taskLoading, taskError,
   fetchTasks, createTask, updateTask, deleteTask,
   openTaskModal, openEditTaskModal, closeTaskModal,
   taskFilterEstado, taskFilterPrioridad, taskFilterEmpleado,
   filteredTasks, priorityLabel, priorityColor, estadoLabel, estadoColor,
   openNewTaskFromModule,
-  members, selectedMemberId, selectedMember,
+  members, selectedMemberId, selectedMember, memberDetailLoading,
   memberSearch, memberPage, memberTotalPages, filteredMembers, paginatedMembers, MEMBERS_PER_PAGE,
+  memberView, visibleMembers, inactiveMembersCount, toggleMemberView,
   showMemberModal, openMemberModal, closeMemberModal,
   // Miembros CRUD
   showMemberForm, editingMember, newMember, memberFormError, memberFormSaving,
-  MEMBER_DOC_TYPES, openNewMember, openEditMember, closeMemberForm, createMember, updateMember, toggleMemberStatus,
+  openNewMember, openEditMember, closeMemberForm, createMember, updateMember, toggleMemberStatus,
   // Reservas
   allReservations, reservationsLoading, reservationsError,
   reservationTypeFilter, reservationStatusFilter, reservationSearch, reservationPage,
@@ -44,7 +45,8 @@ const {
   changingReservationId, reservationActionError,
   fetchAllReservations, changeReservationStatus, cancelAdminReservation,
   // Habitaciones
-  rooms, roomTypes, roomsLoading, roomsError, showInactiveRooms,
+  rooms, roomTypes, roomsLoading, roomsError, roomView, visibleRooms, inactiveRoomsCount, toggleRoomView,
+  roomDateFilter, roomDateMin,
   showRoomForm, editingRoom, newRoom, roomFormError, roomFormSaving,
   fetchRooms, createRoom, updateRoom, deleteRoom, reactivateRoom, resetRoomForm, openEditRoom, onTipoChange,
   // Subida de imágenes
@@ -52,19 +54,26 @@ const {
   onSalonGalleryChange, onProductGalleryChange, onRoomGalleryChange,
   markGalleryPrincipal, removeGalleryImage,
   // Menú
-  products, menuCategories, productsLoading, productsError, showInactiveProducts,
+  products, menuCategories, productsLoading, productsError, productView,
+  inactiveProductsCount, productCategoryFilter, productSearch, LOW_STOCK_THRESHOLD,
+  filteredProducts, lowStockCount, stockBadge,
+  showStockModal, stockTarget, stockQty, stockSaving, stockError,
+  openStockModal, closeStockModal, addStock,
   showProductForm, editingProduct, newProduct, productFormError, productFormSaving,
   fetchProducts, createProduct, updateProduct, deleteProduct, reactivateProduct, reactivateCategory, resetProductForm, openEditProduct,
   // Salones
   salons, salonsLoading, salonsError,
+  salonView, visibleSalons, inactiveSalonsCount,
   showSalonForm, editingSalon, newSalon, salonFormError, salonFormSaving,
-  fetchSalons, createSalon, updateSalon, deleteSalon, resetSalonForm, openEditSalon,
+  fetchSalons, createSalon, updateSalon, deleteSalon, reactivateSalon, toggleSalonView,
+  resetSalonForm, openEditSalon,
 } = usePanelAdmin()
 
 const {
-  employees: empList, loading: empLoading, error: empError,
+  loading: empLoading, error: empError,
+  activeEmployees, visibleEmployees, inactiveEmployeesCount, employeeView, toggleEmployeeView,
   showForm: showEmpForm, editingEmployee, formError: empFormError, formLoading: empFormLoading,
-  createEmployee, updateEmployee, deactivateEmployee,
+  createEmployee, updateEmployee, deactivateEmployee, reactivateEmployee,
   openCreateForm, openEditForm, closeForm: closeEmpForm,
 } = useEmployees()
 
@@ -282,6 +291,15 @@ async function handleDeactivateEmployee(emp) {
   }
 }
 
+async function handleReactivateEmployee(emp) {
+  if (!confirm(`¿Reactivar a ${emp.nombre}?`)) return
+  try {
+    await reactivateEmployee(emp.id)
+  } catch {
+    // silently
+  }
+}
+
 onMounted(() => {
   window.scrollTo(0, 0)
   if (!isAdmin.value) emit('navigate', 'index')
@@ -291,73 +309,69 @@ onMounted(() => {
 
 <template>
   <div class="lux-page">
-    <!-- ═══════════════════ HEADER ═══════════════════ -->
-    <header class="lux-header">
-      <div class="lux-header-inner">
-        <div class="lux-header-left">
-          <button type="button" class="lux-back-btn" @click="emit('navigate', 'index')" aria-label="Volver al inicio" title="Volver al inicio">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          </button>
-          <div class="lux-brand" @click="setModule('panel')">
-            <img src="/imagenes/Logo.png" alt="Asogema" class="lux-logo" />
-            <span class="lux-brand-text">Asogema</span>
-            <span class="lux-brand-club">Club Privado</span>
-          </div>
-        </div>
-
-        <nav class="lux-module-nav">
-          <button class="lux-module-pill" :class="{ active: activeModule === 'panel' }" @click="setModule('panel')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            <span>Panel General</span>
-          </button>
-          <button class="lux-module-pill" :class="{ active: activeModule === 'calendario' }" @click="setModule('calendario')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            <span>Calendario</span>
-          </button>
-          <button class="lux-module-pill" :class="{ active: activeModule === 'tareas' }" @click="setModule('tareas')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
-            <span>Tareas</span>
-          </button>
-          <button class="lux-module-pill" :class="{ active: activeModule === 'socio' }" @click="setModule('socio')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-            <span>Socios</span>
-          </button>
-          <button class="lux-module-pill" :class="{ active: activeModule === 'habitaciones' }" @click="setModule('habitaciones')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
-            <span>Habitaciones</span>
-          </button>
-          <button class="lux-module-pill" :class="{ active: activeModule === 'menu' }" @click="setModule('menu')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-4l-2-2L2 12l10-8 8 8-2-2v4"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            <span>Menú</span>
-          </button>
-          <button class="lux-module-pill" :class="{ active: activeModule === 'salones' }" @click="setModule('salones')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11m2.66-1.66a2.83 2.83 0 114 4L15 11.66l-3.08 3.08a2.83 2.83 0 01-4-4l3.08-3.08z"></path><line x1="16" y1="8" x2="21" y2="13"></line><line x1="21" y1="16" x2="16" y2="21"></line></svg>
-            <span>Salones</span>
-          </button>
-          <button class="lux-module-pill" :class="{ active: activeModule === 'reservas' }" @click="setModule('reservas')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>
-            <span>Reservas</span>
-          </button>
-        </nav>
-
-        <div class="lux-header-right">
-          <div
-            class="lux-user-mini"
-            role="button"
-            tabindex="0"
-            title="Ver mi perfil"
-            aria-label="Ver mi perfil"
-            @click="emit('navigate', 'profile')"
-            @keydown.enter="emit('navigate', 'profile')"
-            @keydown.space.prevent="emit('navigate', 'profile')"
-          >
-            <span class="lux-user-name">{{ user?.name || 'Admin' }}</span>
-            <div class="lux-user-avatar">{{ getUserInitials() }}</div>
-          </div>
-          <button class="lux-header-btn" @click="logout(); emit('navigate', 'index')">Salir</button>
+    <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+    <aside class="lux-sidebar">
+      <div class="lux-sidebar-top">
+        <button type="button" class="lux-back-btn" @click="emit('navigate', 'index')" aria-label="Volver al inicio" title="Volver al inicio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <div class="lux-sidebar-brand">
+          <img src="/imagenes/Logo.png" alt="Asogema" class="lux-logo" />
         </div>
       </div>
-    </header>
+
+      <nav class="lux-sidebar-nav" aria-label="Módulos del panel">
+        <button class="lux-module-pill" :class="{ active: activeModule === 'panel' }" @click="setModule('panel')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Panel General</span>
+        </button>
+        <button class="lux-module-pill" :class="{ active: activeModule === 'calendario' }" @click="setModule('calendario')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>Calendario</span>
+        </button>
+        <button class="lux-module-pill" :class="{ active: activeModule === 'tareas' }" @click="setModule('tareas')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
+          <span>Tareas</span>
+        </button>
+        <button class="lux-module-pill" :class="{ active: activeModule === 'socio' }" @click="setModule('socio')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+          <span>Socios</span>
+        </button>
+        <button class="lux-module-pill" :class="{ active: activeModule === 'habitaciones' }" @click="setModule('habitaciones')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+          <span>Habitaciones</span>
+        </button>
+        <button class="lux-module-pill" :class="{ active: activeModule === 'menu' }" @click="setModule('menu')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-4l-2-2L2 12l10-8 8 8-2-2v4"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          <span>Menú</span>
+        </button>
+        <button class="lux-module-pill" :class="{ active: activeModule === 'salones' }" @click="setModule('salones')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11m2.66-1.66a2.83 2.83 0 114 4L15 11.66l-3.08 3.08a2.83 2.83 0 01-4-4l3.08-3.08z"></path><line x1="16" y1="8" x2="21" y2="13"></line><line x1="21" y1="16" x2="16" y2="21"></line></svg>
+          <span>Salones</span>
+        </button>
+        <button class="lux-module-pill" :class="{ active: activeModule === 'reservas' }" @click="setModule('reservas')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>
+          <span>Reservas</span>
+        </button>
+      </nav>
+
+      <div class="lux-sidebar-user">
+        <div
+          class="lux-user-mini"
+          role="button"
+          tabindex="0"
+          title="Ver mi perfil"
+          aria-label="Ver mi perfil"
+          @click="emit('navigate', 'profile')"
+          @keydown.enter="emit('navigate', 'profile')"
+          @keydown.space.prevent="emit('navigate', 'profile')"
+        >
+          <div class="lux-user-avatar">{{ getUserInitials() }}</div>
+          <span class="lux-user-name">{{ user?.name || 'Admin' }}</span>
+        </div>
+        <button class="lux-sidebar-logout" @click="logout(); emit('navigate', 'index')">Cerrar Sesión</button>
+      </div>
+    </aside>
 
     <!-- ═══════════════════ CONTEXT STRIP ═══════════════════ -->
     <div class="lux-context-strip">
@@ -386,6 +400,7 @@ onMounted(() => {
              MODULE 1: PANEL GENERAL
              ═══════════════════════════════════════════════ -->
         <template v-if="activeModule === 'panel'">
+          <div class="lux-panel-general">
           <section class="lux-section">
             <div class="lux-section-header">
               <h2>Resumen Ejecutivo</h2>
@@ -419,6 +434,11 @@ onMounted(() => {
                   <span class="lux-kpi-label">Ocupación</span>
                   <div class="lux-kpi-value-row">
                     <span class="lux-kpi-value">{{ hotelOccupancy.current }}%</span>
+                    <span
+                      v-if="hotelOccupancy.changeFromLastWeek"
+                      class="lux-kpi-trend"
+                      :class="hotelOccupancy.changeFromLastWeek > 0 ? 'positive' : 'negative'"
+                    >{{ hotelOccupancy.changeFromLastWeek > 0 ? '+' : '' }}{{ hotelOccupancy.changeFromLastWeek }}%</span>
                   </div>
                   <span class="lux-kpi-sub">{{ hotelOccupancy.occupiedRooms }}/{{ hotelOccupancy.totalRooms }} hab.</span>
                 </div>
@@ -462,6 +482,29 @@ onMounted(() => {
               </table>
             </div>
           </section>
+
+          <section class="lux-section" v-if="topServices.length">
+            <div class="lux-section-header">
+              <h2>Servicios más solicitados</h2>
+            </div>
+            <div class="lux-card">
+              <ul class="lux-top-services">
+                <li v-for="s in topServices" :key="s.name" class="lux-top-service">
+                  <div class="lux-top-service-head">
+                    <span class="lux-top-service-name">{{ s.name }}</span>
+                    <span class="lux-top-service-count">{{ s.bookings }}</span>
+                  </div>
+                  <div class="lux-top-service-bar">
+                    <div
+                      class="lux-top-service-fill"
+                      :style="{ width: getBarHeight(s.percentage, 100) + '%' }"
+                    ></div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </section>
+          </div>
         </template>
 
         <!-- ═══════════════════════════════════════════════
@@ -536,6 +579,9 @@ onMounted(() => {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Nueva Tarea
               </button>
+              <button v-if="taskSection === 'empleados'" class="lux-btn-secondary" @click="toggleEmployeeView">
+                {{ employeeView === 'activos' ? `Ver eliminados (${inactiveEmployeesCount})` : 'Ver activos' }}
+              </button>
               <button v-if="taskSection === 'empleados'" class="lux-btn-primary" @click="openCreateForm">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Nuevo Empleado
@@ -561,7 +607,7 @@ onMounted(() => {
                 </select>
                 <select v-model="taskFilterEmpleado" class="lux-task-filter-select">
                   <option value="">Todos los empleados</option>
-                  <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
+                  <option v-for="emp in activeEmployees" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
                 </select>
               </div>
 
@@ -604,41 +650,49 @@ onMounted(() => {
                 <p>Cargando empleados…</p>
               </div>
 
-              <div v-else class="lux-card lux-card-table">
-                <table class="lux-table">
-                  <thead>
-                    <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th></th></tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="emp in employees" :key="emp.id" class="lux-task-row">
-                      <td><strong>{{ emp.nombre }}</strong></td>
-                      <td class="lux-text-muted">{{ emp.correo }}</td>
-                      <td class="lux-text-muted">{{ emp.telefono || '—' }}</td>
-                      <td><span class="lux-task-estado-badge" :style="{ background: emp.estado !== false ? '#00b89420' : '#d6303120', color: emp.estado !== false ? '#00b894' : '#d63031' }">{{ emp.estado !== false ? 'Activo' : 'Inactivo' }}</span></td>
-                      <td>
-                        <div style="display:flex;gap:6px">
-                          <button class="lux-task-edit-btn" @click="openEditForm(emp.id)" title="Editar">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                          </button>
-                          <button class="lux-task-edit-btn" @click="handleDeactivateEmployee(emp)" title="Desactivar" style="color:#d63031">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr v-if="!employees.length && !empLoading">
-                      <td colspan="5" class="lux-empty-row">No hay empleados registrados</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div v-else>
+                <div class="lux-card lux-card-table">
+                  <div class="lux-emp-list-title" :class="{ 'lux-emp-list-title--inactive': employeeView === 'eliminados' }">{{ employeeView === 'eliminados' ? 'Empleados Desactivados' : 'Empleados Activos' }} <span>({{ visibleEmployees.length }})</span></div>
+                  <table class="lux-table">
+                    <thead>
+                      <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="emp in visibleEmployees" :key="emp.id" class="lux-task-row">
+                        <td><strong>{{ emp.nombre }}</strong></td>
+                        <td class="lux-text-muted">{{ emp.correo }}</td>
+                        <td class="lux-text-muted">{{ emp.telefono || '—' }}</td>
+                        <td><span class="lux-task-estado-badge" :style="emp.estado !== false ? { background: '#00b89420', color: '#00b894' } : { background: '#d6303120', color: '#d63031' }">{{ emp.estado !== false ? 'Activo' : 'Inactivo' }}</span></td>
+                        <td>
+                          <div style="display:flex;gap:6px">
+                            <button v-if="employeeView === 'eliminados'" class="lux-task-edit-btn" @click="handleReactivateEmployee(emp)" title="Reactivar" style="color:#00b894">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg>
+                            </button>
+                            <template v-else>
+                              <button class="lux-task-edit-btn" @click="openEditForm(emp.id)" title="Editar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                              </button>
+                              <button class="lux-task-edit-btn" @click="handleDeactivateEmployee(emp)" title="Desactivar" style="color:#d63031">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>
+                              </button>
+                            </template>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr v-if="!visibleEmployees.length">
+                        <td colspan="5" class="lux-empty-row">{{ employeeView === 'eliminados' ? 'No hay empleados desactivados' : 'No hay empleados activos' }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </template>
           </section>
 
           <!-- ── EMPLOYEE FORM MODAL ── -->
           <Teleport to="body">
-            <div v-if="showEmpForm" class="lux-modal-overlay" @click.self="closeEmpForm">
-              <div class="lux-modal">
+            <div class="lux-modal-overlay" :class="{ active: showEmpForm }" @click.self="closeEmpForm">
+              <div class="lux-modal" v-if="showEmpForm">
                 <div class="lux-modal-header">
                   <h3>{{ editingEmployee ? 'Editar Empleado' : 'Nuevo Empleado' }}</h3>
                   <button class="lux-modal-close" @click="closeEmpForm">&times;</button>
@@ -704,10 +758,15 @@ onMounted(() => {
                 <h2 class="lux-section-title">Gestión de Miembros</h2>
                 <p class="lux-section-desc">Crea, edita y desactiva los miembros del club.</p>
               </div>
-              <button class="lux-btn-primary" @click="openNewMember">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Nuevo Miembro
-              </button>
+              <div class="lux-section-actions">
+                <button class="lux-btn-secondary" @click="toggleMemberView">
+                  {{ memberView === 'activos' ? `Ver eliminados (${inactiveMembersCount})` : 'Ver activos' }}
+                </button>
+                <button class="lux-btn-primary" @click="openNewMember">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  Nuevo Miembro
+                </button>
+              </div>
             </div>
 
             <div class="lux-socio-search">
@@ -722,6 +781,7 @@ onMounted(() => {
             </div>
 
             <div class="lux-card lux-card-table">
+              <div class="lux-emp-list-title" :class="{ 'lux-emp-list-title--inactive': memberView === 'eliminados' }">{{ memberView === 'eliminados' ? 'Socios Desactivados' : 'Socios Activos' }} <span>({{ visibleMembers.length }})</span></div>
               <table class="lux-table">
                 <thead>
                   <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Membresía</th><th>Estado</th><th></th></tr>
@@ -743,17 +803,21 @@ onMounted(() => {
                       <span class="lux-status-badge" :class="m.activo ? 'lux-status-confirmed' : 'lux-status-cancelled'">{{ m.activo ? 'Activo' : 'Inactivo' }}</span>
                     </td>
                     <td class="lux-table-actions">
-                      <button class="lux-icon-btn" title="Editar miembro" @click.stop="openEditMember(m)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      <button v-if="memberView === 'eliminados'" class="lux-icon-btn" title="Activar miembro" style="color:#00b894" @click.stop="toggleMemberStatus(m)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg>
                       </button>
-                      <button class="lux-icon-btn" :class="m.activo ? 'lux-icon-btn-danger' : ''" :title="m.activo ? 'Desactivar miembro' : 'Activar miembro'" @click.stop="toggleMemberStatus(m)">
-                        <svg v-if="m.activo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 11-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
-                        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                      </button>
+                      <template v-else>
+                        <button class="lux-icon-btn" title="Editar miembro" @click.stop="openEditMember(m)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button class="lux-icon-btn lux-icon-btn-danger" title="Desactivar miembro" @click.stop="toggleMemberStatus(m)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 11-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                        </button>
+                      </template>
                     </td>
                   </tr>
                   <tr v-if="paginatedMembers.length === 0">
-                    <td colspan="6" class="lux-empty-row">No se encontraron socios</td>
+                    <td colspan="6" class="lux-empty-row">{{ memberView === 'eliminados' ? 'No se encontraron socios desactivados' : 'No se encontraron socios activos' }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -761,7 +825,7 @@ onMounted(() => {
 
             <div class="lux-socio-pagination">
               <span class="lux-socio-pagination-info">
-                Mostrando {{ filteredMembers.length === 0 ? 0 : (memberPage - 1) * MEMBERS_PER_PAGE + 1 }}–{{ Math.min(memberPage * MEMBERS_PER_PAGE, filteredMembers.length) }} de {{ filteredMembers.length }}
+                Mostrando {{ visibleMembers.length === 0 ? 0 : (memberPage - 1) * MEMBERS_PER_PAGE + 1 }}–{{ Math.min(memberPage * MEMBERS_PER_PAGE, visibleMembers.length) }} de {{ visibleMembers.length }}
               </span>
               <div class="lux-socio-pagination-btns">
                 <button class="lux-socio-page-btn" :disabled="memberPage <= 1" @click="memberPage--">← Anterior</button>
@@ -777,10 +841,14 @@ onMounted(() => {
              ═══════════════════════════════════════════════ -->
         <template v-if="activeModule === 'habitaciones'">
           <div class="lux-section-header">
-            <h2 class="lux-section-title">Habitaciones</h2>
+            <div>
+              <h2 class="lux-section-title">Habitaciones</h2>
+              <p class="lux-section-desc">Disponibilidad para el {{ new Date(roomDateFilter + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }) }} (el día de checkout cuenta como ocupado).</p>
+            </div>
             <div class="lux-section-actions">
-              <button class="lux-btn-secondary" @click="showInactiveRooms = !showInactiveRooms; fetchRooms()">
-                {{ showInactiveRooms ? 'Ocultar eliminados' : 'Ver eliminados' }}
+              <input v-model="roomDateFilter" type="date" class="lux-task-filter-select" :min="roomDateMin" title="Ver disponibilidad del día" />
+              <button class="lux-btn-secondary" @click="toggleRoomView">
+                {{ roomView === 'activos' ? `Ver eliminados (${inactiveRoomsCount})` : 'Ver activos' }}
               </button>
               <button class="lux-btn-primary" @click="showRoomForm = true; editingRoom = null; resetRoomForm()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -789,16 +857,17 @@ onMounted(() => {
             </div>
           </div>
 
-          <div v-if="roomsLoading" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando habitaciones...</p></div>
-          <div v-else-if="roomsError" class="lux-panel-state lux-panel-error"><p>{{ roomsError }}</p><button class="lux-btn-secondary" @click="fetchRooms">Reintentar</button></div>
+          <div v-if="roomsLoading && !rooms.length" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando habitaciones...</p></div>
+          <div v-else-if="roomsError && !rooms.length" class="lux-panel-state lux-panel-error"><p>{{ roomsError }}</p><button class="lux-btn-secondary" @click="fetchRooms">Reintentar</button></div>
           <template v-else>
             <div class="lux-card lux-card-table">
+              <div class="lux-emp-list-title" :class="{ 'lux-emp-list-title--inactive': roomView === 'eliminados' }">{{ roomView === 'eliminados' ? 'Habitaciones eliminadas' : 'Habitaciones' }} <span>({{ visibleRooms.length }})</span></div>
               <table class="lux-table">
                 <thead>
                   <tr><th>#</th><th>Piso</th><th>Tipo</th><th>Capacidad</th><th>Precio / Noche</th><th>Estado</th><th></th></tr>
                 </thead>
                 <tbody>
-                  <tr v-for="room in rooms" :key="room.id">
+                  <tr v-for="room in visibleRooms" :key="room.id">
                     <td><strong>{{ room.numero }}</strong></td>
                     <td>{{ room.piso }}</td>
                     <td>{{ room.tipos_habitacion?.nombre || '—' }}</td>
@@ -817,7 +886,7 @@ onMounted(() => {
                       </button>
                     </td>
                   </tr>
-                  <tr v-if="rooms.length === 0"><td colspan="7" class="lux-empty-row">No hay habitaciones registradas</td></tr>
+                  <tr v-if="visibleRooms.length === 0"><td colspan="7" class="lux-empty-row">{{ roomView === 'eliminados' ? 'No hay habitaciones eliminadas' : 'No hay habitaciones registradas' }}</td></tr>
                 </tbody>
               </table>
             </div>
@@ -902,10 +971,14 @@ onMounted(() => {
              ═══════════════════════════════════════════════ -->
         <template v-if="activeModule === 'menu'">
           <div class="lux-section-header">
-            <h2 class="lux-section-title">Menú</h2>
+            <div>
+              <h2 class="lux-section-title">Menú</h2>
+              <p class="lux-section-desc">Administra las categorías y productos del restaurante.</p>
+            </div>
             <div class="lux-section-actions">
-              <button class="lux-btn-secondary" @click="showInactiveProducts = !showInactiveProducts; fetchProducts()">
-                {{ showInactiveProducts ? 'Ocultar eliminados' : 'Ver eliminados' }}
+              <span v-if="productView === 'activos' && lowStockCount > 0" class="lux-task-estado-badge" :style="{ background: '#e1705520', color: '#e17055' }">⚠ {{ lowStockCount }} con stock bajo (≤ {{ LOW_STOCK_THRESHOLD }})</span>
+              <button class="lux-btn-secondary" @click="productView = productView === 'activos' ? 'eliminados' : 'activos'">
+                {{ productView === 'activos' ? `Ver eliminados (${inactiveProductsCount})` : 'Ver activos' }}
               </button>
               <button class="lux-btn-primary" @click="showProductForm = true; editingProduct = null; resetProductForm()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -914,33 +987,52 @@ onMounted(() => {
             </div>
           </div>
 
-          <div v-if="productsLoading" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando productos...</p></div>
-          <div v-else-if="productsError" class="lux-panel-state lux-panel-error"><p>{{ productsError }}</p><button class="lux-btn-secondary" @click="fetchProducts">Reintentar</button></div>
+          <div v-if="productsLoading && !products.length" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando productos...</p></div>
+          <div v-else-if="productsError && !products.length" class="lux-panel-state lux-panel-error"><p>{{ productsError }}</p><button class="lux-btn-secondary" @click="fetchProducts">Reintentar</button></div>
           <template v-else>
+            <div class="lux-task-filters">
+              <select v-model="productCategoryFilter" class="lux-task-filter-select">
+                <option value="all">Todas las categorías</option>
+                <option v-for="c in menuCategories" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+              </select>
+              <div class="lux-reservation-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input v-model="productSearch" type="text" placeholder="Buscar producto..." />
+              </div>
+            </div>
             <div class="lux-card lux-card-table">
+              <div class="lux-emp-list-title" :class="{ 'lux-emp-list-title--inactive': productView === 'eliminados' }">{{ productView === 'eliminados' ? 'Productos eliminados' : 'Productos' }} <span>({{ filteredProducts.length }})</span></div>
               <table class="lux-table">
                 <thead>
                   <tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th></th></tr>
                 </thead>
                 <tbody>
-                  <tr v-for="p in products" :key="p.id">
+                  <tr v-for="p in filteredProducts" :key="p.id">
                     <td><strong>{{ p.nombre }}</strong></td>
                     <td>{{ p.categorias_menu?.nombre || '—' }}</td>
                     <td>{{ formatCurrency(p.precio) }}</td>
-                    <td :class="{ 'lux-text-muted': p.stock === 0 }">{{ p.stock }}</td>
+                    <td>
+                      <span v-if="productView === 'activos' && stockBadge(p).color" class="lux-task-estado-badge" :style="{ background: stockBadge(p).color + '20', color: stockBadge(p).color }">{{ stockBadge(p).label }}</span>
+                      <span v-else :class="{ 'lux-text-muted': p.stock === 0 }">{{ p.stock }}</span>
+                    </td>
                     <td class="lux-table-actions">
-                      <button v-if="p.activo === false" class="lux-icon-btn lux-icon-btn-success" @click="reactivateProduct(p.id)" title="Reactivar">
+                      <button v-if="productView === 'eliminados'" class="lux-icon-btn lux-icon-btn-success" @click="reactivateProduct(p.id)" title="Reactivar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg>
                       </button>
-                      <button v-else class="lux-icon-btn" @click="openEditProduct(p)" title="Editar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                      </button>
-                      <button v-if="p.activo !== false" class="lux-icon-btn lux-icon-btn-danger" @click="deleteProduct(p.id)" title="Eliminar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5-3h4a1 1 0 011 1v1H9V4a1 1 0 011-1z"></path></svg>
-                      </button>
+                      <template v-else>
+                        <button class="lux-icon-btn" @click="openStockModal(p)" title="Sumar stock">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </button>
+                        <button class="lux-icon-btn" @click="openEditProduct(p)" title="Editar">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button class="lux-icon-btn lux-icon-btn-danger" @click="deleteProduct(p.id)" title="Eliminar">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5-3h4a1 1 0 011 1v1H9V4a1 1 0 011-1z"></path></svg>
+                        </button>
+                      </template>
                     </td>
                   </tr>
-                  <tr v-if="products.length === 0"><td colspan="5" class="lux-empty-row">No hay productos en el menú</td></tr>
+                  <tr v-if="filteredProducts.length === 0"><td colspan="5" class="lux-empty-row">{{ productView === 'eliminados' ? 'No hay productos eliminados' : 'No hay productos que coincidan con los filtros' }}</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1015,6 +1107,35 @@ onMounted(() => {
               </div>
             </div>
           </Teleport>
+
+          <!-- Stock Add Modal -->
+          <Teleport to="body">
+            <div class="lux-modal-overlay" :class="{ active: showStockModal }" @click.self="closeStockModal">
+              <div class="lux-modal" v-if="showStockModal && stockTarget">
+                <button class="lux-modal-close" @click="closeStockModal">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <div class="lux-modal-body">
+                  <h2 class="lux-modal-title">Sumar stock</h2>
+                  <p class="lux-section-desc" style="margin:0 0 12px">{{ stockTarget.nombre }} · Stock actual: <strong>{{ stockTarget.stock }}</strong></p>
+                  <div v-if="stockError" class="lux-task-form-error">{{ stockError }}</div>
+                  <form class="lux-task-form" @submit.prevent="addStock">
+                    <div class="lux-task-form-group">
+                      <label>Cantidad a sumar *</label>
+                      <input v-model="stockQty" type="number" min="1" step="1" required />
+                    </div>
+                    <p class="lux-text-muted" style="font-size: 12px; margin: 0">Nuevo stock: <strong>{{ Number(stockTarget.stock || 0) + (Number(stockQty) || 0) }}</strong></p>
+                    <div class="lux-task-form-actions">
+                      <div class="lux-task-form-actions-right">
+                        <button type="button" class="lux-btn-secondary" @click="closeStockModal" :disabled="stockSaving">Cancelar</button>
+                        <button type="submit" class="lux-btn-primary" :disabled="stockSaving">{{ stockSaving ? 'Guardando...' : 'Sumar' }}</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </Teleport>
         </template>
 
         <!-- ═══════════════════════════════════════════════
@@ -1022,26 +1143,34 @@ onMounted(() => {
              ═══════════════════════════════════════════════ -->
         <template v-if="activeModule === 'salones'">
           <div class="lux-section-header">
-            <h2 class="lux-section-title">Salones de Eventos</h2>
+            <div style="display:flex;align-items:center;gap:12px">
+              <h2 class="lux-section-title">Salones de Eventos</h2>
+              <button class="lux-btn-secondary" @click="toggleSalonView">
+                {{ salonView === 'activos' ? `Ver eliminados (${inactiveSalonsCount})` : 'Ver activos' }}
+              </button>
+            </div>
             <button class="lux-btn-primary" @click="showSalonForm = true; editingSalon = null; resetSalonForm()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Nuevo Salón
             </button>
           </div>
 
-          <div v-if="salonsLoading" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando salones...</p></div>
-          <div v-else-if="salonsError" class="lux-panel-state lux-panel-error"><p>{{ salonsError }}</p><button class="lux-btn-secondary" @click="fetchSalons">Reintentar</button></div>
+          <div v-if="salonsLoading && !salons.length" class="lux-panel-state"><div class="lux-panel-spinner"></div><p>Cargando salones...</p></div>
+          <div v-else-if="salonsError && !salons.length" class="lux-panel-state lux-panel-error"><p>{{ salonsError }}</p><button class="lux-btn-secondary" @click="fetchSalons">Reintentar</button></div>
           <template v-else>
             <div class="lux-salones-grid">
-              <div v-for="s in salons" :key="s.id" class="lux-card lux-salon-card">
+              <div v-for="s in visibleSalons" :key="s.id" class="lux-card lux-salon-card">
                 <div class="lux-salon-card-header">
                   <h3>{{ s.nombre }}</h3>
                   <div class="lux-salon-card-actions">
-                    <button class="lux-icon-btn" @click="openEditSalon(s)" title="Editar">
+                    <button v-if="salonView === 'activos'" class="lux-icon-btn" @click="openEditSalon(s)" title="Editar">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </button>
-                    <button class="lux-icon-btn lux-icon-btn-danger" @click="deleteSalon(s.id)" title="Eliminar">
+                    <button v-if="salonView === 'activos'" class="lux-icon-btn lux-icon-btn-danger" @click="deleteSalon(s.id)" title="Eliminar">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5-3h4a1 1 0 011 1v1H9V4a1 1 0 011-1z"></path></svg>
+                    </button>
+                    <button v-else class="lux-icon-btn" @click="reactivateSalon(s.id)" title="Reactivar">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                     </button>
                   </div>
                 </div>
@@ -1051,7 +1180,9 @@ onMounted(() => {
                   <div v-if="s.ubicacion" class="lux-salon-stat"><span class="lux-salon-stat-label">Ubicación</span><span class="lux-salon-stat-value">{{ s.ubicacion }}</span></div>
                 </div>
               </div>
-              <div v-if="salons.length === 0" class="lux-panel-state"><p>No hay salones de eventos registrados</p></div>
+              <div v-if="visibleSalons.length === 0" class="lux-panel-state"><p>
+                {{ salonView === 'activos' ? 'No hay salones de eventos registrados' : 'No hay salones eliminados' }}
+              </p></div>
             </div>
           </template>
 
@@ -1127,24 +1258,28 @@ onMounted(() => {
             <div class="lux-section-header">
               <div>
                 <h2 class="lux-section-title">Gestión de Reservas</h2>
-                <p class="lux-section-desc">Listado completo de todas las reservas del club.</p>
+                <p class="lux-section-desc">
+                  {{ reservationTypeFilter === 'all' ? 'Listado completo de todas las reservas del club.' : reservationTypeFilter === 'hotel' ? 'Reservas de hospedaje con fechas de entrada y salida.' : reservationTypeFilter === 'restaurante' ? 'Reservas de mesas con fecha y hora.' : 'Reservas de eventos con salón y hora de inicio.' }}
+                </p>
               </div>
             </div>
 
-            <div class="lux-task-filters">
-              <select v-model="reservationTypeFilter" class="lux-task-filter-select">
-                <option value="all">Todos los servicios</option>
-                <option value="hotel">Hotel</option>
-                <option value="restaurante">Restaurante</option>
-                <option value="eventos">Eventos</option>
-              </select>
-              <select v-model="reservationStatusFilter" class="lux-task-filter-select">
-                <option value="all">Todos los estados</option>
-                <option v-for="opt in reservationStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-              </select>
-              <div class="lux-reservation-search">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input v-model="reservationSearch" type="text" placeholder="Buscar por cliente, detalle o Nº..." />
+            <div class="lux-task-filters" style="flex-wrap: wrap; gap: 16px;">
+              <div class="lux-reservation-tabs" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="lux-btn-secondary" :class="{ 'active': reservationTypeFilter === 'all' }" style="padding: 8px 14px; border-radius: 20px;" @click="reservationTypeFilter = 'all'">Todos</button>
+                <button class="lux-btn-secondary" :class="{ 'active': reservationTypeFilter === 'hotel' }" style="padding: 8px 14px; border-radius: 20px;" @click="reservationTypeFilter = 'hotel'">Hotel</button>
+                <button class="lux-btn-secondary" :class="{ 'active': reservationTypeFilter === 'restaurante' }" style="padding: 8px 14px; border-radius: 20px;" @click="reservationTypeFilter = 'restaurante'">Restaurante</button>
+                <button class="lux-btn-secondary" :class="{ 'active': reservationTypeFilter === 'eventos' }" style="padding: 8px 14px; border-radius: 20px;" @click="reservationTypeFilter = 'eventos'">Eventos</button>
+              </div>
+              <div style="display: flex; gap: 12px; flex: 1; justify-content: flex-end;">
+                <select v-model="reservationStatusFilter" class="lux-task-filter-select">
+                  <option value="all">Todos los estados</option>
+                  <option v-for="opt in reservationStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </select>
+                <div class="lux-reservation-search" style="min-width: 220px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input v-model="reservationSearch" type="text" placeholder="Buscar por cliente, detalle o Nº..." />
+                </div>
               </div>
             </div>
 
@@ -1163,45 +1298,41 @@ onMounted(() => {
             <div v-else class="lux-card lux-card-table">
               <table class="lux-table">
                 <thead>
-                  <tr><th>Nº</th><th>Cliente</th><th>Servicio</th><th>Detalle</th><th>Fecha</th><th>Hora</th><th>Personas</th><th>Estado</th><th></th></tr>
+                  <tr>
+                    <th>Nº</th>
+                    <th>Cliente</th>
+                    <th v-if="reservationTypeFilter === 'all'">Servicio</th>
+                    <th>Detalle</th>
+                    <th>Fecha</th>
+                    <th v-if="reservationTypeFilter !== 'hotel'">Hora</th>
+                    <th>Personas</th>
+                    <th>Estado</th>
+                  </tr>
                 </thead>
                 <tbody>
                   <tr v-for="r in paginatedReservations" :key="r.key">
-                    <td><span class="lux-time-badge">#{{ r.id }}</span></td>
+                    <td>
+                      <span class="lux-time-badge">
+                        {{ r.tipoKey === 'hotel' ? 'H' : r.tipoKey === 'restaurante' ? 'R' : 'E' }}-#{{ r.id }}
+                      </span>
+                    </td>
                     <td>
                       <strong>{{ r.cliente }}</strong>
                       <div class="lux-text-muted" style="font-size: 11px">{{ r.telefono }}</div>
                     </td>
-                    <td>
+                    <td v-if="reservationTypeFilter === 'all'">
                       <span class="lux-reservation-type-badge" :class="'type-' + r.tipoKey">{{ r.tipo }}</span>
                     </td>
                     <td class="lux-text-muted">{{ r.detalle }}</td>
                     <td>{{ r.fecha }}{{ r.fechaFin && r.fechaFin !== r.fecha ? ' → ' + r.fechaFin : '' }}</td>
-                    <td class="lux-text-muted">{{ r.hora }}</td>
+                    <td v-if="reservationTypeFilter !== 'hotel'" class="lux-text-muted">{{ r.hora }}</td>
                     <td>{{ r.personas }}</td>
                     <td>
-                      <select
-                        class="lux-reservation-status-select"
-                        :value="r.estado"
-                        :disabled="changingReservationId === r.key || r.estado === 'cancelada'"
-                        @change="changeReservationStatus(r, $event.target.value)"
-                      >
-                        <option v-for="opt in reservationStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                      </select>
-                    </td>
-                    <td class="lux-table-actions">
-                      <button
-                        class="lux-icon-btn lux-icon-btn-danger"
-                        title="Cancelar reserva"
-                        :disabled="r.estado === 'cancelada' || changingReservationId === r.key"
-                        @click="cancelAdminReservation(r)"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                      </button>
+                      <span class="lux-reservation-status-badge">{{ r.estado }}</span>
                     </td>
                   </tr>
                   <tr v-if="paginatedReservations.length === 0">
-                    <td colspan="9" class="lux-empty-row">No se encontraron reservas que coincidan con los filtros</td>
+                    <td :colspan="reservationTypeFilter === 'all' ? (reservationTypeFilter !== 'hotel' ? 8 : 7) : (reservationTypeFilter !== 'hotel' ? 7 : 6)" class="lux-empty-row">No se encontraron reservas que coincidan con los filtros</td>
                   </tr>
                 </tbody>
               </table>
@@ -1368,7 +1499,7 @@ onMounted(() => {
                 <label>Asignar a (Empleado) *</label>
                 <select v-model="taskForm.asignado_a" required>
                   <option value="" disabled>Seleccionar empleado...</option>
-                  <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
+                  <option v-for="emp in activeEmployees" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
                 </select>
               </div>
               <div class="lux-task-form-actions">
@@ -1411,7 +1542,12 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="lux-socio-grid">
+            <div v-if="memberDetailLoading" class="lux-panel-state">
+              <div class="lux-panel-spinner"></div>
+              <p>Cargando detalle del socio…</p>
+            </div>
+
+            <div v-else class="lux-socio-grid">
               <div class="lux-card">
                 <div class="lux-card-header"><h3>Reservas</h3><span class="lux-badge">{{ selectedMember.reservations.length }}</span></div>
                 <div class="lux-socio-list">
@@ -1474,33 +1610,39 @@ onMounted(() => {
             <h2 class="lux-modal-title">{{ editingMember ? 'Editar Miembro' : 'Nuevo Miembro' }}</h2>
             <div v-if="memberFormError" class="lux-task-form-error">{{ memberFormError }}</div>
             <form class="lux-task-form" @submit.prevent="editingMember ? updateMember() : createMember()">
-              <div class="lux-task-form-group">
-                <label>Nombre completo *</label>
-                <input v-model="newMember.nombre" type="text" placeholder="Ej: Carlos Andrés Gómez" required />
+              <div class="lux-task-form-row">
+                <div class="lux-task-form-group">
+                  <label>Nombre *</label>
+                  <input v-model="newMember.nombre" type="text" maxlength="100" placeholder="Ej: Carlos Andrés" required />
+                </div>
+                <div class="lux-task-form-group">
+                  <label>Apellido *</label>
+                  <input v-model="newMember.apellido" type="text" maxlength="100" placeholder="Ej: Gómez" required />
+                </div>
               </div>
               <div class="lux-task-form-group">
                 <label>Correo electrónico *</label>
-                <input v-model="newMember.correo" type="email" placeholder="correo@ejemplo.com" required />
+                <input v-model="newMember.correo" type="email" maxlength="150" placeholder="correo@ejemplo.com" required />
               </div>
               <div class="lux-task-form-row">
                 <div class="lux-task-form-group">
-                  <label>Tipo de documento</label>
-                  <select v-model="newMember.tipo_documento">
-                    <option v-for="t in MEMBER_DOC_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
+                  <label>Tipo de documento *</label>
+                  <select v-model="newMember.tipo_documento_id">
+                    <option v-for="dt in DOCUMENT_TYPES" :key="dt.value" :value="DOC_TYPE_IDS[dt.value]">{{ dt.label }}</option>
                   </select>
                 </div>
                 <div class="lux-task-form-group">
-                  <label>N.º documento</label>
-                  <input v-model="newMember.numero_documento" type="text" placeholder="Ej: 123456789" />
+                  <label>N.º documento *</label>
+                  <input v-model="newMember.numero_documento" type="text" maxlength="20" placeholder="Ej: 123456789" required />
                 </div>
               </div>
               <div class="lux-task-form-group">
-                <label>Teléfono</label>
-                <input v-model="newMember.telefono" type="text" placeholder="Ej: 3001234567" />
+                <label>Teléfono *</label>
+                <input v-model="newMember.telefono" type="text" maxlength="20" placeholder="Ej: 3001234567" required />
               </div>
               <div class="lux-task-form-group">
-                <label>{{ editingMember ? 'Nueva contraseña (opcional)' : 'Contraseña' }}</label>
-                <input v-model="newMember.password" type="password" :placeholder="editingMember ? 'Dejar en blanco para no cambiarla' : 'Mínimo 8 caracteres'" :required="!editingMember" />
+                <label>{{ editingMember ? 'Nueva contraseña (opcional)' : 'Contraseña *' }}</label>
+                <input v-model="newMember.password" type="password" minlength="8" :placeholder="editingMember ? 'Dejar en blanco para no cambiarla' : 'Mínimo 8 caracteres'" :required="!editingMember" />
               </div>
               <div class="lux-task-form-actions">
                 <div class="lux-task-form-actions-right">
