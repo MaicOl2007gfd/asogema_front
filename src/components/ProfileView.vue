@@ -3,6 +3,7 @@
 import { computed, ref, watch, onMounted } from 'vue'
 import { useProfile } from '../composables/useProfile.js'
 import { useMyReservations } from '../composables/useMyReservations.js'
+import { useMyInvoices } from '../composables/useMyInvoices.js'
 import '../Profile.css'
 
 const emit = defineEmits(['navigate'])
@@ -73,6 +74,19 @@ const {
   formatCurrency,
 } = useMyReservations()
 
+/* ── Mis Facturas (historial de pagos y facturas del usuario) ── */
+const {
+  invoices,
+  loading: invoicesLoading,
+  error: invoicesError,
+  loaded: invoicesLoaded,
+  hasLoadedOnce: invoicesHasLoadedOnce,
+  downloading,
+  getInvoices: loadInvoices,
+  downloadPdfFor,
+  formatCurrency: formatInvoiceCurrency,
+} = useMyInvoices()
+
 const typeFilters = computed(() => [
   { value: 'all', label: 'Todas', count: totalCount.value },
   { value: 'hotel', label: 'Hotel', count: typeCounts.value.hotel },
@@ -118,6 +132,7 @@ watch(
 // Cargar todas las reservas (hotel, mesa y eventos) al abrir el perfil.
 onMounted(() => {
   loadAll()
+  loadInvoices()
 })
 </script>
 
@@ -199,6 +214,22 @@ onMounted(() => {
             </svg>
             Mis Reservas
             <span v-if="reservations.length" class="sidebar-nav-badge">{{ reservations.length }}</span>
+          </button>
+          <button
+            type="button"
+            class="sidebar-nav-item"
+            :class="{ active: activeTab === 'facturas' }"
+            @click="activeTab = 'facturas'"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Mis Facturas
+            <span v-if="invoices.length" class="sidebar-nav-badge">{{ invoices.length }}</span>
           </button>
         </nav>
 
@@ -794,6 +825,158 @@ onMounted(() => {
                       Cancelar
                     </button>
                     <span v-else class="reserva-finished">Finalizada</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <!-- ── Mis Facturas (historial de pagos) ── -->
+          <section v-else-if="activeTab === 'facturas'" key="facturas" class="panel panel-reservas">
+            <header class="panel-header">
+              <div class="panel-title-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+              <div>
+                <h1 class="panel-title">Mis Facturas</h1>
+                <p class="panel-subtitle">Historial de tus pagos y facturas</p>
+              </div>
+            </header>
+
+            <!-- Cargando -->
+            <div v-if="invoicesLoading" class="reservas-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+              </svg>
+              <h3>Cargando tus facturas</h3>
+              <p>Un momento, estamos consultando tu historial.</p>
+            </div>
+
+            <!-- Error -->
+            <div v-else-if="invoicesError" class="reservas-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <h3>No pudimos cargar tus facturas</h3>
+              <p>{{ invoicesError }}</p>
+              <button type="button" class="primary-btn" @click="loadInvoices">Reintentar</button>
+            </div>
+
+            <!-- Sin facturas -->
+            <div v-else-if="invoices.length === 0" class="reservas-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <h3>Aún no tienes facturas</h3>
+              <p>Cuando realices tu primera compra o reserva aquí aparecerán tus facturas.</p>
+            </div>
+
+            <!-- Lista de facturas -->
+            <div v-else class="reservas-list">
+              <article
+                v-for="f in invoices"
+                :key="f.id"
+                class="reserva-card"
+                :class="f.estado === 'PAGADA' || f.estado === 'CONFIRMADA' ? 'reserva-completada' : f.estado === 'ANULADA' || f.estado === 'RECHAZADA' || f.estado === 'FALLIDA' ? 'reserva-cancelada' : 'reserva-pendiente'"
+              >
+                <div class="reserva-card-head">
+                  <div class="reserva-room">
+                    <span class="reserva-room-icon">
+                      <svg v-if="f.tipo === 'HOTEL'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 21h18"></path>
+                        <path d="M3 10h18"></path>
+                        <path d="M5 6l7-3 7 3"></path>
+                        <path d="M4 10v11"></path>
+                        <path d="M20 10v11"></path>
+                      </svg>
+                      <svg v-else-if="f.tipo === 'RESTAURANTE'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="7"></circle>
+                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                      </svg>
+                      <svg v-else-if="f.tipo === 'EVENTO'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                        <line x1="2" y1="10" x2="22" y2="10"></line>
+                      </svg>
+                    </span>
+                    <span class="reserva-room-txt">
+                      <small>Factura #{{ f.id }} · {{ f.tipo ? (f.tipo === 'HOTEL' ? 'Hotel' : f.tipo === 'RESTAURANTE' ? 'Restaurante' : f.tipo === 'EVENTO' ? 'Evento' : 'Recarga wallet') : 'Compra' }}</small>
+                      <h3>{{ f.fecha }}</h3>
+                    </span>
+                  </div>
+                  <span class="reserva-status">
+                    <i class="reserva-status-dot"></i>
+                    {{ f.estadoLabel }}
+                  </span>
+                </div>
+
+                <div class="reserva-meta">
+                  <span v-if="f.metodoPago !== '—'">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                    Pago: {{ f.metodoPago }}
+                  </span>
+                  <span v-if="f.numeroFactura">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    {{ f.numeroFactura }}
+                  </span>
+                  <span v-if="f.detalle.length && f.detalle[0].descripcion">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="8" y1="6" x2="21" y2="6"></line>
+                      <line x1="8" y1="12" x2="21" y2="12"></line>
+                      <line x1="8" y1="18" x2="21" y2="18"></line>
+                      <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                      <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                      <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    {{ f.detalle[0].descripcion }}
+                  </span>
+                </div>
+
+                <div class="reserva-foot">
+                  <div class="reserva-total">
+                    <small>Total</small>
+                    <strong>{{ f.totalLabel }}</strong>
+                  </div>
+                  <div class="reserva-actions">
+                    <button
+                      v-if="f.numeroFactura"
+                      type="button"
+                      class="reserva-detail"
+                      :disabled="downloading === String(f.id)"
+                      @click="downloadPdfFor(f.id)"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                      {{ downloading === String(f.id) ? 'Descargando…' : 'Descargar PDF' }}
+                    </button>
+                    <span v-else class="reserva-finished">Factura en proceso</span>
                   </div>
                 </div>
               </article>

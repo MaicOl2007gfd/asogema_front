@@ -6,6 +6,11 @@ export function usePaymentApi() {
     return data
   }
 
+  async function getMisFacturas() {
+    const { data } = await api.get('/payments/mis-facturas')
+    return data
+  }
+
   async function downloadPdf(facturaId) {
     const { data } = await api.get(`/payments/${facturaId}/pdf`)
     return data
@@ -69,6 +74,7 @@ export function usePaymentApi() {
 
   return {
     getPaymentStatus,
+    getMisFacturas,
     downloadPdf,
     verifyPayment,
     createPayment,
