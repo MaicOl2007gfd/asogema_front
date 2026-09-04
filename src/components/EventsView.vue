@@ -238,7 +238,6 @@ const {
           >
             <div class="events-card-image" @click="showSalonDetail(salon)">
               <img :src="salon.image" :alt="salon.name" loading="lazy" />
-              <div class="events-card-badge">{{ salon.badge }}</div>
             </div>
             <div class="events-card-info">
               <h3 class="events-card-name">{{ salon.name }}</h3>
@@ -301,7 +300,6 @@ const {
             <img :src="selectedSalon.image" :alt="selectedSalon.name" />
           </div>
           <div class="events-modal-info">
-            <div class="events-modal-badge">{{ selectedSalon.badge }}</div>
             <h2 class="events-modal-name">{{ selectedSalon.name }}</h2>
             <p class="events-modal-desc">{{ selectedSalon.description }}</p>
 
@@ -558,7 +556,7 @@ const {
     <footer class="events-footer">
       <div class="events-footer-grid">
         <div class="events-footer-brand">
-          <img src="/imagenes/Logo.png" alt="Asogema" style="width:36px;height:36px;object-fit:contain;filter:brightness(1.3);" />
+          <img src="/imagenes/Logo.png" alt="Asogema" style="width:48px;height:48px;object-fit:contain;filter:brightness(1.3);" />
           <p>Asogema es un destino único donde la naturaleza, la gastronomía y la elegancia se combinan para ofrecerte experiencias inolvidables.</p>
         </div>
         <div class="events-footer-col">
@@ -581,14 +579,6 @@ const {
       </div>
       <div class="events-footer-bottom">
         <span>&copy; {{ new Date().getFullYear() }} Asogema. Todos los derechos reservados.</span>
-        <div class="events-footer-socials">
-          <a href="#" aria-label="Facebook">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-          </a>
-          <a href="#" aria-label="Instagram">
-            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-          </a>
-        </div>
       </div>
     </footer>
   </div>

@@ -40,3 +40,23 @@ export const PROFILE_BASE_URL = ''
  */
 export const WHATSAPP_NUMBER = '573161596416'
 export const WHATSAPP_MESSAGE = 'Hola Asogema, quiero más información.'
+
+/**
+ * Ubicación de la Sede Recreacional ASOGEMA (Ibagué, Tolima).
+ * Usada por el mapa Leaflet de la sección "Contacto / Ubicación".
+ *
+ * Dirección registrada: Carrera 12 # 147-84, Barrio El Salado, Ibagué, Tolima.
+ * Coordenadas verificadas sobre OpenStreetMap: 4.44913, -75.1415.
+ */
+export const CLUB_LOCATION = {
+  name: 'Sede Recreacional ASOGEMA',
+  address: 'Carrera 12 # 147-84, Barrio El Salado, Ibagué, Tolima',
+  lat: 4.44913,
+  lng: -75.1415,
+  zoom: 16,
+}
+
+/**
+ * Enlace de Google Maps para trazar una ruta hasta la sede.
+ */
+export const GOOGLE_MAPS_DIRECTIONS_URL = `https://www.google.com/maps/dir/?api=1&destination=${CLUB_LOCATION.lat},${CLUB_LOCATION.lng}`

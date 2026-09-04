@@ -1929,8 +1929,184 @@
    FOOTER
    ---------------------------------------------------------- */
 .index-footer {
-  background: var(--idx-primary-dark);
-  border-top: 1px solid rgba(200, 169, 106, 0.1);
+ background: var(--idx-primary-dark);
+ border-top: 1px solid rgba(200, 169, 106, 0.1);
+}
+
+/* ----------------------------------------------------------
+  UBICACIÓN — Mapa Leaflet de la sede
+  ---------------------------------------------------------- */
+.location-section {
+ background:
+   radial-gradient(1000px 460px at 15% 0%, rgba(200, 169, 106, 0.08), transparent 60%),
+   linear-gradient(180deg, var(--idx-bg) 0%, #efe3cc 100%);
+}
+
+.location-header {
+ text-align: center;
+ max-width: 640px;
+ margin: 0 auto clamp(44px, 5vw, 64px);
+}
+
+.location-header .section-tag {
+ background: rgba(200, 169, 106, 0.12);
+ border: 1px solid var(--idx-gold-border);
+}
+
+.location-header .section-desc {
+ max-width: 560px;
+ margin: 0 auto;
+}
+
+.location-grid {
+ display: grid;
+ grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr);
+ gap: clamp(24px, 3vw, 40px);
+ max-width: var(--idx-container);
+ margin: 0 auto;
+ align-items: stretch;
+}
+
+.location-card {
+ background: var(--idx-white);
+ border: 1px solid var(--idx-border-light);
+ border-radius: var(--idx-radius);
+ box-shadow: var(--idx-shadow);
+ overflow: hidden;
+ min-height: 420px;
+}
+
+.location-info {
+ background: var(--idx-primary);
+ background-image:
+   radial-gradient(420px 320px at 100% 0%, rgba(200, 169, 106, 0.16), transparent 65%),
+   linear-gradient(160deg, #16421a 0%, #0d2a10 100%);
+ border-radius: var(--idx-radius);
+ padding: clamp(28px, 3vw, 40px);
+ display: flex;
+ flex-direction: column;
+ gap: 26px;
+ color: var(--idx-bg);
+ box-shadow: var(--idx-shadow-lg);
+}
+
+.location-info-item {
+ display: flex;
+ gap: 16px;
+ align-items: flex-start;
+}
+
+.location-info-icon {
+ flex: 0 0 auto;
+ width: 46px;
+ height: 46px;
+ border-radius: 14px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ background: rgba(200, 169, 106, 0.14);
+ border: 1px solid var(--idx-gold-border);
+ color: var(--idx-gold-light);
+}
+
+.location-info-icon svg {
+ width: 22px;
+ height: 22px;
+}
+
+.location-info-item > div:last-child {
+ display: flex;
+ flex-direction: column;
+ gap: 4px;
+}
+
+.location-info-item strong {
+ font-family: var(--idx-font-display);
+ font-size: 18px;
+ color: var(--idx-gold-light);
+ margin-bottom: 2px;
+}
+
+.location-info-item span {
+ font-size: 14px;
+ font-weight: 300;
+ line-height: 1.6;
+ color: rgba(243, 232, 211, 0.82);
+}
+
+.location-btn {
+ margin-top: auto;
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ gap: 10px;
+ padding: 15px 26px;
+ border-radius: 999px;
+ background: var(--idx-gold);
+ color: var(--idx-primary-dark);
+ font-size: 15px;
+ font-weight: 600;
+ text-decoration: none;
+ transition: all var(--idx-transition);
+ align-self: flex-start;
+}
+
+.location-btn svg {
+ width: 18px;
+ height: 18px;
+}
+
+.location-btn:hover {
+ background: var(--idx-gold-light);
+ transform: translateY(-2px);
+ box-shadow: 0 12px 30px rgba(200, 169, 106, 0.35);
+}
+
+/* Leaflet — controles y popup acordes al tema */
+.location-card .asogema-club-map {
+ height: 100% !important;
+ min-height: 420px;
+}
+
+.location-card .leaflet-popup-content-wrapper {
+ background: var(--idx-primary);
+ color: var(--idx-bg);
+ border-radius: 14px;
+ box-shadow: 0 14px 40px rgba(11, 31, 13, 0.35);
+}
+
+.location-card .leaflet-popup-content {
+ font-family: var(--idx-font-body);
+ font-size: 14px;
+ line-height: 1.5;
+ margin: 14px 18px;
+}
+
+.location-card .leaflet-popup-content strong {
+ color: var(--idx-gold-light);
+ font-family: var(--idx-font-display);
+}
+
+.location-card .leaflet-popup-tip {
+ background: var(--idx-primary);
+}
+
+/* Responsive de la sección Ubicación */
+@media (max-width: 1024px) {
+ .location-grid {
+   grid-template-columns: 1fr;
+ }
+ .location-card,
+ .location-card .asogema-club-map {
+   min-height: 380px;
+ }
+}
+
+@media (max-width: 768px) {
+ .location-card,
+ .location-card .asogema-club-map {
+   min-height: 320px;
+ }
 }
 
 .footer-grid {

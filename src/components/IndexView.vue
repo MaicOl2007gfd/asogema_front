@@ -5,7 +5,8 @@ import { isStaffUser, getUserInitials as utilsGetUserInitials } from '../composa
 import { useIndex } from '../composables/useIndex.js'
 import MagicBento from './MagicBento.vue'
 import ClickSpark from './ClickSpark.vue'
-import { WHATSAPP_NUMBER, WHATSAPP_MESSAGE } from '../config.js'
+import ClubMap from './ClubMap.vue'
+import { WHATSAPP_NUMBER, WHATSAPP_MESSAGE, CLUB_LOCATION, GOOGLE_MAPS_DIRECTIONS_URL } from '../config.js'
 
 const emit = defineEmits(['navigate'])
 
@@ -616,6 +617,87 @@ onUnmounted(() => onUnmount())
     </section>
 
     <!-- ======================================================
+         UBICACIÓN — Mapa Leaflet de la Sede Recreacional
+         ====================================================== -->
+    <section id="ubicacion" class="location-section section-padding">
+      <div class="location-header reveal">
+        <span class="section-tag">Ubicación</span>
+        <h2 class="section-title">¿Dónde estamos?</h2>
+        <p class="section-desc">
+          Encuentra la Sede Recreacional ASOGEMA en Ibagué. Te esperamos para
+          vivir la naturaleza, la recreación y el descanso en familia.
+        </p>
+      </div>
+
+      <div class="location-grid reveal reveal-delay-1">
+        <div class="location-card">
+          <ClubMap
+            :lat="CLUB_LOCATION.lat"
+            :lng="CLUB_LOCATION.lng"
+            :zoom="CLUB_LOCATION.zoom"
+            :title="CLUB_LOCATION.name"
+            :address="CLUB_LOCATION.address"
+          />
+        </div>
+
+        <div class="location-info">
+          <div class="location-info-item">
+            <div class="location-info-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+            <div>
+              <strong>Dirección</strong>
+              <span>{{ CLUB_LOCATION.name }}</span>
+              <span>{{ CLUB_LOCATION.address }}</span>
+            </div>
+          </div>
+
+          <div class="location-info-item">
+            <div class="location-info-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div>
+              <strong>Horario de atención</strong>
+              <span>Lunes a Domingo · 8:00 a.m. – 5:00 p.m.</span>
+              <span>Restaurante y eventos con reserva previa.</span>
+            </div>
+          </div>
+
+          <div class="location-info-item">
+            <div class="location-info-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+            </div>
+            <div>
+              <strong>Contacto</strong>
+              <span>WhatsApp: +57 316 159 6416</span>
+              <span>Ibagué · Tolima · Colombia</span>
+            </div>
+          </div>
+
+          <a
+            class="location-btn"
+            :href="GOOGLE_MAPS_DIRECTIONS_URL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+            </svg>
+            Cómo llegar
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
          FOOTER
          ====================================================== -->
     <footer id="contact" class="index-footer">
@@ -627,11 +709,6 @@ onUnmounted(() => onUnmount())
             se combinan para ofrecerte experiencias inolvidables.
           </p>
           <div class="footer-socials">
-            <a href="#" aria-label="Facebook">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-              </svg>
-            </a>
             <a href="#" aria-label="Twitter">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
@@ -642,13 +719,6 @@ onUnmounted(() => onUnmount())
                 <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
                 <rect x="2" y="9" width="4" height="12"></rect>
                 <circle cx="4" cy="4" r="2"></circle>
-              </svg>
-            </a>
-            <a href="#" aria-label="Instagram">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
               </svg>
             </a>
           </div>
