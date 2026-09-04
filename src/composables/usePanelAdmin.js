@@ -95,12 +95,30 @@ const filteredMembers = computed(() => {
   )
 })
 
-const memberTotalPages = computed(() => Math.max(1, Math.ceil(filteredMembers.value.length / MEMBERS_PER_PAGE)))
+// Vista de la tabla: 'activos' | 'eliminados' (nunca mezcladas).
+// El back ya devuelve activos e inactivos en GET /admin/members: se parte en cliente,
+// igual que productos (productView) y salones (salonView).
+const memberView = ref('activos')
+
+const activeMembers = computed(() => filteredMembers.value.filter(m => m.activo !== false))
+
+const inactiveMembers = computed(() => filteredMembers.value.filter(m => m.activo === false))
+
+const inactiveMembersCount = computed(() => inactiveMembers.value.length)
+
+const visibleMembers = computed(() => memberView.value === 'eliminados' ? inactiveMembers.value : activeMembers.value)
+
+const memberTotalPages = computed(() => Math.max(1, Math.ceil(visibleMembers.value.length / MEMBERS_PER_PAGE)))
 
 const paginatedMembers = computed(() => {
   const start = (memberPage.value - 1) * MEMBERS_PER_PAGE
-  return filteredMembers.value.slice(start, start + MEMBERS_PER_PAGE)
+  return visibleMembers.value.slice(start, start + MEMBERS_PER_PAGE)
 })
+
+function toggleMemberView() {
+  memberView.value = memberView.value === 'activos' ? 'eliminados' : 'activos'
+  memberPage.value = 1
+}
 
 import { watch as vueWatch } from 'vue'
 vueWatch(memberSearch, () => { memberPage.value = 1 })
@@ -117,31 +135,66 @@ function getInitials(name) {
     .slice(0, 2) || '?'
 }
 
-async function fetchMembers() {
-  const { data } = await api.get('/admin/members')
-  members.value = (data || []).map((m, i) => ({
+function splitDisplayName(full) {
+  const parts = String(full || '').trim().split(/\s+/)
+  if (parts.length <= 1) return { nombre: parts[0] || '', apellido: '' }
+  return { nombre: parts[0], apellido: parts.slice(1).join(' ') }
+}
+
+function mapMember(m, i = 0) {
+  const displayName = m.nombre || '—'
+  const { nombre: pila, apellido } = splitDisplayName(displayName)
+  return {
     id: m.id,
-    name: m.nombre,
+    // Display (tabla / tarjetas)
+    name: displayName,
     email: m.correo,
+    // Crudos (formulario edición)
+    nombre: m.nombre_pila ?? pila,
+    apellido: m.apellido ?? apellido,
+    correo: m.correo,
     telefono: m.telefono,
     activo: m.activo !== false,
+    tipo_documento_id: m.tipo_documento_id ?? null,
+    numero_documento: m.numero_documento ?? '',
     membership: 'Cliente',
     membershipColor: memberColors[i % memberColors.length],
-    initials: getInitials(m.nombre),
+    initials: getInitials(displayName),
     reservations: [],
     payments: { totalFacturado: 0, invoices: [] },
     events: [],
-  }))
+  }
+}
+
+async function fetchMembers() {
+  const { data } = await api.get('/admin/members')
+  members.value = (data || []).map((m, i) => mapMember(m, i))
   if (members.value.length && selectedMemberId.value == null) {
     selectedMemberId.value = members.value[0].id
   }
 }
 
+const memberDetailLoading = ref(false)
+
 async function loadMemberDetail(id) {
+  memberDetailLoading.value = true
   try {
     const { data } = await api.get(`/admin/members/${id}`)
     const m = members.value.find(x => x.id === id)
     if (!m || !data) return
+
+    if (data.usuario) {
+      const u = data.usuario
+      m.nombre = u.nombre ?? m.nombre
+      m.apellido = u.apellido ?? m.apellido
+      m.correo = u.correo ?? m.correo
+      m.telefono = u.telefono ?? m.telefono
+      m.activo = u.activo !== false
+      m.tipo_documento_id = u.tipo_documento_id ?? m.tipo_documento_id
+      m.numero_documento = u.numero_documento ?? m.numero_documento
+      m.name = [m.nombre, m.apellido].filter(Boolean).join(' ') || m.name
+      m.email = m.correo
+    }
 
     const reservations = []
     ;(data.reservas_hotel || []).forEach(r => reservations.push({
@@ -189,6 +242,8 @@ async function loadMemberDetail(id) {
     }
   } catch {
     // Detalle no disponible
+  } finally {
+    memberDetailLoading.value = false
   }
 }
 
@@ -199,37 +254,79 @@ vueWatch(selectedMemberId, (id) => {
 // ─── Miembros: Crear / Editar / Desactivar ─────────────────
 const showMemberForm = ref(false)
 const editingMember = ref(null)
-const newMember = ref({ nombre: '', correo: '', telefono: '', tipo_documento: 'CC', numero_documento: '', password: '' })
+const newMember = ref({ nombre: '', apellido: '', correo: '', telefono: '', tipo_documento_id: 1, numero_documento: '', password: '' })
 const memberFormError = ref('')
 const memberFormSaving = ref(false)
 
-const MEMBER_DOC_TYPES = [
-  { value: 'CC', label: 'Cédula de Ciudadanía' },
-  { value: 'CE', label: 'Cédula de Extranjería' },
-  { value: 'PAS', label: 'Pasaporte' },
-  { value: 'RC', label: 'Registro Civil' },
-  { value: 'NIT', label: 'NIT' },
-  { value: 'CD', label: 'Carné Diplomático' },
-]
+function emptyMemberForm() {
+  return { nombre: '', apellido: '', correo: '', telefono: '', tipo_documento_id: 1, numero_documento: '', password: '' }
+}
+
+function extractMemberError(e, fallback) {
+  const msg = e?.response?.data?.message
+  if (Array.isArray(msg)) return msg[0] || fallback
+  return msg || fallback
+}
+
+function validateMemberForm(isEdit) {
+  if (!newMember.value.nombre.trim() || !newMember.value.apellido.trim()) {
+    return 'Nombre y apellido son obligatorios.'
+  }
+  if (!newMember.value.correo.trim()) {
+    return 'El correo es obligatorio.'
+  }
+  if (!newMember.value.telefono.trim()) {
+    return 'El teléfono es obligatorio.'
+  }
+  if (!newMember.value.numero_documento.trim()) {
+    return 'El número de documento es obligatorio.'
+  }
+  if (!newMember.value.tipo_documento_id) {
+    return 'El tipo de documento es obligatorio.'
+  }
+  if (!isEdit && (!newMember.value.password || newMember.value.password.length < 8)) {
+    return 'La contraseña debe tener al menos 8 caracteres.'
+  }
+  if (newMember.value.password && newMember.value.password.length < 8) {
+    return 'La contraseña debe tener al menos 8 caracteres.'
+  }
+  return ''
+}
 
 function openNewMember() {
   editingMember.value = null
-  newMember.value = { nombre: '', correo: '', telefono: '', tipo_documento: 'CC', numero_documento: '', password: '' }
+  newMember.value = emptyMemberForm()
   memberFormError.value = ''
   showMemberForm.value = true
 }
 
-function openEditMember(m) {
-  editingMember.value = { ...m }
-  newMember.value = {
-    nombre: m.nombre || '',
-    correo: m.correo || '',
-    telefono: m.telefono || '',
-    tipo_documento: m.tipo_documento || 'CC',
-    numero_documento: m.numero_documento || '',
-    password: '',
-  }
+async function openEditMember(m) {
   memberFormError.value = ''
+  try {
+    const { data } = await api.get(`/admin/members/${m.id}`)
+    const u = data?.usuario || {}
+    editingMember.value = { ...m }
+    newMember.value = {
+      nombre: u.nombre ?? m.nombre ?? '',
+      apellido: u.apellido ?? m.apellido ?? '',
+      correo: u.correo ?? m.correo ?? '',
+      telefono: u.telefono ?? m.telefono ?? '',
+      tipo_documento_id: Number(u.tipo_documento_id ?? m.tipo_documento_id ?? 1),
+      numero_documento: u.numero_documento ?? m.numero_documento ?? '',
+      password: '',
+    }
+  } catch {
+    editingMember.value = { ...m }
+    newMember.value = {
+      nombre: m.nombre ?? '',
+      apellido: m.apellido ?? '',
+      correo: m.correo ?? m.email ?? '',
+      telefono: m.telefono ?? '',
+      tipo_documento_id: Number(m.tipo_documento_id ?? 1),
+      numero_documento: m.numero_documento ?? '',
+      password: '',
+    }
+  }
   showMemberForm.value = true
 }
 
@@ -239,36 +336,48 @@ function closeMemberForm() {
 }
 
 async function createMember() {
+  const validationError = validateMemberForm(false)
+  if (validationError) {
+    memberFormError.value = validationError
+    return
+  }
   memberFormSaving.value = true
   memberFormError.value = ''
   try {
     await api.post('/admin/members', {
       nombre: newMember.value.nombre.trim(),
+      apellido: newMember.value.apellido.trim(),
       correo: newMember.value.correo.trim(),
-      telefono: newMember.value.telefono.trim() || null,
-      tipo_documento: newMember.value.tipo_documento,
-      numero_documento: newMember.value.numero_documento.trim() || null,
-      password: newMember.value.password || null,
+      telefono: newMember.value.telefono.trim(),
+      tipo_documento_id: Number(newMember.value.tipo_documento_id),
+      numero_documento: newMember.value.numero_documento.trim(),
+      password: newMember.value.password,
     })
     closeMemberForm()
     await fetchMembers()
   } catch (e) {
-    memberFormError.value = e?.response?.data?.message || 'Error al crear el miembro.'
+    memberFormError.value = extractMemberError(e, 'Error al crear el miembro.')
   } finally {
     memberFormSaving.value = false
   }
 }
 
 async function updateMember() {
+  const validationError = validateMemberForm(true)
+  if (validationError) {
+    memberFormError.value = validationError
+    return
+  }
   memberFormSaving.value = true
   memberFormError.value = ''
   try {
     const payload = {
       nombre: newMember.value.nombre.trim(),
+      apellido: newMember.value.apellido.trim(),
       correo: newMember.value.correo.trim(),
-      telefono: newMember.value.telefono.trim() || null,
-      tipo_documento: newMember.value.tipo_documento,
-      numero_documento: newMember.value.numero_documento.trim() || null,
+      telefono: newMember.value.telefono.trim(),
+      tipo_documento_id: Number(newMember.value.tipo_documento_id),
+      numero_documento: newMember.value.numero_documento.trim(),
     }
     if (newMember.value.password) payload.password = newMember.value.password
     await api.patch(`/admin/members/${editingMember.value.id}`, payload)
@@ -276,7 +385,7 @@ async function updateMember() {
     await fetchMembers()
     if (selectedMemberId.value != null) await loadMemberDetail(selectedMemberId.value)
   } catch (e) {
-    memberFormError.value = e?.response?.data?.message || 'Error al actualizar el miembro.'
+    memberFormError.value = extractMemberError(e, 'Error al actualizar el miembro.')
   } finally {
     memberFormSaving.value = false
   }
@@ -285,11 +394,14 @@ async function updateMember() {
 async function toggleMemberStatus(m) {
   const action = m.activo ? 'desactivar' : 'activar'
   if (!confirm(`¿Estás seguro de ${action} a ${m.name}?`)) return
+  const previous = m.activo
+  m.activo = !m.activo
   try {
-    await api.patch(`/admin/members/${m.id}/status`, { activo: !m.activo })
-    m.activo = !m.activo
+    const { data } = await api.patch(`/admin/members/${m.id}/status`, { activo: !previous })
+    if (data && typeof data.activo === 'boolean') m.activo = data.activo
   } catch (e) {
-    alert(e?.response?.data?.message || `No se pudo ${action} al miembro.`)
+    m.activo = previous
+    alert(extractMemberError(e, `No se pudo ${action} al miembro.`))
   }
 }
 
@@ -549,25 +661,21 @@ async function fetchDayOverview(dateStr) {
 const calendarEvents = ref([])
 
 const calendarFilters = ref({
-  torneos: true,
-  eventos: true,
   reservas: true,
-  mantenimiento: true,
-  horarios: true,
+  eventos: true,
+  tareas: true,
 })
 
 const filteredCalendarEvents = computed(() => {
   return calendarEvents.value.filter(ev => calendarFilters.value[ev.category])
 })
 
-const categoryLabels = { torneos: 'Torneos', eventos: 'Eventos', reservas: 'Reservas', mantenimiento: 'Mantenimiento', horarios: 'Especiales' }
+const categoryLabels = { reservas: 'Reservas', eventos: 'Eventos', tareas: 'Tareas' }
 
 const filterColors = {
-  torneos: '#00cec9',
-  eventos: '#6c5ce7',
   reservas: '#fdcb6e',
-  mantenimiento: '#e17055',
-  horarios: '#00b894',
+  eventos: '#6c5ce7',
+  tareas: '#e84393',
 }
 
 function getFilterColor(cat) {
@@ -801,7 +909,8 @@ const calendarGrid = computed(() => {
     const dateStr = `${calendarYear.value}-${String(calendarMonth.value + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     const dayEvents = filteredCalendarEvents.value.filter(e => e.date === dateStr)
     const dayTasks = tasksByDate.value[dateStr] || []
-    cells.push({ day: d, date: dateStr, events: dayEvents, tasks: dayTasks, hasTasks: dayTasks.length > 0, isToday: isToday(dateStr) })
+    const showTasks = calendarFilters.value.tareas
+    cells.push({ day: d, date: dateStr, events: dayEvents, tasks: dayTasks, hasTasks: showTasks && dayTasks.length > 0, isToday: isToday(dateStr) })
   }
   return cells
 })
@@ -838,19 +947,31 @@ const rooms = ref([])
 const roomTypes = ref([])
 const roomsLoading = ref(false)
 const roomsError = ref(null)
-const showInactiveRooms = ref(false)
+// Vista de la tabla: 'activos' | 'eliminados' (nunca mezcladas).
+// Se trae todo una vez (incluir_inactivos) y se parte en cliente,
+// igual que productos (productView) y salones (salonView).
+const roomView = ref('activos')
 const showRoomForm = ref(false)
 const editingRoom = ref(null)
 const newRoom = ref({ numero: '', tipo_id: '', piso: '', capacidad: '', precio_noche: '', imagen_url: '' })
 const roomFormError = ref('')
 const roomFormSaving = ref(false)
 
+// Filtro de disponibilidad por día (YYYY-MM-DD): de hoy en adelante.
+// El back calcula `disponible` por habitación para ese día.
+function todayISO() {
+  const t = new Date()
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`
+}
+const roomDateMin = todayISO()
+const roomDateFilter = ref(todayISO())
+
 async function fetchRooms() {
   roomsLoading.value = true
   roomsError.value = null
   try {
     const [roomsRes, typesRes] = await Promise.all([
-      api.get('/admin/rooms', { params: { incluir_inactivos: showInactiveRooms.value ? 'true' : undefined } }),
+      api.get('/admin/rooms', { params: { incluir_inactivos: 'true', fecha: roomDateFilter.value || undefined } }),
       api.get('/admin/room-types'),
     ])
     rooms.value = roomsRes.data || []
@@ -861,6 +982,20 @@ async function fetchRooms() {
     roomsLoading.value = false
   }
 }
+
+const activeRooms = computed(() => rooms.value.filter(r => r.activo !== false))
+
+const inactiveRooms = computed(() => rooms.value.filter(r => r.activo === false))
+
+const inactiveRoomsCount = computed(() => inactiveRooms.value.length)
+
+const visibleRooms = computed(() => roomView.value === 'eliminados' ? inactiveRooms.value : activeRooms.value)
+
+function toggleRoomView() {
+  roomView.value = roomView.value === 'activos' ? 'eliminados' : 'activos'
+}
+
+vueWatch(roomDateFilter, () => { fetchRooms() })
 
 async function reactivateRoom(id) {
   try {
@@ -970,20 +1105,27 @@ const products = ref([])
 const menuCategories = ref([])
 const productsLoading = ref(false)
 const productsError = ref(null)
-const showInactiveProducts = ref(false)
+// Vista de la tabla: 'activos' | 'eliminados' (nunca mezcladas).
+// Se trae todo una vez (incluir_inactivos) y se parte en cliente.
+const productView = ref('activos')
 const showProductForm = ref(false)
 const editingProduct = ref(null)
 const newProduct = ref({ nombre: '', categoria_id: '', precio: '', stock: '', descripcion: '', imagen_url: '' })
 const productFormError = ref('')
 const productFormSaving = ref(false)
 
+// Filtros + alertas de stock (aplican a la vista actual)
+const productCategoryFilter = ref('all')
+const productSearch = ref('')
+const LOW_STOCK_THRESHOLD = 5
+
 async function fetchProducts() {
   productsLoading.value = true
   productsError.value = null
   try {
     const [productsRes, catsRes] = await Promise.all([
-      api.get('/admin/menu/products', { params: { incluir_inactivos: showInactiveProducts.value ? 'true' : undefined } }),
-      api.get('/admin/menu/categories', { params: { incluir_inactivos: showInactiveProducts.value ? 'true' : undefined } }),
+      api.get('/admin/menu/products', { params: { incluir_inactivos: 'true' } }),
+      api.get('/admin/menu/categories', { params: { incluir_inactivos: 'true' } }),
     ])
     products.value = productsRes.data || []
     menuCategories.value = catsRes.data || []
@@ -992,6 +1134,35 @@ async function fetchProducts() {
   } finally {
     productsLoading.value = false
   }
+}
+
+const activeProducts = computed(() => products.value.filter(p => p.activo !== false))
+
+const inactiveProducts = computed(() => products.value.filter(p => p.activo === false))
+
+const inactiveProductsCount = computed(() => inactiveProducts.value.length)
+
+const filteredProducts = computed(() => {
+  const base = productView.value === 'eliminados' ? inactiveProducts.value : activeProducts.value
+  const byCat = productCategoryFilter.value === 'all'
+    ? base
+    : base.filter(p => String(p.categoria_id) === String(productCategoryFilter.value))
+  const q = productSearch.value.trim().toLowerCase()
+  if (!q) return byCat
+  return byCat.filter(p =>
+    (p.nombre || '').toLowerCase().includes(q) ||
+    (p.descripcion || '').toLowerCase().includes(q),
+  )
+})
+
+const lowStockCount = computed(() =>
+  activeProducts.value.filter(p => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD).length,
+)
+
+function stockBadge(p) {
+  if (p.stock <= 0) return { label: 'Agotado', color: '#d63031' }
+  if (p.stock <= LOW_STOCK_THRESHOLD) return { label: `¡Solo ${p.stock}!`, color: '#e17055' }
+  return { label: String(p.stock), color: '' }
 }
 
 async function reactivateProduct(id) {
@@ -1066,6 +1237,49 @@ async function deleteProduct(id) {
   }
 }
 
+// ─── Sumar stock (mini-modal) ────────────────────────────────
+const showStockModal = ref(false)
+const stockTarget = ref(null)
+const stockQty = ref(1)
+const stockSaving = ref(false)
+const stockError = ref('')
+
+function openStockModal(p) {
+  stockTarget.value = { ...p }
+  stockQty.value = 1
+  stockError.value = ''
+  showStockModal.value = true
+}
+
+function closeStockModal() {
+  showStockModal.value = false
+  stockTarget.value = null
+  stockError.value = ''
+}
+
+async function addStock() {
+  const qty = Number(stockQty.value)
+  if (!Number.isInteger(qty) || qty < 1) {
+    stockError.value = 'Ingresa una cantidad entera mayor a 0.'
+    return
+  }
+  if (!stockTarget.value) return
+  stockSaving.value = true
+  stockError.value = ''
+  try {
+    await api.patch(`/admin/menu/products/${stockTarget.value.id}`, {
+      stock: Number(stockTarget.value.stock || 0) + qty,
+    })
+    closeStockModal()
+    await fetchProducts()
+  } catch (e) {
+    const msg = e?.response?.data?.message
+    stockError.value = Array.isArray(msg) ? (msg[0] || 'No se pudo sumar el stock.') : (msg || 'No se pudo sumar el stock.')
+  } finally {
+    stockSaving.value = false
+  }
+}
+
 function resetProductForm() {
   newProduct.value = { nombre: '', categoria_id: '', precio: '', stock: '', descripcion: '', imagen_url: '' }
   productFormError.value = ''
@@ -1091,6 +1305,9 @@ function openEditProduct(p) {
 const salons = ref([])
 const salonsLoading = ref(false)
 const salonsError = ref(null)
+// Vista de la grilla: 'activos' | 'eliminados' (nunca mezclados).
+// Se trae todo una vez (incluir_inactivos) y se parte en cliente.
+const salonView = ref('activos')
 const showSalonForm = ref(false)
 const editingSalon = ref(null)
 const newSalon = ref({ nombre: '', capacidad: '', precio_base: '', ubicacion: '', imagen_url: '' })
@@ -1101,7 +1318,7 @@ async function fetchSalons() {
   salonsLoading.value = true
   salonsError.value = null
   try {
-    const { data } = await api.get('/admin/events/salons')
+    const { data } = await api.get('/admin/events/salons', { params: { incluir_inactivos: 'true' } })
     salons.value = data || []
   } catch {
     salonsError.value = 'No se pudieron cargar los salones de eventos.'
@@ -1109,6 +1326,14 @@ async function fetchSalons() {
     salonsLoading.value = false
   }
 }
+
+const activeSalons = computed(() => salons.value.filter(s => s.estado !== 'ELIMINADO'))
+
+const inactiveSalons = computed(() => salons.value.filter(s => s.estado === 'ELIMINADO'))
+
+const inactiveSalonsCount = computed(() => inactiveSalons.value.length)
+
+const visibleSalons = computed(() => salonView.value === 'eliminados' ? inactiveSalons.value : activeSalons.value)
 
 async function createSalon() {
   salonFormSaving.value = true
@@ -1161,6 +1386,19 @@ async function deleteSalon(id) {
   } catch (e) {
     salonsError.value = e?.response?.data?.message || 'Error al eliminar el salón.'
   }
+}
+
+async function reactivateSalon(id) {
+  try {
+    await api.patch(`/admin/events/salons/${id}/reactivate`)
+    await fetchSalons()
+  } catch (e) {
+    salonsError.value = e?.response?.data?.message || 'Error al reactivar el salón.'
+  }
+}
+
+function toggleSalonView() {
+  salonView.value = salonView.value === 'activos' ? 'eliminados' : 'activos'
 }
 
 function resetSalonForm() {
@@ -1348,7 +1586,7 @@ const onRoomGalleryChange = (e) => onGalleryImageChange(e, 'habitacion')
 const activeModule = ref('panel')
 
 const moduleContextMessages = {
-  panel: 'Panel General — Visualiza las métricas y reservas del día en un solo lugar.',
+  panel: 'Panel General',
   calendario: 'Calendario — Visualiza la agenda del club. Haz clic en un día para ver todos los eventos.',
   tareas: 'Tareas — Gestiona y asigna tareas a los empleados del club.',
   socio: 'Panel del Socio — Información personalizada y detallada de cada miembro del club.',
@@ -1411,28 +1649,36 @@ export function usePanelAdmin() {
     taskFilterEstado, taskFilterPrioridad, taskFilterEmpleado,
     filteredTasks, priorityLabel, priorityColor, estadoLabel, estadoColor,
     openNewTaskFromModule,
-    members, selectedMemberId, selectedMember,
+    members, selectedMemberId, selectedMember, memberDetailLoading,
     memberSearch, memberPage, memberTotalPages, filteredMembers, paginatedMembers, MEMBERS_PER_PAGE,
+    memberView, visibleMembers, activeMembers, inactiveMembers, inactiveMembersCount, toggleMemberView,
     showMemberModal, openMemberModal, closeMemberModal,
     showMemberForm, editingMember, newMember, memberFormError, memberFormSaving,
-    MEMBER_DOC_TYPES, openNewMember, openEditMember, closeMemberForm, createMember, updateMember, toggleMemberStatus,
+    openNewMember, openEditMember, closeMemberForm, createMember, updateMember, toggleMemberStatus,
     allReservations, reservationsLoading, reservationsError,
     reservationTypeFilter, reservationStatusFilter, reservationSearch, reservationPage,
     RESERVATIONS_PER_PAGE, RESERVATION_STATUS_OPTIONS, reservationStatusOptions,
     filteredReservations, paginatedReservations, reservationTotalPages,
     changingReservationId, reservationActionError,
     fetchAllReservations, changeReservationStatus, cancelAdminReservation,
-    rooms, roomTypes, roomsLoading, roomsError, showInactiveRooms,
+    rooms, roomTypes, roomsLoading, roomsError, roomView, visibleRooms, inactiveRoomsCount, toggleRoomView,
+    roomDateFilter, roomDateMin,
     showRoomForm, editingRoom, newRoom, roomFormError, roomFormSaving,
     fetchRooms, createRoom, updateRoom, deleteRoom, reactivateRoom, resetRoomForm, openEditRoom, onTipoChange,
     imageUploading, formGallery,
     onSalonGalleryChange, onProductGalleryChange, onRoomGalleryChange,
     markGalleryPrincipal, removeGalleryImage,
-    products, menuCategories, productsLoading, productsError, showInactiveProducts,
+    products, menuCategories, productsLoading, productsError, productView,
+    inactiveProductsCount, productCategoryFilter, productSearch, LOW_STOCK_THRESHOLD,
+    filteredProducts, lowStockCount, stockBadge,
+    showStockModal, stockTarget, stockQty, stockSaving, stockError,
+    openStockModal, closeStockModal, addStock,
     showProductForm, editingProduct, newProduct, productFormError, productFormSaving,
     fetchProducts, createProduct, updateProduct, deleteProduct, reactivateProduct, reactivateCategory, resetProductForm, openEditProduct,
     salons, salonsLoading, salonsError,
+    salonView, visibleSalons, inactiveSalonsCount,
     showSalonForm, editingSalon, newSalon, salonFormError, salonFormSaving,
-    fetchSalons, createSalon, updateSalon, deleteSalon, resetSalonForm, openEditSalon,
+    fetchSalons, createSalon, updateSalon, deleteSalon, reactivateSalon, toggleSalonView,
+    resetSalonForm, openEditSalon,
   }
 }

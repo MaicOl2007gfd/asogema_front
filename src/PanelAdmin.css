@@ -27,6 +27,8 @@
   --lux-radius-xs: 8px;
   --lux-header-height: 72px;
 
+  --lux-sidebar-width: 250px;
+
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
 }
@@ -316,12 +318,127 @@
 }
 
 /* ==========================================================
+   SIDEBAR (navegación de módulos)
+   ========================================================== */
+.lux-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 900;
+  width: var(--lux-sidebar-width);
+  background: var(--lux-primary-dark);
+  border-right: 1px solid rgba(243, 232, 211, 0.06);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 16px;
+}
+
+.lux-sidebar-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(243, 232, 211, 0.08);
+}
+
+.lux-sidebar-top .lux-back-btn {
+  align-self: flex-start;
+  margin-bottom: 16px;
+}
+
+.lux-sidebar-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.lux-sidebar-brand .lux-logo {
+  width: 48px;
+  height: 48px;
+}
+
+.lux-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lux-sidebar-user {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid rgba(243, 232, 211, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.lux-sidebar-user .lux-user-mini {
+  flex-direction: column;
+  gap: 8px;
+  margin-right: 0;
+  padding: 0;
+}
+
+.lux-sidebar-logout {
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(243, 232, 211, 0.12);
+  background: transparent;
+  color: rgba(243, 232, 211, 0.55);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--lux-transition);
+}
+.lux-sidebar-logout:hover {
+  color: #ffffff;
+  border-color: rgba(231, 76, 60, 0.5);
+  background: rgba(231, 76, 60, 0.12);
+}
+
+.lux-sidebar .lux-module-pill {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(243, 232, 211, 0.55);
+}
+
+.lux-sidebar .lux-module-pill svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.lux-sidebar .lux-module-pill:hover {
+  color: rgba(243, 232, 211, 0.85);
+  background: rgba(243, 232, 211, 0.07);
+}
+
+.lux-sidebar .lux-module-pill.active {
+  background: linear-gradient(135deg, rgba(0, 206, 201, 0.18), rgba(0, 206, 201, 0.08));
+  color: var(--lux-accent);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--lux-accent), 0 4px 16px rgba(0, 206, 201, 0.08);
+}
+
+/* ==========================================================
    CONTEXT STRIP
    ========================================================== */
 .lux-context-strip {
   position: fixed;
-  top: var(--lux-header-height);
-  left: 0;
+  top: 0;
+  left: var(--lux-sidebar-width);
   right: 0;
   z-index: 999;
   background: rgba(11, 31, 13, 0.95);
@@ -358,12 +475,13 @@
    MAIN CONTENT
    ========================================================== */
 .lux-main {
-  padding-top: calc(var(--lux-header-height) + 46px);
+  padding-top: 64px;
   padding-left: 48px;
   padding-right: 48px;
   padding-bottom: 80px;
   max-width: 1600px;
-  margin: 0 auto;
+  margin-left: var(--lux-sidebar-width);
+  margin-right: auto;
 }
 
 /* ==========================================================
@@ -559,6 +677,126 @@
 .lux-kpi-sub {
   font-size: 11px;
   color: var(--lux-text-light);
+}
+
+/* ==========================================================
+   PANEL GENERAL — Espaciado refinado (solo este módulo)
+   ========================================================== */
+.lux-panel-general .lux-section-header {
+  margin-bottom: 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--lux-border);
+}
+.lux-panel-general .lux-section-header h2 {
+  font-size: 24px;
+  letter-spacing: -0.2px;
+}
+.lux-panel-general .lux-section-desc {
+  font-size: 13px;
+  color: var(--lux-text-muted);
+  text-transform: capitalize;
+}
+.lux-panel-general .lux-section { margin-bottom: 38px; }
+.lux-panel-general .lux-section:last-child { margin-bottom: 0; }
+
+.lux-panel-general .lux-kpi-banner {
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.lux-panel-general .lux-kpi-card {
+  padding: 22px 24px;
+  gap: 14px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(19, 50, 21, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.45s ease;
+}
+.lux-panel-general .lux-kpi-card:hover {
+  transform: translateY(-8px) scale(1.015);
+  box-shadow: 0 28px 72px rgba(19, 50, 21, 0.14), 0 10px 24px rgba(19, 50, 21, 0.06);
+}
+
+.lux-panel-general .lux-kpi-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+}
+.lux-panel-general .lux-kpi-icon svg { width: 22px; height: 22px; }
+
+.lux-panel-general .lux-kpi-label { font-size: 10.5px; margin-bottom: 8px; }
+.lux-panel-general .lux-kpi-value-row { gap: 10px; margin-bottom: 6px; }
+.lux-panel-general .lux-kpi-value { font-size: 26px; }
+.lux-panel-general .lux-kpi-sub { font-size: 11.5px; }
+
+.lux-panel-general .lux-card {
+  box-shadow: 0 12px 44px rgba(19, 50, 21, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+.lux-panel-general .lux-card-table .lux-table thead th { padding: 15px 20px; }
+.lux-panel-general .lux-card-table .lux-table tbody td { padding: 14px 20px; }
+.lux-panel-general .lux-card-table .lux-table tbody tr:hover { background: rgba(0, 206, 201, 0.04); }
+
+.lux-panel-general .lux-top-services { gap: 16px; }
+.lux-panel-general .lux-top-service-name { font-size: 13.5px; }
+.lux-panel-general .lux-top-service-count {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--lux-primary);
+  background: rgba(0, 206, 201, 0.1);
+  border: 1px solid rgba(0, 206, 201, 0.2);
+}
+.lux-panel-general .lux-top-service-bar { height: 10px; border-radius: 10px; }
+.lux-panel-general .lux-top-service-fill {
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--lux-accent), #6c5ce7);
+  box-shadow: 0 2px 8px rgba(0, 206, 201, 0.25);
+}
+
+/* ── Servicios más solicitados ──────────────────────────── */
+.lux-top-services {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.lux-top-service-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+}
+
+.lux-top-service-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--lux-primary);
+}
+
+.lux-top-service-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--lux-text-muted);
+  background: rgba(0, 206, 201, 0.08);
+  border: 1px solid rgba(0, 206, 201, 0.15);
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+.lux-top-service-bar {
+  height: 8px;
+  border-radius: 8px;
+  background: rgba(19, 50, 21, 0.08);
+  overflow: hidden;
+}
+
+.lux-top-service-fill {
+  height: 100%;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--lux-accent), var(--lux-primary-light));
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ==========================================================
@@ -2251,7 +2489,6 @@
 }
 
 @media (max-width: 1024px) {
-  .lux-header-inner { padding: 0 24px; }
   .lux-main { padding-left: 24px; padding-right: 24px; }
   .lux-context-inner { padding: 10px 24px; }
 
@@ -2267,13 +2504,74 @@
 }
 
 @media (max-width: 768px) {
-  .lux-header-inner { padding: 0 16px; gap: 12px; }
-  .lux-main { padding-left: 16px; padding-right: 16px; padding-top: calc(var(--lux-header-height) + 40px); }
-  .lux-context-inner { padding: 8px 16px; }
+  /* ── Sidebar → barra horizontal superior ── */
+  .lux-sidebar {
+    position: relative;
+    top: auto;
+    left: auto;
+    bottom: auto;
+    width: 100%;
+    z-index: auto;
+    flex-direction: column;
+    border-right: none;
+    border-bottom: 1px solid rgba(243, 232, 211, 0.06);
+    padding: 12px 16px;
+  }
 
-  .lux-brand-club { display: none; }
-  .lux-user-name { display: none; }
-  .lux-header-btn { padding: 6px 14px; font-size: 11px; }
+  .lux-sidebar-top {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+  }
+  .lux-sidebar-top .lux-logo {
+    width: 32px;
+    height: 32px;
+    margin: 0;
+  }
+  .lux-sidebar-top .lux-back-btn {
+    align-self: center;
+    margin: 0;
+    /* en móvil el botón queda a la derecha, junto al logo */
+  }
+
+  .lux-sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    scrollbar-width: none;
+  }
+  .lux-sidebar-nav::-webkit-scrollbar { display: none; }
+  .lux-sidebar-nav .lux-module-pill {
+    flex-shrink: 0;
+    width: auto;
+    padding: 10px 14px;
+    justify-content: center;
+    border-radius: 12px;
+  }
+
+  .lux-sidebar-user {
+    display: none;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  /* ── Main: ocupa todo el ancho, debajo de la barra ── */
+  .lux-main {
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 28px;
+  }
+
+  .lux-context-strip {
+    left: 0;
+    position: relative;
+  }
+  .lux-context-inner { padding: 8px 16px; }
 
   .lux-kpi-banner { grid-template-columns: 1fr; gap: 14px; }
   .lux-quick-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -3034,6 +3332,30 @@
   height: 16px;
 }
 
+.lux-emp-list-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 22px 4px;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--lux-primary);
+}
+.lux-emp-list-title span {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lux-text-muted);
+  background: rgba(0, 206, 201, 0.1);
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.lux-emp-list-title--inactive span {
+  background: rgba(214, 48, 49, 0.1);
+  color: #d63031;
+}
+
 .lux-empty-row {
   text-align: center;
   color: var(--lux-text-light);
@@ -3528,6 +3850,18 @@
   .lux-modal {
     width: 95%;
   }
+}
+
+@media (max-width: 480px) {
+  .lux-sidebar {
+    padding: 10px 12px;
+  }
+  .lux-main {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 24px;
+  }
+  .lux-context-inner { padding: 8px 12px; }
 }
 
 /* ==========================================================
