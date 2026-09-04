@@ -167,28 +167,29 @@
 }
 
 .nav-brand-text {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   font-family: var(--idx-font-display);
   color: #ffffff;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: clamp(18px, 2.2vw, 34px);
+  gap: clamp(20px, 2.5vw, 36px);
   list-style: none;
 }
 
 .nav-links a {
-  font-size: 13px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
   text-decoration: none;
   position: relative;
-  padding: 4px 0;
-  letter-spacing: 0.4px;
+  padding: 6px 0;
+  letter-spacing: 0.3px;
+  font-family: var(--idx-font-body);
   transition: color var(--idx-transition);
 }
 
@@ -323,7 +324,6 @@
   gap: 1px;
   cursor: pointer;
   padding: 4px 10px;
-  margin-right: -10px;
   border-radius: 10px;
   transition: background var(--idx-transition);
 }
@@ -333,19 +333,19 @@
 }
 
 .nav-user-greeting {
-  font-size: 10px;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.2px;
   line-height: 1;
 }
 
 .nav-user-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #ffffff;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .nav-user-avatar {
@@ -378,15 +378,15 @@
 }
 
 .nav-btn-logout {
-  padding: 8px 18px;
+  padding: 9px 20px;
   border-radius: 50px;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   transition: all var(--idx-transition);
 }
 
@@ -442,8 +442,8 @@
   position: relative;
   width: 100%;
   height: 100vh;
-  min-height: 600px;
-  max-height: 940px;
+  height: 100svh;
+  min-height: 560px;
   overflow: hidden;
   background: var(--idx-primary-dark);
 }
@@ -484,6 +484,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 .carousel-slide-img::after {
