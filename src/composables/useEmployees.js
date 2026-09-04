@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import api from './useApi.js'
 
 const employees = ref([])
@@ -8,6 +8,23 @@ const showForm = ref(false)
 const editingEmployee = ref(null)
 const formError = ref(null)
 const formLoading = ref(false)
+
+// Vista de la tabla: 'activos' | 'eliminados' (nunca mezcladas).
+// GET /admin/employees ya devuelve activos e inactivos: se parte en cliente,
+// igual que productos (productView) y salones (salonView).
+const employeeView = ref('activos')
+
+const activeEmployees = computed(() => employees.value.filter(e => e.estado !== false))
+
+const inactiveEmployees = computed(() => employees.value.filter(e => e.estado === false))
+
+const inactiveEmployeesCount = computed(() => inactiveEmployees.value.length)
+
+const visibleEmployees = computed(() => employeeView.value === 'eliminados' ? inactiveEmployees.value : activeEmployees.value)
+
+function toggleEmployeeView() {
+  employeeView.value = employeeView.value === 'activos' ? 'eliminados' : 'activos'
+}
 
 function mapEmployee(e) {
   return {
@@ -77,7 +94,14 @@ async function updateEmployee(id, employeeData) {
 
 async function deactivateEmployee(id) {
   await api.delete(`/admin/employees/${id}`)
-  employees.value = employees.value.filter(e => e.id !== id)
+  const emp = employees.value.find(e => e.id === id)
+  if (emp) emp.estado = false
+}
+
+async function reactivateEmployee(id) {
+  await api.patch(`/admin/employees/${id}/reactivate`)
+  const emp = employees.value.find(e => e.id === id)
+  if (emp) emp.estado = true
 }
 
 function openCreateForm() {
@@ -113,6 +137,12 @@ function extractError(err) {
 export function useEmployees() {
   return {
     employees,
+    activeEmployees,
+    inactiveEmployees,
+    inactiveEmployeesCount,
+    visibleEmployees,
+    employeeView,
+    toggleEmployeeView,
     loading,
     error,
     showForm,
@@ -124,6 +154,7 @@ export function useEmployees() {
     createEmployee,
     updateEmployee,
     deactivateEmployee,
+    reactivateEmployee,
     openCreateForm,
     openEditForm,
     closeForm,
