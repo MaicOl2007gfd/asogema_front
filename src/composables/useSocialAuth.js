@@ -4,13 +4,13 @@ import { login } from './useAuth.js'
 
 /**
  * Estado global del login social. Indica qué proveedor está en proceso
- * de redirección ('google' | 'facebook' | null).
+ * de redirección ('google' | null).
  */
 const socialLoading = ref(null)
 
 /**
  * Construye la URL del backend que inicia el flujo OAuth del proveedor.
- * @param {string} provider - 'google' | 'facebook'
+ * @param {string} provider - 'google'
  * @returns {string} URL absoluta hacia el endpoint de autenticación del backend
  */
 function buildProviderUrl(provider) {
@@ -22,7 +22,7 @@ function buildProviderUrl(provider) {
 /**
  * Redirige el navegador hacia el backend para iniciar el flujo OAuth.
  * El backend redirige de vuelta al front con los tokens en la URL.
- * @param {string} provider - 'google' | 'facebook'
+ * @param {string} provider - 'google'
  */
 function redirectToProvider(provider) {
   socialLoading.value = provider
@@ -36,12 +36,6 @@ export function redirectToGoogle() {
   redirectToProvider('google')
 }
 
-/**
- * Inicia el login con Facebook.
- */
-export function redirectToFacebook() {
-  redirectToProvider('facebook')
-}
 
 /**
  * Lee el resultado del callback OAuth desde la URL actual.
@@ -95,13 +89,12 @@ export function applyOAuthCallback() {
 
 /**
  * Composable para el login social en el front.
- * @returns {{ socialLoading: import('vue').Ref<string|null>, redirectToGoogle: Function, redirectToFacebook: Function, applyOAuthCallback: Function }}
+ * @returns {{ socialLoading: import('vue').Ref<string|null>, redirectToGoogle: Function, applyOAuthCallback: Function }}
  */
 export function useSocialAuth() {
   return {
     socialLoading,
     redirectToGoogle,
-    redirectToFacebook,
     applyOAuthCallback,
   }
 }

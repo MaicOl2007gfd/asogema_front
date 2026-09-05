@@ -63,6 +63,7 @@ export function useRestaurant(emit, isLoggedIn) {
           category: catSlug,
           image: product.imagen_url || `https://picsum.photos/seed/${slugify(product.nombre)}/400/300`,
           badge: cat.nombre,
+          stock: product.stock ?? 0,
         })
       }
     }
@@ -184,6 +185,7 @@ export function useRestaurant(emit, isLoggedIn) {
      ---------------------------------------------------------- */
   function addToOrder(item, qty = 1) {
     if (!item) return
+    if (item.stock <= 0) return
     const amount = Math.max(1, Math.floor(qty) || 1)
     const existing = order.value.find(o => o.id === item.id)
     if (existing) {

@@ -1,7 +1,6 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useAuth } from './useAuth.js'
 import { useHotelApi } from './useHotelApi.js'
-import { getUserInitials as utilsGetUserInitials } from './useUtils.js'
 
 /**
  * Composable que maneja la lógica del Dashboard (logged-in).
@@ -15,7 +14,7 @@ export function useDashboard(emit) {
   /* ----------------------------------------------------------
      AUTH
      ---------------------------------------------------------- */
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const { fetchRooms, createBooking } = useHotelApi()
 
   /* ----------------------------------------------------------
@@ -156,10 +155,6 @@ export function useDashboard(emit) {
   /* ----------------------------------------------------------
      METHODS
      ---------------------------------------------------------- */
-  function getUserInitials() {
-    return utilsGetUserInitials(user.value)
-  }
-
   function incrementGuests() {
     if (guests.value < maxGuests.value) guests.value++
   }
@@ -176,13 +171,6 @@ export function useDashboard(emit) {
     const el = document.querySelector('.room-gallery-section')
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }
-
-  function handleLogout() {
-    logout()
-    if (emit) {
-      emit('navigate', 'index')
     }
   }
 
@@ -376,8 +364,6 @@ export function useDashboard(emit) {
   return {
     // Auth
     user,
-    getUserInitials,
-    handleLogout,
     goBackToHome,
     // Room types (from API)
     rooms,

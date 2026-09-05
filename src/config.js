@@ -7,7 +7,7 @@ export const WS_URL = import.meta.env.PROD
   : 'ws://localhost:3000'
 
 /**
- * Configuración del login social (Google / Facebook).
+ * Configuración del login social (Google).
  *
  * FLUJO (redirección OAuth estándar, p. ej. Passport):
  * 1. El front redirige al navegador a `${API_URL}${SOCIAL_AUTH[provider]}`.
@@ -20,7 +20,6 @@ export const WS_URL = import.meta.env.PROD
  */
 export const SOCIAL_AUTH = {
   google: '/auth/google',
-  facebook: '/auth/facebook',
   // Nombre del query param con el que el front indica al backend a dónde regresar
   redirectParam: 'redirect_uri',
 }

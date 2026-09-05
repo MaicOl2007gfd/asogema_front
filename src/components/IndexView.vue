@@ -1,18 +1,17 @@
 <script setup>
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
-import { isStaffUser, getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
+import { getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
 import { useIndex } from '../composables/useIndex.js'
 import MagicBento from './MagicBento.vue'
 import ClickSpark from './ClickSpark.vue'
+import UserMenu from './UserMenu.vue'
 import ClubMap from './ClubMap.vue'
 import { WHATSAPP_NUMBER, WHATSAPP_MESSAGE, CLUB_LOCATION, GOOGLE_MAPS_DIRECTIONS_URL } from '../config.js'
 
 const emit = defineEmits(['navigate'])
 
-const { user, isLoggedIn, isAdmin, isMesero, isComanda, isEmployee, logout } = useAuth()
-
-const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
+const { user, isLoggedIn, isMesero, isComanda, isEmployee } = useAuth()
 
 const isComandaUser = computed(() => isMesero.value || isComanda.value || isEmployee.value)
 
@@ -43,12 +42,8 @@ function getUserInitials() {
 }
 
 function handleLogout() {
-  logout()
+  // UserMenu ya ejecutó logout(); aquí solo cerramos el menú móvil.
   closeMobileMenu()
-}
-
-function handleAdminClick() {
-  emit('navigate', 'admin')
 }
 
 /* Enlace directo de WhatsApp para el botón flotante de contacto */
@@ -73,17 +68,6 @@ onUnmounted(() => onUnmount())
          ====================================================== -->
     <div v-if="showSplash" class="splash-overlay" :class="'splash-' + splashState">
       <div class="splash-cascade"></div>
-    </div>
-
-    <!-- ======================================================
-         ADMIN ACCESS — Botón flotante para el panel admin
-         ====================================================== -->
-    <div v-if="isAdmin" class="admin-float-btn" @click="handleAdminClick">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path>
-      </svg>
-      <span>Admin</span>
     </div>
 
     <!-- ======================================================
@@ -131,54 +115,18 @@ onUnmounted(() => onUnmount())
         </li>
         <template v-if="isComandaUser">
           <li><a href="#" @click.prevent="emit('navigate', 'comanda')">Comanda</a></li>
-          <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
         </template>
         <template v-else>
           <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
           <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
           <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
-          <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
-          <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
           <li><a href="#contact" @click.prevent="scrollToSection('contact')">Contacto</a></li>
         </template>
       </ul>
 
-      <!-- Logged-in user section -->
+      <!-- Logged-in user section: solo el símbolo de perfil; el resto vive en el dropdown -->
       <div v-if="isLoggedIn && user" class="nav-actions" :class="{ open: mobileMenuOpen }">
-        <div
-          class="nav-user-info"
-          role="button"
-          tabindex="0"
-          title="Ver mi perfil"
-          aria-label="Ver mi perfil"
-          @click="emit('navigate', 'profile')"
-          @keydown.enter="emit('navigate', 'profile')"
-          @keydown.space.prevent="emit('navigate', 'profile')"
-        >
-          <span class="nav-user-greeting">Bienvenido</span>
-          <strong class="nav-user-name">{{ user.name }}</strong>
-        </div>
-        <div
-          class="nav-user-avatar"
-          role="button"
-          tabindex="0"
-          title="Ver mi perfil"
-          aria-label="Ver mi perfil"
-          @click="emit('navigate', 'profile')"
-          @keydown.enter="emit('navigate', 'profile')"
-          @keydown.space.prevent="emit('navigate', 'profile')"
-        >{{ getUserInitials() }}</div>
-        
-        <button v-if="isAdmin" class="nav-admin-link-btn" @click="emit('navigate', 'admin')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path>
-          </svg>
-          Admin
-        </button>
-        <ClickSpark spark-color="#ffffff" :spark-size="10" :spark-radius="25" :spark-count="12" :duration="600" @spark-click="handleLogout">
-          <button class="nav-btn nav-btn-logout" type="button">Cerrar Sesión</button>
-        </ClickSpark>
+        <UserMenu @navigate="emit('navigate', $event)" @logged-out="handleLogout" />
       </div>
       <!-- Guest section -->
       <div v-else class="nav-actions" :class="{ open: mobileMenuOpen }">
