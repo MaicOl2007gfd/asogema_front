@@ -87,6 +87,12 @@
   color: var(--w-primary);
 }
 
+.wallet-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .wallet-nav-back {
   border: 1px solid var(--w-border);
   background: transparent;

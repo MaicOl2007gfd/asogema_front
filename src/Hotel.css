@@ -126,36 +126,6 @@
   gap: 12px;
 }
 
-.hotel-nav-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-right: 4px;
-}
-
-.hotel-nav-user strong {
-  font-size: 13px;
-  font-weight: 600;
-  color: #F3E8D3;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hotel-nav-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #133215, #00cec9);
-  color: #F3E8D3;
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .hotel-nav-btn {
   display: inline-flex;
   align-items: center;

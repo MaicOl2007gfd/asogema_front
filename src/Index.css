@@ -257,80 +257,8 @@
   box-shadow: 0 6px 20px rgba(200, 169, 106, 0.35);
 }
 
-/* Admin link button — only visible when admin is logged in */
-.nav-admin-link-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 50px;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--idx-gold-light);
-  border: 1px solid rgba(200, 169, 106, 0.35);
-  transition: all var(--idx-transition);
-}
-
-.nav-admin-link-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.nav-admin-link-btn:hover {
-  background: var(--idx-gold);
-  color: var(--idx-primary-dark);
-  border-color: var(--idx-gold);
-  transform: translateY(-1px);
-}
-
-/* Profile link button — only visible when a user is logged in */
-.nav-profile-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 50px;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  background: rgba(0, 206, 201, 0.12);
-  color: var(--idx-accent, #00cec9);
-  border: 1px solid rgba(0, 206, 201, 0.3);
-  transition: all var(--idx-transition);
-}
-
-.nav-profile-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.nav-profile-btn:hover {
-  background: #00cec9;
-  color: #133215;
-  border-color: #00cec9;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0, 206, 201, 0.3);
-}
-
-/* Logged-in user nav */
-.nav-user-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-  cursor: pointer;
-  padding: 4px 10px;
-  border-radius: 10px;
-  transition: background var(--idx-transition);
-}
-
-.nav-user-info:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
+/* Logged-in user nav (el menú vive en UserMenu.vue; aquí solo quedan los
+   estilos del ítem de usuario dentro del drawer móvil) */
 
 .nav-user-greeting {
   font-size: 11px;
@@ -370,30 +298,10 @@
   box-shadow: 0 4px 14px rgba(200, 169, 106, 0.45);
 }
 
-.nav-user-info:focus-visible,
 .nav-user-avatar:focus-visible,
 .nav-mobile-user:focus-visible {
   outline: 2px solid var(--idx-gold);
   outline-offset: 2px;
-}
-
-.nav-btn-logout {
-  padding: 9px 20px;
-  border-radius: 50px;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  transition: all var(--idx-transition);
-}
-
-.nav-btn-logout:hover {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.08);
 }
 
 /* Mobile user — hidden on desktop, visible in mobile menu */
@@ -2376,21 +2284,16 @@
     gap: 12px;
   }
 
-  .nav-actions.open .nav-user-info {
-    display: none;
+  /* UserMenu en móvil: barra inferior fija y el dropdown abre hacia arriba */
+  .nav-actions.open .user-menu-dropdown {
+    top: auto;
+    bottom: calc(100% + 10px);
   }
 
-  .nav-actions.open .nav-user-avatar {
-    display: none;
-  }
-
-  .nav-actions.open .nav-btn-logout {
-    padding: 12px 32px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--idx-gold-light);
-    border-color: var(--idx-gold);
-    background: transparent;
+  .nav-actions.open .user-menu-pop-enter-from,
+  .nav-actions.open .user-menu-pop-leave-to {
+    transform-origin: bottom right;
+    transform: scale(0.96) translateY(4px);
   }
 
   .nav-toggle {
@@ -2521,72 +2424,6 @@
 }
 
 /* =============================================================
-   ADMIN FLOATING BUTTON
-   ============================================================= */
-.admin-float-btn {
-  position: fixed;
-  bottom: 32px;
-  right: 32px;
-  z-index: 9998;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 24px;
-  background: linear-gradient(135deg, var(--idx-gold-light), var(--idx-gold));
-  color: var(--idx-primary-dark);
-  border: none;
-  border-radius: 60px;
-  font-size: 16px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  box-shadow: 0 8px 32px rgba(200, 169, 106, 0.35);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  animation: adminFloatIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-.admin-float-btn svg {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-}
-
-.admin-float-btn:hover {
-  transform: translateY(-4px) scale(1.04);
-  box-shadow: 0 16px 48px rgba(200, 169, 106, 0.5);
-}
-
-.admin-float-btn:active {
-  transform: translateY(-1px) scale(0.98);
-}
-
-@keyframes adminFloatIn {
-  from {
-    opacity: 0;
-    transform: translateY(24px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@media (max-width: 768px) {
-  .admin-float-btn {
-    bottom: 20px;
-    right: 20px;
-    padding: 14px 20px;
-    font-size: 14px;
-    gap: 8px;
-  }
-
-  .admin-float-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-}
-
-/* =============================================================
    WHATSAPP FLOATING BUTTON
    ============================================================= */
 .wa-float-btn {
@@ -2684,11 +2521,6 @@
   }
 }
 
-/* El botón de admin sube para no superponerse con WhatsApp */
-.admin-float-btn {
-  bottom: 116px;
-}
-
 @media (max-width: 768px) {
   .wa-float-btn {
     right: 20px;
@@ -2704,9 +2536,5 @@
 
   .wa-float-tooltip {
     display: none;
-  }
-
-  .admin-float-btn {
-    bottom: 96px;
   }
 }

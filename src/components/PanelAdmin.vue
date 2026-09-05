@@ -312,12 +312,9 @@ onMounted(() => {
     <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
     <aside class="lux-sidebar">
       <div class="lux-sidebar-top">
-        <button type="button" class="lux-back-btn" @click="emit('navigate', 'index')" aria-label="Volver al inicio" title="Volver al inicio">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-        </button>
-        <div class="lux-sidebar-brand">
+        <button type="button" class="lux-sidebar-brand lux-sidebar-brand-btn" @click="emit('navigate', 'index')" aria-label="Volver al inicio" title="Volver al inicio">
           <img src="/imagenes/Logo.png" alt="Asogema" class="lux-logo" />
-        </div>
+        </button>
       </div>
 
       <nav class="lux-sidebar-nav" aria-label="Módulos del panel">
@@ -579,13 +576,15 @@ onMounted(() => {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Nueva Tarea
               </button>
-              <button v-if="taskSection === 'empleados'" class="lux-btn-secondary" @click="toggleEmployeeView">
-                {{ employeeView === 'activos' ? `Ver eliminados (${inactiveEmployeesCount})` : 'Ver activos' }}
-              </button>
-              <button v-if="taskSection === 'empleados'" class="lux-btn-primary" @click="openCreateForm">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Nuevo Empleado
-              </button>
+              <div v-if="taskSection === 'empleados'" class="lux-segmented-actions">
+                <button class="lux-btn-secondary" @click="toggleEmployeeView">
+                  {{ employeeView === 'activos' ? `Ver eliminados (${inactiveEmployeesCount})` : 'Ver activos' }}
+                </button>
+                <button class="lux-btn-primary" @click="openCreateForm">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  Nuevo Empleado
+                </button>
+              </div>
             </div>
 
             <!-- ── TAREAS SUB-VIEW ── -->

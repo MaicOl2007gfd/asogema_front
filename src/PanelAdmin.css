@@ -344,11 +344,6 @@
   border-bottom: 1px solid rgba(243, 232, 211, 0.08);
 }
 
-.lux-sidebar-top .lux-back-btn {
-  align-self: flex-start;
-  margin-bottom: 16px;
-}
-
 .lux-sidebar-brand {
   display: flex;
   flex-direction: column;
@@ -356,9 +351,28 @@
   text-align: center;
 }
 
+.lux-sidebar-brand-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 14px;
+  transition: transform var(--lux-transition), opacity var(--lux-transition);
+}
+
+.lux-sidebar-brand-btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+.lux-sidebar-brand-btn:focus-visible {
+  outline: 2px solid var(--lux-accent);
+  outline-offset: 4px;
+}
+
 .lux-sidebar-brand .lux-logo {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
 }
 
 .lux-sidebar-nav {
@@ -3689,6 +3703,13 @@
   background: rgba(19, 50, 21, 0.04);
 }
 
+.lux-segmented-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 /* ── Employee Modal ─────────────────────────────────────── */
 .lux-modal-overlay {
   position: fixed;
@@ -3840,6 +3861,9 @@
   .lux-segmented-row {
     flex-direction: column;
     align-items: stretch;
+  }
+  .lux-segmented-actions {
+    justify-content: center;
   }
   .lux-segmented {
     justify-content: center;

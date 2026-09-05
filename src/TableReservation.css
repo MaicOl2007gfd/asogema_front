@@ -895,6 +895,18 @@
     z-index: 1000;
   }
 
+  /* UserMenu en móvil: el dropdown abre hacia arriba */
+  .table-reservation-nav .nav-actions.open .user-menu-dropdown {
+    top: auto;
+    bottom: calc(100% + 10px);
+  }
+
+  .table-reservation-nav .nav-actions.open .user-menu-pop-enter-from,
+  .table-reservation-nav .nav-actions.open .user-menu-pop-leave-to {
+    transform-origin: bottom right;
+    transform: scale(0.96) translateY(4px);
+  }
+
   .table-reservation-nav .nav-toggle {
     display: flex;
   }

@@ -828,7 +828,7 @@ body {
 /* Contenedor de los botones sociales */
 .social-buttons {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
@@ -886,19 +886,7 @@ body {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 }
 
-/* Facebook */
-.social-btn-facebook {
-  background: #1877f2;
-  border-color: #1877f2;
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(24, 119, 242, 0.3);
-}
 
-.social-btn-facebook:hover:not(:disabled) {
-  background: #0f6fe0;
-  border-color: #0f6fe0;
-  box-shadow: 0 6px 18px rgba(24, 119, 242, 0.4);
-}
 
 /* Loader de los botones sociales */
 .social-btn-loader {

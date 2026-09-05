@@ -1,15 +1,14 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { isStaffUser, getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
+import { ref } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { useRestaurant } from '../composables/useRestaurant.js'
 import ReviewsView from './ReviewsView.vue'
+import UserMenu from './UserMenu.vue'
 
 const emit = defineEmits(['navigate'])
 
-const { user, isLoggedIn, logout, isAdmin } = useAuth()
+const { user, isLoggedIn } = useAuth()
 
-const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 const mobileMenuOpen = ref(false)
 const menuSectionRef = ref(null)
 
@@ -18,12 +17,8 @@ function toggleMobileMenu() {
 }
 
 function handleLogout() {
-  logout()
+  // UserMenu ya ejecutó logout(); aquí solo cerramos el menú móvil.
   mobileMenuOpen.value = false
-}
-
-function getUserInitials() {
-  return utilsGetUserInitials(user.value)
 }
 
 const {
@@ -95,18 +90,11 @@ function onSelectCategory(categoryId) {
         <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
-        <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
-        <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
       </ul>
 
       <div class="inner-nav-actions" :class="{ open: mobileMenuOpen }">
         <template v-if="isLoggedIn && user">
-          <div class="inner-nav-user-info">
-            <span class="inner-nav-user-greeting">Bienvenido</span>
-            <strong class="inner-nav-user-name">{{ user.name }}</strong>
-          </div>
-          <div class="inner-nav-user-avatar">{{ getUserInitials() }}</div>
-          <button class="inner-nav-btn inner-nav-btn-logout" @click="handleLogout">Cerrar Sesión</button>
+          <UserMenu @navigate="emit('navigate', $event)" @logged-out="handleLogout" />
         </template>
         <template v-else>
           <button class="inner-nav-btn inner-nav-btn-outline" @click="emit('navigate', 'login')">Iniciar Sesión</button>
@@ -340,8 +328,8 @@ function onSelectCategory(categoryId) {
         >
           <div class="restaurant-card-image" @click="showItemDetail(item)">
             <img :src="item.image" :alt="item.name" loading="lazy" />
-            <div class="restaurant-card-badge">{{ item.badge }}</div>
-            <button class="restaurant-card-add" @click.stop="addToOrder(item)" title="Agregar a la orden">
+            <div class="restaurant-card-badge" :class="{ agotado: item.stock <= 0 }">{{ item.stock <= 0 ? 'Agotado' : item.badge }}</div>
+            <button class="restaurant-card-add" v-if="item.stock > 0" @click.stop="addToOrder(item)" title="Agregar a la orden">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -507,7 +495,7 @@ function onSelectCategory(categoryId) {
             <img :src="selectedItem.image" :alt="selectedItem.name" />
           </div>
           <div class="restaurant-modal-info">
-            <div class="restaurant-modal-badge">{{ selectedItem.badge }}</div>
+            <div class="restaurant-modal-badge" :class="{ agotado: selectedItem.stock <= 0 }">{{ selectedItem.stock <= 0 ? 'Agotado' : selectedItem.badge }}</div>
             <h2 class="restaurant-modal-name">{{ selectedItem.name }}</h2>
             <p class="restaurant-modal-desc">{{ selectedItem.description }}</p>
             <div class="restaurant-modal-divider"></div>
@@ -539,7 +527,7 @@ function onSelectCategory(categoryId) {
                 </button>
               </div>
               <span class="restaurant-modal-price">{{ selectedItem.price }}</span>
-              <button class="restaurant-btn restaurant-btn-primary" @click="addToOrder(selectedItem, detailQty); closeItemDetail();">
+              <button class="restaurant-btn restaurant-btn-primary" :disabled="selectedItem.stock <= 0" @click="addToOrder(selectedItem, detailQty); closeItemDetail();">
                 {{ detailQty > 1 ? 'Agregar ' + detailQty + ' unidades' : 'Agregar a la Orden' }}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19"></line>

@@ -1,13 +1,13 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
-import { isStaffUser, getUserInitials as utilsGetUserInitials } from '../composables/useUtils.js'
 import { useHotel } from '../composables/useHotel.js'
+import UserMenu from './UserMenu.vue'
 
 const emit = defineEmits(['navigate'])
 const mobileMenuOpen = ref(false)
 
-const { user, isLoggedIn, logout, isAdmin } = useAuth()
+const { user, isLoggedIn } = useAuth()
 
 const {
   rooms,
@@ -37,18 +37,12 @@ const {
   goBackToHome,
 } = useHotel()
 
-const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
-
-function getUserInitials() {
-  return utilsGetUserInitials(user.value)
-}
-
 function toggleMobileMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
 
 function handleLogout() {
-  logout()
+  // UserMenu ya ejecutó logout(); aquí solo cerramos el menú y volvemos al inicio.
   mobileMenuOpen.value = false
   emit('navigate', 'index')
 }
@@ -95,17 +89,11 @@ onMounted(async () => {
         <li><a href="" class="active" @click.prevent>Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
-        <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
-        <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
       </ul>
 
       <div class="hotel-nav-actions" :class="{ open: mobileMenuOpen }">
         <template v-if="isLoggedIn && user">
-          <div class="hotel-nav-user">
-            <span class="hotel-nav-avatar">{{ getUserInitials() }}</span>
-            <strong>{{ user.name }}</strong>
-          </div>
-          <button class="hotel-nav-btn hotel-nav-btn-outline" @click="handleLogout">Cerrar Sesión</button>
+          <UserMenu @navigate="emit('navigate', $event)" @logged-out="handleLogout" />
         </template>
         <template v-else>
           <button class="hotel-nav-btn hotel-nav-btn-outline" @click="emit('navigate', 'login')">Iniciar Sesión</button>
