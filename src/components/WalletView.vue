@@ -8,8 +8,14 @@
  */
 import { watch, onUnmounted } from 'vue'
 import { useWallet } from '../composables/useWallet.js'
+import UserMenu from './UserMenu.vue'
 
 const emit = defineEmits(['navigate'])
+
+function handleLogout() {
+  // UserMenu ya ejecutó logout(); aquí solo volvemos al inicio.
+  emit('navigate', 'index')
+}
 
 const {
   saldo,
@@ -69,9 +75,12 @@ onUnmounted(() => {
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
       </ul>
-      <button type="button" class="wallet-nav-back" @click="emit('navigate', 'index')">
-        ← Volver
-      </button>
+      <div class="wallet-nav-actions">
+        <UserMenu @navigate="emit('navigate', $event)" @logged-out="handleLogout" />
+        <button type="button" class="wallet-nav-back" @click="emit('navigate', 'index')">
+          ← Volver
+        </button>
+      </div>
     </nav>
 
     <main class="wallet-main">

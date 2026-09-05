@@ -2,8 +2,8 @@
 import { ref, computed } from 'vue'
 import { useDashboard } from '../composables/useDashboard.js'
 import { useAuth } from '../composables/useAuth.js'
-import { isStaffUser } from '../composables/useUtils.js'
 import ReviewsView from './ReviewsView.vue'
+import UserMenu from './UserMenu.vue'
 
 const emit = defineEmits(['navigate'])
 const mobileMenuOpen = ref(false)
@@ -12,9 +12,7 @@ function toggleMobileMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
 
-const { user, isLoggedIn, isAdmin } = useAuth()
-
-const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
+const { user } = useAuth()
 
 const {
   rooms,
@@ -53,10 +51,14 @@ const {
   selectRoomFromCard,
   closeBookingPanel,
   scrollToGallery,
-  getUserInitials,
-  handleLogout,
   goBackToHome
 } = useDashboard(emit)
+
+function handleLogout() {
+  // UserMenu ya ejecutó logout(); aquí solo cerramos el menú móvil y volvemos al inicio.
+  mobileMenuOpen.value = false
+  emit('navigate', 'index')
+}
 </script>
 
 <template>
@@ -64,7 +66,7 @@ const {
     <!-- ======================================================
          NAVBAR
          ====================================================== -->
-    <nav class="dashboard-nav" :class="{ 'has-admin': isAdmin }">
+    <nav class="dashboard-nav">
       <div class="nav-brand" @click="scrollToGallery">
         <img src="/imagenes/Logo.png" alt="Asogema" class="nav-logo" />
         <span class="nav-brand-text">Asogema</span>
@@ -75,57 +77,10 @@ const {
         <li><a href="#" @click.prevent="emit('navigate', 'hotel')">Hotel</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'restaurant')">Restaurante</a></li>
         <li><a href="#" @click.prevent="emit('navigate', 'events')">Eventos</a></li>
-        <li v-if="isLoggedIn"><a href="#" @click.prevent="emit('navigate', 'wallet')">Mi Saldo</a></li>
-        <li v-if="isStaff"><a href="#" @click.prevent="emit('navigate', 'qr-reader')">Lector QR</a></li>
       </ul>
 
       <div class="nav-user" :class="{ open: mobileMenuOpen }">
-        <div v-if="isAdmin" class="nav-admin-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0110 0v4" />
-          </svg>
-          <span>Admin</span>
-        </div>
-        <div
-          class="nav-user-greeting"
-          v-if="user"
-          role="button"
-          tabindex="0"
-          title="Ver mi perfil"
-          aria-label="Ver mi perfil"
-          @click="emit('navigate', 'profile')"
-          @keydown.enter="emit('navigate', 'profile')"
-          @keydown.space.prevent="emit('navigate', 'profile')"
-        >
-          <small>Bienvenido</small>
-          <strong>{{ user.name }}</strong>
-        </div>
-        <div
-          class="nav-user-avatar"
-          role="button"
-          tabindex="0"
-          title="Ver mi perfil"
-          aria-label="Ver mi perfil"
-          @click="emit('navigate', 'profile')"
-          @keydown.enter="emit('navigate', 'profile')"
-          @keydown.space.prevent="emit('navigate', 'profile')"
-        >{{ getUserInitials() }}</div>
-        <button class="nav-profile-btn" @click="emit('navigate', 'profile')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          Mi Perfil
-        </button>
-        <button v-if="isAdmin" class="nav-admin-btn" @click="emit('navigate', 'admin')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path>
-          </svg>
-          Admin
-        </button>
-        <button class="nav-logout-btn" @click="handleLogout">Cerrar Sesión</button>
+        <UserMenu @navigate="emit('navigate', $event)" @logged-out="handleLogout" />
       </div>
 
       <button class="dashboard-nav-toggle" :class="{ active: mobileMenuOpen }" @click="toggleMobileMenu" :aria-label="mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'">
