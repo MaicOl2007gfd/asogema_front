@@ -17,6 +17,7 @@ import EventsView from './components/EventsView.vue'
 import TableReservationView from './components/TableReservationView.vue'
 import PanelAdmin from './components/PanelAdmin.vue'
 import PanelEmpleado from './components/PanelEmpleado.vue'
+import PanelRecepcion from './components/PanelRecepcion.vue'
 import ComandaView from './components/ComandaView.vue'
 import PaymentResultView from './components/PaymentResultView.vue'
 import PaymentCheckoutView from './components/PaymentCheckoutView.vue'
@@ -25,12 +26,12 @@ import QrReaderView from './components/QrReaderView.vue'
 import { isStaffUser } from './composables/useUtils.js'
 const currentView = ref('index')
 
-const { isLoggedIn, isAdmin, isEmployee, isMesero, isComanda, user } = useAuth()
+const { isLoggedIn, isAdmin, isEmployee, isMesero, isComanda, isRecepcionista, user } = useAuth()
 
 const isStaff = computed(() => isStaffUser(user.value, isAdmin.value))
 
 // Secciones que requieren sesión iniciada
-const protectedViews = ['table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'employee', 'profile', 'wallet', 'qr-reader', 'comanda']
+const protectedViews = ['table-reservation', 'restaurant-reservations', 'dashboard', 'admin', 'employee', 'recepcion', 'profile', 'wallet', 'qr-reader', 'comanda']
 
 const sessionReady = ref(false)
 const showLoginAlert = ref(false)
@@ -48,6 +49,10 @@ function navigate(view) {
     return
   }
   if (view === 'employee' && !isEmployee.value) {
+    currentView.value = 'index'
+    return
+  }
+  if (view === 'recepcion' && !isRecepcionista.value) {
     currentView.value = 'index'
     return
   }
@@ -95,12 +100,18 @@ onMounted(async () => {
     try {
       const { data } = await api.get('/auth/users/me')
       const stored = JSON.parse(sessionStorage.getItem('asogema_user') || '{}')
-      stored.nombre = data.nombre || stored.nombre
-      stored.apellido = data.apellido || stored.apellido
-      stored.correo = data.correo || stored.correo
-      stored.name = `${stored.nombre || ''} ${stored.apellido || ''}`.trim() || stored.name || 'Usuario'
-      user.value = stored
-      sessionStorage.setItem('asogema_user', JSON.stringify(stored))
+      const merged = {
+        ...stored,
+        ...data,
+        correo: data.correo || stored.correo || stored.email,
+        email: data.correo || stored.correo || stored.email,
+      }
+      merged.name =
+        `${merged.nombre || ''} ${merged.apellido || ''}`.trim() ||
+        merged.name ||
+        'Usuario'
+      user.value = merged
+      sessionStorage.setItem('asogema_user', JSON.stringify(merged))
     } catch {
       logout()
     }
@@ -131,6 +142,7 @@ onMounted(async () => {
     <DashboardView v-else-if="currentView === 'dashboard'" key="dashboard" @navigate="navigate" />
     <PanelAdmin v-else-if="currentView === 'admin'" key="admin" @navigate="navigate" />
     <PanelEmpleado v-else-if="currentView === 'employee'" key="employee" @navigate="navigate" />
+    <PanelRecepcion v-else-if="currentView === 'recepcion'" key="recepcion" @navigate="navigate" />
     <ComandaView v-else-if="currentView === 'comanda'" key="comanda" @navigate="navigate" />
     <PaymentResultView v-else-if="currentView === 'payment-result'" key="payment-result" @navigate="navigate" />
     <PaymentCheckoutView v-else-if="currentView === 'checkout'" key="checkout" @navigate="navigate" />

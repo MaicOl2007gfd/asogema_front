@@ -71,10 +71,32 @@ export function useHotelApi() {
     return data
   }
 
+  /**
+   * Get payment status for a hotel booking
+   * @param {number} bookingId - Booking ID
+   * @returns {Promise<Object>} Payment status
+   */
+  async function getPaymentStatus(bookingId) {
+    const { data } = await api.get(`/hotel/bookings/${bookingId}/payment-status`)
+    return data
+  }
+
+  /**
+   * Pay balance for a hotel booking
+   * @param {number} bookingId - Booking ID
+   * @returns {Promise<Object>} Payment result
+   */
+  async function payBalance(bookingId) {
+    const { data } = await api.post(`/hotel/bookings/${bookingId}/pay-balance`)
+    return data
+  }
+
   return {
     fetchRooms,
     createBooking,
     fetchMyBookings,
     cancelBooking,
+    getPaymentStatus,
+    payBalance,
   }
 }

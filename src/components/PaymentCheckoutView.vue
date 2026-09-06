@@ -52,6 +52,7 @@ const {
 const TIPO_LABEL = {
   RESTAURANTE: 'Pedido Restaurante',
   HOTEL: 'Reserva de Hotel',
+  HOTEL_SALDO: 'Saldo pendiente de Hotel',
   EVENTO: 'Reserva de Evento',
   RECARGA: 'Recarga de Saldo',
 }

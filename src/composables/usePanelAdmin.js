@@ -898,6 +898,11 @@ function getBarHeight(val, max) {
 const calendarMonth = ref(new Date().getMonth())
 const calendarYear = ref(new Date().getFullYear())
 
+function todayCalendarMonth() {
+  calendarMonth.value = new Date().getMonth()
+  calendarYear.value = new Date().getFullYear()
+}
+
 const calendarGrid = computed(() => {
   const firstDay = new Date(calendarYear.value, calendarMonth.value, 1)
   const lastDay = new Date(calendarYear.value, calendarMonth.value + 1, 0)
@@ -966,6 +971,9 @@ function todayISO() {
 const roomDateMin = todayISO()
 const roomDateFilter = ref(todayISO())
 
+// Estado de filtrado de habitaciones para check-in/check-out
+const roomFilterEstado = ref('all') // 'all' | 'available' | 'occupied'
+
 async function fetchRooms() {
   roomsLoading.value = true
   roomsError.value = null
@@ -990,6 +998,37 @@ const inactiveRooms = computed(() => rooms.value.filter(r => r.activo === false)
 const inactiveRoomsCount = computed(() => inactiveRooms.value.length)
 
 const visibleRooms = computed(() => roomView.value === 'eliminados' ? inactiveRooms.value : activeRooms.value)
+
+const filteredRooms = computed(() => {
+  const base = roomFilterEstado.value === 'all'
+    ? visibleRooms.value
+    : visibleRooms.value.filter(r => r.disponible === (roomFilterEstado.value === 'available'))
+  return base
+})
+
+function toggleRoomFilter(estado) {
+  roomFilterEstado.value = estado
+}
+
+async function checkInRoom(id) {
+  if (!confirm('¿Marcar esta habitación como check-in?')) return
+  try {
+    await api.patch(`/admin/rooms/${id}`, { disponible: false })
+    await fetchRooms()
+  } catch (e) {
+    roomsError.value = e?.response?.data?.message || 'Error al realizar check-in.'
+  }
+}
+
+async function checkOutRoom(id) {
+  if (!confirm('¿Marcar esta habitación como check-out?')) return
+  try {
+    await api.patch(`/admin/rooms/${id}`, { disponible: true })
+    await fetchRooms()
+  } catch (e) {
+    roomsError.value = e?.response?.data?.message || 'Error al realizar check-out.'
+  }
+}
 
 function toggleRoomView() {
   roomView.value = roomView.value === 'activos' ? 'eliminados' : 'activos'

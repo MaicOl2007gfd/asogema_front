@@ -527,6 +527,9 @@ onMounted(() => {
               <button class="lux-cal-nav" @click="prevMonth">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
               </button>
+              <button class="lux-cal-nav" @click="todayCalendarMonth">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="6" x2="12" y2="18"></line><line x1="12" y1="6" x2="12.01" y2="18"></line></svg>
+              </button>
               <h2 class="lux-cal-title">{{ calendarTitle }}</h2>
               <button class="lux-cal-nav" @click="nextMonth">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -849,6 +852,18 @@ onMounted(() => {
               <button class="lux-btn-secondary" @click="toggleRoomView">
                 {{ roomView === 'activos' ? `Ver eliminados (${inactiveRoomsCount})` : 'Ver activos' }}
               </button>
+              <button class="lux-btn-secondary" @click="toggleRoomFilter('available')">
+                Check-in
+              </button>
+              <button class="lux-btn-secondary" @click="toggleRoomFilter('occupied')">
+                Check-out
+              </button>
+              <button class="lux-btn-secondary" @click="toggleRoomFilter('all')">
+                Ocupadas
+              </button>
+              <button class="lux-btn-primary" @click="fetchRooms">
+                Actualizar
+              </button>
               <button class="lux-btn-primary" @click="showRoomForm = true; editingRoom = null; resetRoomForm()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Nueva Habitación
@@ -866,7 +881,7 @@ onMounted(() => {
                   <tr><th>#</th><th>Piso</th><th>Tipo</th><th>Capacidad</th><th>Precio / Noche</th><th>Estado</th><th></th></tr>
                 </thead>
                 <tbody>
-                  <tr v-for="room in visibleRooms" :key="room.id">
+                  <tr v-for="room in filteredRooms" :key="room.id">
                     <td><strong>{{ room.numero }}</strong></td>
                     <td>{{ room.piso }}</td>
                     <td>{{ room.tipos_habitacion?.nombre || '—' }}</td>
@@ -880,12 +895,24 @@ onMounted(() => {
                       <button v-else class="lux-icon-btn" @click="openEditRoom(room)" title="Editar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                       </button>
+                      <template v-if="roomFilterEstado !== 'all'">
+                        <template v-if="room.disponible && roomFilterEstado === 'available'">
+                          <button class="lux-icon-btn lux-icon-btn-success" @click="checkInRoom(room.id)" title="Check-in" style="color:#00b894">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1.4 1.4 0 0 1 1.9 1.9l-7.8 7.8a1.4 1.4 0 0 1-1.9 0l7.8-7.8z"></path></svg>
+                          </button>
+                        </template>
+                        <template v-if="!room.disponible && roomFilterEstado === 'occupied'">
+                          <button class="lux-icon-btn lux-icon-btn-danger" @click="checkOutRoom(room.id)" title="Check-out" style="color:#d63031">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="4"></circle><line x1="6" y1="6" x2="14" y2="14"></line><line x1="10" y1="10" x2="14" y2="14"></line></svg>
+                          </button>
+                        </template>
+                      </template>
                       <button v-if="room.activo !== false" class="lux-icon-btn lux-icon-btn-danger" @click="deleteRoom(room.id)" title="Eliminar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5-3h4a1 1 0 011 1v1H9V4a1 1 0 011-1z"></path></svg>
                       </button>
                     </td>
                   </tr>
-                  <tr v-if="visibleRooms.length === 0"><td colspan="7" class="lux-empty-row">{{ roomView === 'eliminados' ? 'No hay habitaciones eliminadas' : 'No hay habitaciones registradas' }}</td></tr>
+                  <tr v-if="filteredRooms.length === 0"><td colspan="7" class="lux-empty-row">{{ roomFilterEstado !== 'all' ? (roomFilterEstado === 'available' ? 'No hay habitaciones disponibles' : 'No hay habitaciones ocupadas') : (roomView === 'eliminados' ? 'No hay habitaciones eliminadas' : 'No hay habitaciones registradas') }}</td></tr>
                 </tbody>
               </table>
             </div>

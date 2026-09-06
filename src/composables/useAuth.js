@@ -30,6 +30,11 @@ const isEmployee = computed(() => {
   return user.value.rol_nombre === 'Empleado'
 })
 
+const isRecepcionista = computed(() => {
+  if (!user.value) return false
+  return user.value.rol_nombre === 'Recepcionista'
+})
+
 function storeTokens(accessToken, refreshTokenValue) {
   token.value = accessToken
   refreshToken.value = refreshTokenValue || null
@@ -95,6 +100,7 @@ export function useAuth() {
     isEmployee,
     isMesero,
     isComanda,
+    isRecepcionista,
     homeViewForRole,
     login,
     logout,
@@ -111,5 +117,6 @@ export function homeViewForRole(rolNombre) {
   if (rolNombre === 'Administrador' || rolNombre === 'Admin') return 'admin'
   if (rolNombre === 'Mesero' || rolNombre === 'Comanda') return 'comanda'
   if (rolNombre === 'Empleado') return 'employee'
+  if (rolNombre === 'Recepcionista') return 'recepcion'
   return 'index'
 }

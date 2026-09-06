@@ -524,7 +524,7 @@
 .field-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 22px;
 }
 
 /* ── Campos con label fijo arriba ─────────────────────────── */
@@ -538,6 +538,11 @@
 
 .field-grid .input-group.static-label {
   margin-bottom: 0;
+}
+
+/* Espaciado extra después del grid antes del correo solo lectura */
+.profile-form .input-group.static-label.input-group-readonly {
+  margin-top: 22px;
 }
 
 .profile-form .input-group.static-label .field-label {
