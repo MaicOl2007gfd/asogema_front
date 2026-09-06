@@ -787,6 +787,64 @@
   height: 12px;
 }
 
+/* ── Carga / Error ── */
+.reviews-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 44px 24px;
+  text-align: center;
+  border-radius: 16px;
+}
+
+.reviews-theme-dark .reviews-loading {
+  background: rgba(243, 232, 211, 0.03);
+  border: 1px dashed rgba(243, 232, 211, 0.08);
+}
+
+.reviews-theme-light .reviews-loading {
+  background: #ffffff;
+  border: 1px dashed rgba(19, 50, 21, 0.12);
+}
+
+.reviews-loading svg {
+  width: 42px;
+  height: 42px;
+  color: rgba(0, 206, 201, 0.4);
+}
+
+.reviews-loading p {
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 340px;
+}
+
+.reviews-theme-dark .reviews-loading p {
+  color: rgba(243, 232, 211, 0.5);
+}
+
+.reviews-theme-light .reviews-loading p {
+  color: #7a9a7a;
+}
+
+.reviews-empty-retry {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 206, 201, 0.5);
+  background: transparent;
+  color: #00cec9;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.reviews-empty-retry:hover {
+  background: rgba(0, 206, 201, 0.12);
+}
+
 /* ── Estado vacío ── */
 .reviews-empty {
   display: flex;

@@ -1,5 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAuth } from './useAuth.js'
+import { useReviewsApi } from './useReviewsApi.js'
 
 /**
  * Composable que maneja toda la lógica del apartado de Reseñas de experiencia.
@@ -9,81 +10,6 @@ import { useAuth } from './useAuth.js'
  *   ('hotel' | 'restaurant' | 'events')
  * @returns {object} Estado reactivo y métodos de las reseñas
  */
-
-/* ----------------------------------------------------------
-   DATOS DE EJEMPLO (Modelo) — por tipo de servicio
-   ---------------------------------------------------------- */
-const seedReviews = {
-  hotel: [
-    {
-      id: 1,
-      author: 'María García',
-      rating: 5,
-      text: 'Una experiencia inolvidable. Las habitaciones son espaciosas y la vista es espectacular. El servicio al cliente es excepcional, realmente nos hicieron sentir como en casa.',
-      date: '2026-06-15',
-    },
-    {
-      id: 2,
-      author: 'Carlos Mendoza',
-      rating: 4,
-      text: 'Muy buen hotel, la ubicación es perfecta y las instalaciones están muy bien cuidadas. La piscina y el spa son de primera. Solo mejoraría la variedad en el desayuno.',
-      date: '2026-05-28',
-    },
-    {
-      id: 3,
-      author: 'Ana López',
-      rating: 5,
-      text: 'Simplemente mágico. Pasamos nuestra luna de miel aquí y cada detalle fue perfecto. El personal es muy atento y profesional. Volveremos sin dudarlo.',
-      date: '2026-04-10',
-    },
-  ],
-  restaurant: [
-    {
-      id: 1,
-      author: 'Laura Jiménez',
-      rating: 5,
-      text: 'La mejor experiencia gastronómica que hemos tenido. Cada plato es una obra de arte, tanto en presentación como en sabor. El chef es un verdadero artista.',
-      date: '2026-07-02',
-    },
-    {
-      id: 2,
-      author: 'Andrés Castillo',
-      rating: 4,
-      text: 'Excelente atención y comida deliciosa. Probamos el menú degustación y quedamos encantados. El ambiente es muy acogedor y elegante.',
-      date: '2026-06-18',
-    },
-    {
-      id: 3,
-      author: 'Valentina Ruiz',
-      rating: 5,
-      text: 'Un restaurante con una carta variada y productos frescos. Los postres son increíbles. Sin duda un lugar para repetir y recomendar.',
-      date: '2026-05-22',
-    },
-  ],
-  events: [
-    {
-      id: 1,
-      author: 'Diana Paredes',
-      rating: 5,
-      text: 'Celebramos nuestra boda aquí y fue todo lo que soñábamos. El equipo de eventos se encargó de cada detalle, todo salió perfecto. Un lugar mágico.',
-      date: '2026-06-30',
-    },
-    {
-      id: 2,
-      author: 'Roberto Vega',
-      rating: 4,
-      text: 'El salón de eventos es amplio y bien iluminado. La organización fue impecable y el catering delicioso. Muy recomendable para eventos corporativos.',
-      date: '2026-05-14',
-    },
-    {
-      id: 3,
-      author: 'Patricia Gómez',
-      rating: 5,
-      text: 'Los 15 años de mi hija fueron inolvidables. El lugar es hermoso, la decoración espectacular y el personal muy profesional. Superó todas nuestras expectativas.',
-      date: '2026-04-08',
-    },
-  ],
-}
 
 /* ----------------------------------------------------------
    HELPERS — nombres e íconos por servicio
@@ -106,10 +32,14 @@ const MIN_REVIEW_LENGTH = 10
 const MAX_REVIEW_LENGTH = 500
 
 export function useReviews(serviceTypeRef) {
+  const { fetchReviews, createReview } = useReviewsApi()
+
   /* ----------------------------------------------------------
      STATE (Modelo)
      ---------------------------------------------------------- */
-  const reviewsData = ref(JSON.parse(JSON.stringify(seedReviews)))
+  const reviews = ref([])
+  const isLoading = ref(false)
+  const loadError = ref('')
 
   // Form
   const newRating = ref(0)
@@ -135,13 +65,33 @@ export function useReviews(serviceTypeRef) {
   })
 
   /* ----------------------------------------------------------
+     CARGA DESDE API
+     ---------------------------------------------------------- */
+  async function loadReviews(service) {
+    isLoading.value = true
+    loadError.value = ''
+    try {
+      reviews.value = await fetchReviews(service)
+    } catch (err) {
+      loadError.value =
+        err?.response?.data?.message ||
+        err?.message ||
+        'No se pudieron cargar las reseñas'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  watch(serviceTypeRef, (service) => {
+    loadReviews(service)
+  }, { immediate: true })
+
+  /* ----------------------------------------------------------
      COMPUTED
      ---------------------------------------------------------- */
-  const reviews = computed(() => reviewsData.value[serviceTypeRef.value] || [])
-
   const averageRating = computed(() => {
     if (reviews.value.length === 0) return 0
-    const sum = reviews.value.reduce((acc, r) => acc + r.rating, 0)
+    const sum = reviews.value.reduce((acc, r) => acc + Number(r.rating), 0)
     return (sum / reviews.value.length).toFixed(1)
   })
 
@@ -220,37 +170,40 @@ export function useReviews(serviceTypeRef) {
     return true
   }
 
-  function submitReview() {
+  async function submitReview() {
     if (!validateForm()) return
 
     isSubmitting.value = true
+    submitError.value = ''
 
-    // Simula una llamada a la API con datos de ejemplo
-    setTimeout(() => {
-      const review = {
-        id: Date.now(),
-        author: currentAuthor.value,
-        rating: newRating.value,
-        text: newReviewText.value.trim(),
-        date: new Date().toISOString().slice(0, 10),
-        isOwn: true,
-      }
-      reviewsData.value[serviceTypeRef.value].unshift(review)
-      lastSubmittedId.value = review.id
+    try {
+      const created = await createReview({
+        tipo_servicio: serviceTypeRef.value,
+        calificacion: newRating.value,
+        texto: newReviewText.value.trim(),
+      })
+      reviews.value.unshift({ ...created, isOwn: true })
+      lastSubmittedId.value = created.id
 
       newRating.value = 0
       newReviewText.value = ''
       hoveredRating.value = 0
       ratingTouched.value = false
       textTouched.value = false
-      isSubmitting.value = false
       submitSuccess.value = true
 
       setTimeout(() => {
         submitSuccess.value = false
         lastSubmittedId.value = null
       }, 4000)
-    }, 600)
+    } catch (err) {
+      submitError.value =
+        err?.response?.data?.message ||
+        err?.message ||
+        'No se pudo publicar la reseña. Intenta de nuevo.'
+    } finally {
+      isSubmitting.value = false
+    }
   }
 
   /* ----------------------------------------------------------
@@ -277,8 +230,9 @@ export function useReviews(serviceTypeRef) {
      ---------------------------------------------------------- */
   return {
     // Data / Estado
-    reviewsData,
     reviews,
+    isLoading,
+    loadError,
     newRating,
     newReviewText,
     hoveredRating,
@@ -307,6 +261,7 @@ export function useReviews(serviceTypeRef) {
     // Métodos - Form
     toggleForm,
     submitReview,
+    loadReviews,
     // Métodos - Display
     getStarPercentage,
     getRatingLabel,
