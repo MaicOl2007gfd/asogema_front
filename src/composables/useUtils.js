@@ -20,6 +20,12 @@ export function getErrorMessage(err) {
   return message || 'Ocurrió un error inesperado. Intenta de nuevo.'
 }
 
+/** Fecha ISO hoy YYYY-MM-DD */
+export function todayIso() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
 /** Iniciales del usuario para avatares (máx 2 caracteres). */
 export function getUserInitials(user) {
   const raw =

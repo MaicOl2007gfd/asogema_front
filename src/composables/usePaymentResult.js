@@ -1,6 +1,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePaymentApi } from './usePaymentApi.js'
 import { getErrorMessage, formatCop } from './useUtils.js'
+import { useHotel } from './useHotel.js'
 
 const STATUS_MAP = {
   APPROVED: 'PAGADO',
@@ -174,6 +175,19 @@ export function usePaymentResult() {
       await new Promise((resolve) => setTimeout(resolve, 3000))
       await loadPaymentStatus()
       attempts += 1
+    }
+
+    // Refresh hotel cache if payment was for hotel
+    if (
+      paymentData.value?.estado === 'PAGADA' &&
+      ['HOTEL', 'HOTEL_SALDO'].includes(paymentData.value?.tipo_reserva)
+    ) {
+      try {
+        const { refreshPaymentData } = useHotel()
+        await refreshPaymentData()
+      } catch (e) {
+        console.error('Error refreshing hotel payment data:', e)
+      }
     }
   })
 

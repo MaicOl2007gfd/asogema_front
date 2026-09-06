@@ -1,0 +1,41 @@
+/* PanelRecepcion.css — replica paleta PanelEmpleado */
+@import './PanelEmpleado.css';
+
+.rec-page { min-height:100vh; background:#F3E8D3; color:#133215; }
+.rec-header { background:#133215; color:#F3E8D3; padding:16px 24px; }
+.rec-header-inner { display:flex; align-items:center; justify-content:space-between; }
+.rec-brand { display:flex; align-items:center; gap:12px; }
+.rec-logo { height:36px; width:auto; }
+.rec-title { font-weight:700; font-size:20px; }
+.rec-title-sub { font-size:12px; opacity:.8; }
+.rec-user-pill { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.08); padding:8px 12px; border-radius:12px; }
+.rec-user-avatar { width:36px;height:36px;border-radius:50%;background:#00cec9;color:#133215;display:flex;align-items:center;justify-content:center;font-weight:700; }
+.rec-logout { background:transparent;border:1px solid rgba(255,255,255,.3); color:#F3E8D3; padding:8px 12px; border-radius:10px; cursor:pointer; }
+.rec-main { padding:24px; max-width:1200px; margin:0 auto; }
+.rec-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+.rec-banner { display:flex; flex-wrap:wrap; gap:8px; align-items:center; background:#FFF; border:1px solid #133215; border-radius:12px; padding:10px 14px; margin-bottom:12px; font-size:14px; }
+.rec-banner-icon { font-size:16px; }
+.rec-banner-warn { color:#b45309; font-weight:600; margin-left:auto; }
+.rec-date { padding:8px 12px; border-radius:10px; border:1px solid #133215; background:#FFF; }
+.rec-tabs { display:flex; gap:8px; }
+.rec-tab { padding:8px 14px; border:1px solid #133215; background:#FFF; border-radius:10px; cursor:pointer; }
+.rec-tab.active { background:#133215; color:#F3E8D3; }
+.rec-btn { padding:8px 12px; border-radius:10px; border:1px solid #133215; background:#FFF; cursor:pointer; }
+.rec-btn.primary { background:#133215; color:#F3E8D3; }
+.rec-table-wrap { overflow:auto; background:#FFF; border-radius:12px; border:1px solid #133215; }
+.rec-table { width:100%; border-collapse:collapse; font-size:14px; }
+.rec-table th, .rec-table td { padding:12px; border-bottom:1px solid #e5e7eb; text-align:left; }
+.rec-table th { background:#f5f1e6; font-weight:600; }
+.rec-badge { padding:4px 8px; border-radius:8px; font-size:12px; background:#e5e7eb; }
+.rec-btn-action { padding:6px 10px; border-radius:8px; font-size:13px; cursor:pointer; border:1px solid #133215; background:#FFF; }
+.rec-btn-action.checkin { background:#00cec9; color:#133215; border-color:#00cec9; }
+.rec-btn-action.checkout { background:#133215; color:#F3E8D3; }
+.rec-state { padding:24px; text-align:center; }
+.rec-spinner { width:40px;height:40px;border:4px solid #e5e7eb;border-top-color:#133215;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.rec-toast { position:fixed; bottom:24px; right:24px; background:#133215; color:#F3E8D3; padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.25); z-index:4000; }
+.rec-toast.error { background:#b91c1c; }
+.rec-modal-overlay { position:fixed; inset:0; background:rgba(5,5,5,.6); display:flex; align-items:center; justify-content:center; z-index:5000; }
+.rec-modal { background:#F3E8D3; color:#133215; padding:24px; border-radius:16px; width:90%; max-width:420px; border:1px solid #133215; }
+.rec-modal h3 { margin-top:0; }
+.rec-modal-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:16px; }

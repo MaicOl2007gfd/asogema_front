@@ -110,8 +110,8 @@ const bookingResult = ref(null)
 const errors = ref({ checkIn: '', checkOut: '', guests: '' })
 
 /* ----------------------------------------------------------
-   MY BOOKINGS
-   ---------------------------------------------------------- */
+    MY BOOKINGS
+    ---------------------------------------------------------- */
 const bookings = ref([])
 const bookingsLoading = ref(false)
 const bookingsError = ref(null)
@@ -119,9 +119,12 @@ const bookingToCancel = ref(null)
 const showCancelConfirm = ref(false)
 const isCancelling = ref(false)
 
+// Payment status
+const paymentStatusCache = ref(new Map())
+
 /* ----------------------------------------------------------
-   UI STATE
-   ---------------------------------------------------------- */
+    UI STATE
+    ---------------------------------------------------------- */
 const isVisible = ref(false)
 
 /* ----------------------------------------------------------
@@ -511,6 +514,61 @@ async function confirmCancel() {
   }
 }
 
+/**
+ * Get payment status for a booking
+ */
+async function fetchPaymentStatus(bookingId) {
+  if (paymentStatusCache.value.has(bookingId)) {
+    return paymentStatusCache.value.get(bookingId)
+  }
+  try {
+    const status = await hotelApi.getPaymentStatus(bookingId)
+    paymentStatusCache.value.set(bookingId, status)
+    return status
+  } catch (err) {
+    console.error('Error fetching payment status:', err)
+    return null
+  }
+}
+
+/**
+ * Pay balance for a booking
+ */
+async function payBookingBalance(bookingId, emit) {
+  try {
+    // Obtener saldo pendiente actual
+    const status = await fetchPaymentStatus(bookingId)
+    if (!status || !status.puede_pagar_saldo || status.saldo_pendiente <= 0) {
+      throw new Error('No hay saldo pendiente para pagar')
+    }
+    // Crear registro de pago de saldo en backend para trazabilidad
+    await hotelApi.payBalance(bookingId)
+    // Preparar checkout con tipo HOTEL_SALDO
+    setCheckoutRequest({
+      tipo: 'HOTEL_SALDO',
+      reserva_id: bookingId,
+      montoReferencia: status.saldo_pendiente,
+      origen: 'hotel',
+    })
+    // Invalidate cache
+    paymentStatusCache.value.delete(bookingId)
+    // Refresh bookings
+    await loadBookings()
+    if (emit) emit('navigate', 'checkout')
+  } catch (err) {
+    console.error('Error paying balance:', err)
+    throw err
+  }
+}
+
+/**
+ * Refresh payment cache and bookings list
+ */
+async function refreshPaymentData() {
+  paymentStatusCache.value.clear()
+  await loadBookings()
+}
+
 /* ----------------------------------------------------------
    NAVIGATION
    ---------------------------------------------------------- */
@@ -523,8 +581,8 @@ function goBackToHotel(emit) {
 }
 
 /* ----------------------------------------------------------
-   EXPORT
-   ---------------------------------------------------------- */
+    EXPORT
+    ---------------------------------------------------------- */
 export function useHotel(emit) {
   return {
     // Auth
@@ -569,6 +627,11 @@ export function useHotel(emit) {
     bookingToCancel,
     showCancelConfirm,
     isCancelling,
+    // Payment
+    paymentStatusCache,
+    fetchPaymentStatus,
+    payBookingBalance,
+    refreshPaymentData,
     // UI
     isVisible,
     // Helpers

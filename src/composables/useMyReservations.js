@@ -194,6 +194,14 @@ function normalizeHotel(b) {
   const checkOut = b.checkOut || ''
   const guests = b.guests || 1
   const total = Number(b.total) || 0
+  const canCancelByStatus = !FINAL_STATUSES.includes(status) && ['pendiente','confirmada'].includes(status)
+  let canCancelByDate = true
+  if (checkIn) {
+    const checkInDate = new Date(`${checkIn}T00:00:00`)
+    const now = new Date()
+    const diffHours = (checkInDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+    canCancelByDate = diffHours >= 48
+  }
   return {
     key: `hotel-${b.id}`,
     type: 'hotel',
@@ -211,7 +219,7 @@ function normalizeHotel(b) {
     amount: total,
     amountLabel: total ? formatCurrency(total) : '',
     notes: b.observaciones || '',
-    canCancel: !FINAL_STATUSES.includes(status),
+    canCancel: canCancelByStatus && canCancelByDate,
     details: [
       { label: 'N.º de reserva', value: `#${b.id}`, icon: 'hash' },
       { label: 'Entrada', value: formatDateLong(checkIn), icon: 'calendar' },
@@ -226,6 +234,14 @@ function normalizeHotel(b) {
 function normalizeRestaurant(r) {
   const status = r.status
   const guests = r.guests || 1
+  const canCancelByStatus = !FINAL_STATUSES.includes(status) && ['pendiente','confirmada'].includes(status)
+  let canCancelByDate = true
+  if (r.fecha && r.hora) {
+    const fechaHora = new Date(`${r.fecha}T${r.hora}`)
+    const now = new Date()
+    const diffHours = (fechaHora.getTime() - now.getTime()) / (1000 * 60 * 60)
+    canCancelByDate = diffHours >= 2
+  }
   return {
     key: `restaurant-${r.id}`,
     type: 'restaurant',
@@ -243,7 +259,7 @@ function normalizeRestaurant(r) {
     amount: 0,
     amountLabel: '',
     notes: r.observaciones || '',
-    canCancel: !FINAL_STATUSES.includes(status),
+    canCancel: canCancelByStatus && canCancelByDate,
     details: [
       { label: 'N.º de reserva', value: `#${r.id}`, icon: 'hash' },
       { label: 'Fecha', value: formatDateLong(r.fecha), icon: 'calendar' },
@@ -263,6 +279,14 @@ function normalizeEvent(e) {
   const status = e.status
   const guests = e.guests || 1
   const anticipo = e.anticipo != null ? Number(e.anticipo) : null
+  const canCancelByStatus = !FINAL_STATUSES.includes(status) && ['pendiente','confirmada'].includes(status)
+  let canCancelByDate = true
+  if (e.fecha) {
+    const fecha = new Date(`${e.fecha}T00:00:00`)
+    const now = new Date()
+    const diffHours = (fecha.getTime() - now.getTime()) / (1000 * 60 * 60)
+    canCancelByDate = diffHours >= 24
+  }
   return {
     key: `event-${e.id}`,
     type: 'event',
@@ -280,7 +304,7 @@ function normalizeEvent(e) {
     amount: anticipo || 0,
     amountLabel: anticipo != null ? formatCurrency(anticipo) : '',
     notes: e.observaciones || '',
-    canCancel: !FINAL_STATUSES.includes(status),
+    canCancel: canCancelByStatus && canCancelByDate,
     details: [
       { label: 'N.º de reserva', value: `#${e.id}`, icon: 'hash' },
       { label: 'Fecha', value: formatDateLong(e.fecha), icon: 'calendar' },

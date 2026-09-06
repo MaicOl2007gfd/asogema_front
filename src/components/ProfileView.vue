@@ -4,6 +4,7 @@ import { computed, ref, watch, onMounted } from 'vue'
 import { useProfile } from '../composables/useProfile.js'
 import { useMyReservations } from '../composables/useMyReservations.js'
 import { useMyInvoices } from '../composables/useMyInvoices.js'
+import { useHotel } from '../composables/useHotel.js'
 import '../Profile.css'
 
 const emit = defineEmits(['navigate'])
@@ -73,6 +74,26 @@ const {
   formatTime,
   formatCurrency,
 } = useMyReservations()
+
+const { fetchPaymentStatus, payBookingBalance } = useHotel()
+
+const paymentStatus = ref(null)
+const paymentLoading = ref(false)
+
+watch(selected, async (res) => {
+  paymentStatus.value = null
+  if (res && res.type === 'hotel') {
+    paymentLoading.value = true
+    try {
+      paymentStatus.value = await fetchPaymentStatus(res.id)
+    } catch (e) {
+      console.warn('No se pudo cargar estado de pago', e)
+      paymentStatus.value = null
+    } finally {
+      paymentLoading.value = false
+    }
+  }
+})
 
 /* ── Mis Facturas (historial de pagos y facturas del usuario) ── */
 const {
@@ -1116,6 +1137,38 @@ onMounted(() => {
         <p v-if="selected.notes" class="reservas-confirm-notes">
           <strong>Notas:</strong> {{ selected.notes }}
         </p>
+
+        <!-- Estado de pago hotel -->
+        <div v-if="selected?.type === 'hotel'" class="reservas-confirm-payment">
+          <div class="reservas-confirm-payment-header">
+            <strong>Pago de hotel</strong>
+            <span v-if="paymentLoading" class="pf-spinner" aria-label="Cargando estado de pago"></span>
+          </div>
+          <div v-if="paymentStatus">
+            <div class="reservas-confirm-payment-row">
+              <span>Total</span>
+              <span>{{ paymentStatus.total_pagado ? formatCurrency(paymentStatus.total_pagado) : '—' }} / {{ formatCurrency(paymentStatus.total_reserva) }}</span>
+            </div>
+            <div class="reservas-confirm-payment-row">
+              <span>Pendiente</span>
+              <span>{{ formatCurrency(paymentStatus.saldo_pendiente) }}</span>
+            </div>
+            <div class="reservas-confirm-payment-row">
+              <span>Estado</span>
+              <span>{{ paymentStatus.estado_pago }}</span>
+            </div>
+            <button
+              v-if="paymentStatus.puede_pagar_saldo"
+              class="reservas-confirm-btn reservas-confirm-primary"
+              @click="async () => { try { await payBookingBalance(selected.id, emit); showToast('success','Pago iniciado'); } catch { showToast('error','No se pudo iniciar el pago'); } }"
+            >
+              Pagar saldo pendiente
+            </button>
+          </div>
+          <div v-else-if="!paymentLoading" class="reservas-confirm-payment-empty">
+            No se pudo cargar el estado de pago.
+          </div>
+        </div>
 
         <p v-if="cancelError" class="reservas-confirm-error">{{ cancelError }}</p>
 

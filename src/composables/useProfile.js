@@ -14,17 +14,10 @@ export function requestProfileTab(tab) {
  * Composable que maneja toda la lógica del Perfil / Ajustes de cuenta.
  * Incluye: actualizar datos del perfil y cambiar contraseña.
  *
- * ⚠️ NOTA BACKEND — Piezas pendientes que requieren endpoints aún no implementados
- * en el backend (asogema-back). Cada bloque pendiente está marcado con "PENDIENTE BACKEND":
- *
- *   1. GET /auth/users/me        → solo devuelve { id, correo, rol, rol_nombre }.
- *      No expone nombre, apellido, telefono ni correo_verificado.
- *      Por eso los campos se prellenan desde el estado local de autenticación.
- *   2. Editar correo             → UpdateProfileDto NO acepta `correo`.
- *      (pendiente: agregar correo + validación de unicidad en el backend)
- *   3. Reenvío de código         → no existe endpoint público de reenvío.
- *      (pendiente: POST /auth/verify-email/resend { correo })
- *   4. Estado correo_verificado  → no se expone en el perfil.
+ * NOTA BACKEND — GET /auth/users/me devuelve el perfil completo
+ * { id, nombre, apellido, correo, telefono, direccion, fecha_nacimiento,
+ *   correo_verificado, rol_id, rol_nombre } (sanitizado, sin password_hash).
+ * El correo sigue siendo solo lectura: UpdateProfileDto NO acepta `correo`.
  *
  * @param {Function} emit - Función emit del componente para navegación
  * @returns {object} Estado reactivo y métodos del perfil
@@ -121,12 +114,16 @@ export function useProfile(emit) {
    * tras una actualización de perfil, para que la navbar refleje el nuevo nombre.
    */
   function syncLocalUser(updated) {
-    if (!user.value) return
+    if (!user.value || !updated) return
     user.value.nombre = updated.nombre ?? user.value.nombre
     user.value.apellido = updated.apellido ?? user.value.apellido
     user.value.telefono = updated.telefono ?? user.value.telefono
     user.value.correo = updated.correo ?? user.value.correo
+    user.value.direccion = updated.direccion ?? user.value.direccion
     user.value.fecha_nacimiento = updated.fecha_nacimiento ?? user.value.fecha_nacimiento
+    user.value.correo_verificado = updated.correo_verificado ?? user.value.correo_verificado
+    user.value.rol_id = updated.rol_id ?? user.value.rol_id
+    user.value.rol_nombre = updated.rol_nombre ?? user.value.rol_nombre
     user.value.email = updated.correo ?? user.value.correo ?? user.value.email
     user.value.name = `${user.value.nombre || ''} ${user.value.apellido || ''}`.trim()
       || user.value.name
@@ -137,15 +134,31 @@ export function useProfile(emit) {
   /* ──────────────────────────────────────────────────────────
      AJUSTES DE CUENTA
      ────────────────────────────────────────────────────────── */
-  function loadProfile() {
-    // PENDIENTE BACKEND: el perfil remoto no expone nombre/apellido/telefono.
-    // Se prellenan desde el estado local de autenticación (login/restore).
-    firstName.value = user.value?.nombre || ''
-    lastName.value = user.value?.apellido || ''
-    phone.value = user.value?.telefono || ''
-    email.value = user.value?.correo || user.value?.email || ''
-    birthDate.value = toDateInput(user.value?.fecha_nacimiento)
+  function applyProfileToForm(profile) {
+    if (!profile) return
+    firstName.value = profile.nombre || ''
+    lastName.value = profile.apellido || ''
+    phone.value = profile.telefono || ''
+    email.value = profile.correo || profile.email || ''
+    birthDate.value = toDateInput(profile.fecha_nacimiento)
     syncOriginalProfile()
+  }
+
+  function loadProfile() {
+    // Prefill inmediato desde el estado local y luego revalidar
+    // contra el servidor para no mostrar datos vacíos/stale tras un refresh.
+    applyProfileToForm(user.value)
+    refreshProfileFromServer()
+  }
+
+  async function refreshProfileFromServer() {
+    try {
+      const { data } = await api.get('/auth/users/me')
+      syncLocalUser(data)
+      applyProfileToForm(data)
+    } catch {
+      // Sin sesión válida o backend caído: se conserva el estado local.
+    }
   }
 
   /* Guarda la "foto" de los datos al cargar / tras guardar con éxito. */
@@ -317,6 +330,7 @@ export function useProfile(emit) {
     profileSuccess,
     profileError,
     saveProfile,
+    refreshProfileFromServer,
     hasProfileChanges,
     // Cambiar contraseña
     currentPassword,

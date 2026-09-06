@@ -75,6 +75,7 @@ export function usePaymentCheckout() {
 
   const impuestos = computed(() => {
     if (request.value?.tipo === 'RECARGA') return 0
+    if (request.value?.tipo === 'HOTEL' || request.value?.tipo === 'HOTEL_SALDO') return 0
     // IVA del origen escalado por el descuento (baseGravable / subtotal).
     const factor = subtotal.value > 0 ? baseGravable.value / subtotal.value : 0
     return Math.round(baseGravada.value * IVA_RATE * factor)
