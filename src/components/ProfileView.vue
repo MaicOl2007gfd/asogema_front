@@ -837,7 +837,9 @@ onMounted(() => {
                       </svg>
                       Cancelar
                     </button>
-                    <span v-else class="reserva-finished">Finalizada</span>
+                    <span v-else class="reserva-finished">
+                      {{ ['finalizada', 'cancelada', 'completada', 'check-out'].includes(r.status) ? r.statusLabel : 'No cancelable' }}
+                    </span>
                   </div>
                 </div>
               </article>
