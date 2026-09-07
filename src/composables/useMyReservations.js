@@ -35,9 +35,10 @@ const STATUS_LABELS = {
   'check-out': 'Check-Out',
   cancelada: 'Cancelada',
   completada: 'Completada',
+  finalizada: 'Finalizada',
 }
 
-const FINAL_STATUSES = ['cancelada', 'completada', 'check-out']
+const FINAL_STATUSES = ['cancelada', 'completada', 'check-out', 'finalizada']
 
 function normalizeStatus(s) {
   if (!s) return 'pendiente'
@@ -52,6 +53,7 @@ function normalizeStatus(s) {
     CANCELADA: 'cancelada',
     CANCELLED: 'cancelada',
     COMPLETADA: 'completada',
+    FINALIZADA: 'finalizada',
   }
   return map[s] || String(s).toLowerCase()
 }

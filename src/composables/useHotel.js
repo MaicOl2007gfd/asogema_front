@@ -50,6 +50,7 @@ function normalizeStatus(s) {
     CANCELADA: 'cancelada',
     CANCELLED: 'cancelada',
     COMPLETADA: 'completada',
+    FINALIZADA: 'finalizada',
   }
   return map[s] || String(s).toLowerCase()
 }
