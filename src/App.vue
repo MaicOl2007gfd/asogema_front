@@ -73,6 +73,14 @@ function navigate(view) {
   }
 
   currentView.value = view
+  scrollToTop()
+}
+
+/** Al cambiar de módulo el scroll vuelve arriba (no queda a mitad). */
+function scrollToTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  document.documentElement.scrollTop = 0
+  document.body.scrollTop = 0
 }
 
 function cancelLoginAlert() {
@@ -88,7 +96,7 @@ function goToLogin() {
 
 /** True si ese pago ya se resolvió y fue visto en esta sesión del navegador. */
 function isPaymentResolved(facturaId) {
-  const resolved = sessionStorage.getItem('asogema_pago_resuelto')
+  const resolved = localStorage.getItem('asogema_pago_resuelto')
   return resolved === String(facturaId)
 }
 
@@ -159,6 +167,7 @@ onMounted(async () => {
     } else if (f) {
       currentView.value = 'payment-result'
     }
+    scrollToTop()
   })
 })
 </script>
