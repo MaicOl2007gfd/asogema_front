@@ -47,7 +47,7 @@ const meseroEntregadosHoy = computed(() =>
 )
 
 const seccionPorAtender = computed(() =>
-  ordenarFifo(pedidos.value.filter((p) => p.estado === 'RECIBIDO')),
+  ordenarFifo(pedidos.value.filter((p) => p.estado === 'RECIBIDO' || p.estado === 'CONFIRMADA')),
 )
 const seccionListos = computed(() =>
   ordenarFifo(pedidos.value.filter((p) => p.estado === 'LISTO')),
@@ -69,6 +69,7 @@ function getUserInitials() {
 function estadoLabel(estado) {
   return (
     {
+      CONFIRMADA: 'Pagado',
       RECIBIDO: 'Recibido',
       LISTO: 'Listo',
       ENTREGADO: 'Entregado',
@@ -77,6 +78,7 @@ function estadoLabel(estado) {
 }
 
 function estadoClass(estado) {
+  if (estado === 'CONFIRMADA') return 'pagado'
   return estado === 'LISTO' ? 'ok' : estado === 'ENTREGADO' ? 'entregado' : 'pend'
 }
 
@@ -180,6 +182,10 @@ async function crearPedido() {
 
 function marcarListo(pedido) {
   cambiarEstado(pedido.id, 'LISTO')
+}
+
+function recibirPedido(pedido) {
+  cambiarEstado(pedido.id, 'RECIBIDO')
 }
 
 function marcarEntregado(pedido) {
@@ -359,7 +365,20 @@ onUnmounted(() => {
               <footer class="cda-card-foot">
                 <span class="cda-wait">{{ tiempoEspera(pedido.created_at) }}</span>
                 <strong class="cda-total">Total: {{ formatPrice(pedido.total) }}</strong>
-                <button type="button" class="cda-btn cda-btn--listo" @click="marcarListo(pedido)">
+                <button
+                  v-if="pedido.estado === 'CONFIRMADA'"
+                  type="button"
+                  class="cda-btn cda-btn--recibir"
+                  @click="recibirPedido(pedido)"
+                >
+                  Recibir
+                </button>
+                <button
+                  v-else
+                  type="button"
+                  class="cda-btn cda-btn--listo"
+                  @click="marcarListo(pedido)"
+                >
                   Marcar Listo
                 </button>
               </footer>

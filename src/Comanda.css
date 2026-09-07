@@ -305,6 +305,11 @@
   color: #4a6b4a;
 }
 
+.cda-badge.pagado {
+  background: rgba(0, 206, 201, 0.18);
+  color: #0e7a76;
+}
+
 .cda-tipo {
   font-size: 12px;
   font-weight: 700;
@@ -448,6 +453,16 @@
 
 .cda-btn--listo:hover {
   background: #1f4a22;
+}
+
+.cda-btn--recibir {
+  background: #0e7a76;
+  color: #fff;
+}
+
+.cda-btn--recibir:hover {
+  background: #00cec9;
+  color: #06312f;
 }
 
 .cda-btn--entregar {
