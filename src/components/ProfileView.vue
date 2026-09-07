@@ -52,6 +52,9 @@ const {
 const {
   reservations,
   filteredReservations,
+  pagedReservations,
+  totalPages,
+  setPage,
   totalCount,
   activeCount,
   upcomingCount,
@@ -103,6 +106,8 @@ const {
   loaded: invoicesLoaded,
   hasLoadedOnce: invoicesHasLoadedOnce,
   downloading,
+  pagedInvoices,
+  setInvoicesPage,
   getInvoices: loadInvoices,
   downloadPdfFor,
   formatCurrency: formatInvoiceCurrency,
@@ -750,7 +755,7 @@ onMounted(() => {
             <!-- Lista unificada -->
             <div v-else class="reservas-list">
               <article
-                v-for="r in filteredReservations"
+                v-for="r in pagedReservations.items"
                 :key="r.key"
                 class="reserva-card"
                 :class="[`reserva-${r.status}`, `reserva-type-${r.type}`]"
@@ -844,6 +849,22 @@ onMounted(() => {
                 </div>
               </article>
             </div>
+
+            <!-- Paginación mis reservas -->
+            <div v-if="filteredReservations.length > 0 && totalPages > 1" class="pf-pagination" role="navigation" aria-label="Paginación de reservas">
+              <button type="button" class="pf-page-btn" :disabled="pagedReservations.page === 1" @click="setPage(pagedReservations.page - 1)">‹</button>
+              <button
+                v-for="n in totalPages"
+                :key="n"
+                type="button"
+                class="pf-page-btn"
+                :class="{ active: n === pagedReservations.page }"
+                @click="setPage(n)"
+              >
+                {{ n }}
+              </button>
+              <button type="button" class="pf-page-btn" :disabled="pagedReservations.page === totalPages" @click="setPage(pagedReservations.page + 1)">›</button>
+            </div>
           </section>
 
           <!-- ── Mis Facturas (historial de pagos) ── -->
@@ -905,7 +926,7 @@ onMounted(() => {
             <!-- Lista de facturas -->
             <div v-else class="reservas-list">
               <article
-                v-for="f in invoices"
+                v-for="f in pagedInvoices.items"
                 :key="f.id"
                 class="reserva-card"
                 :class="f.estado === 'PAGADA' || f.estado === 'CONFIRMADA' ? 'reserva-completada' : f.estado === 'ANULADA' || f.estado === 'RECHAZADA' || f.estado === 'FALLIDA' ? 'reserva-cancelada' : 'reserva-pendiente'"
@@ -995,6 +1016,22 @@ onMounted(() => {
                   </div>
                 </div>
               </article>
+            </div>
+
+            <!-- Paginación mis facturas -->
+            <div v-if="invoices.length > 0 && pagedInvoices.total > 1" class="pf-pagination" role="navigation" aria-label="Paginación de facturas">
+              <button type="button" class="pf-page-btn" :disabled="pagedInvoices.page === 1" @click="setInvoicesPage(pagedInvoices.page - 1)">‹</button>
+              <button
+                v-for="n in pagedInvoices.total"
+                :key="n"
+                type="button"
+                class="pf-page-btn"
+                :class="{ active: n === pagedInvoices.page }"
+                @click="setInvoicesPage(n)"
+              >
+                {{ n }}
+              </button>
+              <button type="button" class="pf-page-btn" :disabled="pagedInvoices.page === pagedInvoices.total" @click="setInvoicesPage(pagedInvoices.page + 1)">›</button>
             </div>
           </section>
         </Transition>
