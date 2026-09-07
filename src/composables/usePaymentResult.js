@@ -197,7 +197,7 @@ export function usePaymentResult() {
     const estadoTerminal =
       paymentData.value?.estado === 'PAGADA' || error.value || unauthorized.value
     if (estadoTerminal && facturaId.value) {
-      sessionStorage.setItem('asogema_pago_resuelto', String(facturaId.value))
+      localStorage.setItem('asogema_pago_resuelto', String(facturaId.value))
       clearPaymentQuery()
     }
   })
