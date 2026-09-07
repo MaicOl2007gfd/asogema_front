@@ -313,7 +313,7 @@ const {
                   <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                   <polyline points="17 6 23 6 23 12"></polyline>
                 </svg>
-                Anticipo del 30% al reservar
+                Cobro total al reservar
               </li>
             </ul>
 
@@ -442,7 +442,7 @@ const {
               <strong>{{ selectedSalon ? selectedSalon.price : '-' }}</strong>
             </div>
             <div class="events-summary-row">
-              <span>Anticipo (30%)</span>
+              <span>Precio total</span>
               <strong>{{ formatPrice(anticipoEstimado) }}</strong>
             </div>
           </div>
@@ -512,7 +512,7 @@ const {
                 <strong>{{ personas }}</strong>
               </div>
               <div class="events-summary-row">
-                <span>Anticipo a pagar</span>
+                <span>Total a pagar</span>
                 <strong>{{ formatPrice(anticipoMostrado) }}</strong>
               </div>
             </div>

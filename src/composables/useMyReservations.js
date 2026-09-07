@@ -329,7 +329,7 @@ function normalizeEvent(e) {
       { label: 'Salón', value: e.salonName || '—', icon: 'party' },
       ...(e.tipoName ? [{ label: 'Tipo de evento', value: e.tipoName, icon: 'tag' }] : []),
       ...(anticipo != null
-        ? [{ label: 'Anticipo', value: formatCurrency(anticipo), icon: 'money' }]
+        ? [{ label: 'Total del evento', value: formatCurrency(anticipo), icon: 'money' }]
         : []),
     ],
     raw: e,
