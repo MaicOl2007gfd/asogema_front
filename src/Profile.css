@@ -1748,6 +1748,57 @@
   line-height: 1.5;
 }
 
+/* ── Estado de pago (hotel) en modal de reserva ── */
+.reservas-confirm-payment {
+  margin: 0 0 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.reservas-confirm-payment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pf-ink-soft);
+}
+
+.reservas-confirm-payment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 12.5px;
+}
+
+.reservas-confirm-payment-row + .reservas-confirm-payment-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.reservas-confirm-payment-row span:first-child {
+  color: var(--pf-muted);
+  font-weight: 500;
+}
+
+.reservas-confirm-payment-row span:last-child {
+  color: var(--pf-ink);
+  font-weight: 700;
+  text-align: right;
+}
+
+.reservas-confirm-payment-empty {
+  font-size: 12.5px;
+  color: var(--pf-muted);
+  text-align: center;
+  padding: 10px 0;
+}
+
 .reservas-confirm-notes strong {
   color: #fff0c8;
 }
