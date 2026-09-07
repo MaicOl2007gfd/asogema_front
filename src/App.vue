@@ -64,6 +64,14 @@ function navigate(view) {
     currentView.value = 'index'
     return
   }
+
+  // Al salir de la vista de resultado de pago, elimina los query params
+  // (factura_id/status) para que las flechas atrás/adelante del navegador
+  // no vuelvan a montar la pantalla de pago ya terminada.
+  if (view !== 'payment-result') {
+    clearPaymentUrl()
+  }
+
   currentView.value = view
 }
 
@@ -78,6 +86,21 @@ function goToLogin() {
   currentView.value = 'login'
 }
 
+/** True si ese pago ya se resolvió y fue visto en esta sesión del navegador. */
+function isPaymentResolved(facturaId) {
+  const resolved = sessionStorage.getItem('asogema_pago_resuelto')
+  return resolved === String(facturaId)
+}
+
+/** Quita los query params de pago de la URL actual. */
+function clearPaymentUrl() {
+  const url = new URL(window.location.href)
+  if (['factura_id', 'status'].some((k) => url.searchParams.has(k))) {
+    url.search = ''
+    window.history.replaceState({}, document.title, url.pathname + url.hash)
+  }
+}
+
 onMounted(async () => {
   // Procesar callback OAuth (Google / Facebook) si el backend redirigió con tokens.
   // Se ejecuta antes de restoreSession para no sobrescribir la sesión recién creada.
@@ -90,7 +113,8 @@ onMounted(async () => {
   }
 
   const params = new URLSearchParams(window.location.search)
-  if (params.get('factura_id')) {
+  const urlFacturaId = params.get('factura_id')
+  if (urlFacturaId && !isPaymentResolved(urlFacturaId)) {
     currentView.value = 'payment-result'
   }
 
@@ -123,6 +147,19 @@ onMounted(async () => {
     currentView.value = homeViewForRole(user.value?.rol_nombre)
   }
   sessionReady.value = true
+
+  // Flechas atrás/adelante del navegador: si la URL vuelve a apuntar a un
+  // pago que ya se resolvió, salta a la vista principal en vez de re-montar
+  // la pantalla de resultado.
+  window.addEventListener('popstate', () => {
+    const f = new URLSearchParams(window.location.search).get('factura_id')
+    if (f && isPaymentResolved(f)) {
+      clearPaymentUrl()
+      currentView.value = homeViewForRole(user.value?.rol_nombre)
+    } else if (f) {
+      currentView.value = 'payment-result'
+    }
+  })
 })
 </script>
 

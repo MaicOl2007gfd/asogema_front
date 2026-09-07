@@ -191,11 +191,13 @@ export function usePaymentResult() {
     }
 
     // El pago llegó a un estado terminal (PAGADA/rechazado o error tras
-    // agotar reintentos): limpia la URL para que recargar o navegar no
-    // vuelvan a montar forzosamente la vista de resultado.
+    // agotar reintentos): marca la factura como vista en esta sesión y
+    // limpia la URL para que recargar o navegar no vuelvan a montar
+    // forzosamente la vista de resultado.
     const estadoTerminal =
       paymentData.value?.estado === 'PAGADA' || error.value || unauthorized.value
-    if (estadoTerminal) {
+    if (estadoTerminal && facturaId.value) {
+      sessionStorage.setItem('asogema_pago_resuelto', String(facturaId.value))
       clearPaymentQuery()
     }
   })
