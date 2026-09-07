@@ -189,7 +189,24 @@ export function usePaymentResult() {
         console.error('Error refreshing hotel payment data:', e)
       }
     }
+
+    // El pago llegó a un estado terminal (PAGADA/rechazado o error tras
+    // agotar reintentos): limpia la URL para que recargar o navegar no
+    // vuelvan a montar forzosamente la vista de resultado.
+    const estadoTerminal =
+      paymentData.value?.estado === 'PAGADA' || error.value || unauthorized.value
+    if (estadoTerminal) {
+      clearPaymentQuery()
+    }
   })
+
+  function clearPaymentQuery() {
+    const url = new URL(window.location.href)
+    for (const key of ['factura_id', 'status', 'id', 'transaction_id']) {
+      url.searchParams.delete(key)
+    }
+    window.history.replaceState({}, document.title, url.pathname + url.search)
+  }
 
   return {
     isLoading,
