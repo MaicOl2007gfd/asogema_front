@@ -136,13 +136,13 @@
         <div class="chat-input">
           <input 
             v-model="userInput" 
-            @keyup.enter="sendMessage"
+            @keyup.enter="sendMessage()"
             type="text" 
             placeholder="Escribe tu mensaje..."
             class="input-field"
           />
           <button 
-            @click="sendMessage" 
+            @click="sendMessage()"
             :disabled="!userInput.trim()"
             class="send-btn"
           >
@@ -161,7 +161,6 @@
 import { ref, nextTick } from 'vue'
 
 const WEBHOOK = 'https://bot.clubasogema.com/webhook/n2UEdC71Um/chat'
-const WEBHOOK_INFO = 'https://bot.clubasogema.com/webhook/n2UEdC71Um/chat/info'
 
 // Estado del chat
 const isOpen = ref(false)
@@ -198,7 +197,10 @@ const quickQuestion = (question) => {
 
 // Enviar mensaje
 const sendMessage = async (text = null, isWelcome = false) => {
-  const content = (text !== null ? text : userInput.value).trim()
+  // Blindaje: los handlers del template ya no pasan el evento del DOM,
+  // pero cualquier llamante externo podría pasar un no-string.
+  const raw = typeof text === 'string' ? text : userInput.value
+  const content = raw.trim()
   if (!content && !isWelcome) return
   if (loading.value) return
 
@@ -239,6 +241,7 @@ const sendMessage = async (text = null, isWelcome = false) => {
     }
     messages.value.push(aiMessage)
   } catch (err) {
+    console.error('AiAssistant: fallo al contactar el webhook', err)
     messages.value.push({
       role: 'assistant',
       content: 'Lo siento, no pude conectar con el asistente. Inténtalo de nuevo en un momento.',
