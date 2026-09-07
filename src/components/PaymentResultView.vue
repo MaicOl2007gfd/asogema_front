@@ -9,7 +9,9 @@
  * Concepto: "Dark Luxury Suite" — lujo oscuro con glassmorphism.
  * Pantalla enfocada (sin navbar ni footer).
  */
+import { computed } from 'vue'
 import { usePaymentResult } from '../composables/usePaymentResult.js'
+import { requestProfileTab } from '../composables/useProfile.js'
 
 const emit = defineEmits(['navigate'])
 
@@ -29,20 +31,29 @@ const {
   downloadInvoicePdf,
 } = usePaymentResult()
 
-function goToEvents() {
-  emit('navigate', 'events')
+/** Destino y etiqueta del botón según el tipo de pago realizado. */
+const returnTarget = computed(() => {
+  const target = {
+    HOTEL: { view: 'hotel', label: 'Volver al hotel' },
+    HOTEL_SALDO: { view: 'hotel', label: 'Volver al hotel' },
+    EVENTO: { view: 'events', label: 'Volver a eventos' },
+    RESTAURANTE: { view: 'restaurant', label: 'Volver al restaurante' },
+    RECARGA: { view: 'wallet', label: 'Volver a mi billetera' },
+  }
+  return target[paymentData.value?.tipo_reserva] ?? { view: 'index', label: 'Volver al inicio' }
+})
+
+function goToReturnTarget() {
+  emit('navigate', returnTarget.value.view)
 }
 
-function goToDashboard() {
-  emit('navigate', 'dashboard')
+function goToMyInvoices() {
+  requestProfileTab('facturas')
+  emit('navigate', 'profile')
 }
 
 function goToLogin() {
   emit('navigate', 'login')
-}
-
-function goHome() {
-  emit('navigate', 'index')
 }
 </script>
 
@@ -258,34 +269,39 @@ function goHome() {
 
           <!-- Actions: pago confirmado -->
           <div v-if="status === 'APPROVED' || status === 'PAGADO' || status === 'CONFIRMADO'" class="pr-actions">
-            <button class="pr-btn pr-btn--primary" @click="goHome">
+            <button class="pr-btn pr-btn--primary" @click="goToReturnTarget">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                <path d="M9 14L4 9l5-5"></path>
+                <path d="M4 9h10a6 6 0 016 6v0a6 6 0 01-6 6H6"></path>
               </svg>
-              Listo
+              {{ returnTarget.label }}
+            </button>
+            <button class="pr-btn pr-btn--secondary" @click="goToMyInvoices">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
+              </svg>
+              Mis Facturas
             </button>
           </div>
 
           <!-- Actions: pago fallido -->
           <div v-else-if="status !== 'PENDING' && status !== 'PENDIENTE'" class="pr-actions">
-            <button class="pr-btn pr-btn--primary" @click="goToEvents">
+            <button class="pr-btn pr-btn--primary" @click="goToReturnTarget">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
+                <path d="M9 14L4 9l5-5"></path>
+                <path d="M4 9h10a6 6 0 016 6v0a6 6 0 01-6 6H6"></path>
               </svg>
-              Eventos
+              {{ returnTarget.label }}
             </button>
-            <button class="pr-btn pr-btn--secondary" @click="goToDashboard">
+            <button class="pr-btn pr-btn--secondary" @click="goToMyInvoices">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
               </svg>
-              Dashboard
+              Mis Facturas
             </button>
           </div>
 
