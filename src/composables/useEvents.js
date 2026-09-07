@@ -158,7 +158,7 @@ export function useEvents(emit) {
   const anticipoEstimado = computed(() => {
     const salon = selectedSalonObj.value
     if (!salon) return 0
-    return Math.round(salon.basePrice * 0.3)
+    return Math.round(salon.basePrice)
   })
 
   const anticipoMostrado = computed(() => {
