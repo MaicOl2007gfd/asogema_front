@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useAuth } from './useAuth.js'
 import { usePaymentApi } from './usePaymentApi.js'
 import { resolveError } from './useErrorMessage.js'
@@ -22,6 +22,27 @@ const error = ref('')
 const loaded = ref(false)
 const downloading = ref('')
 const hasLoadedOnce = ref(false)
+
+/* Paginación (10 facturas por página) */
+const PAGE_SIZE = 10
+const currentPage = ref(1)
+
+const pagedInvoices = computed(() => {
+  const list = invoices.value
+  const total = Math.max(1, Math.ceil(list.length / PAGE_SIZE))
+  const page = Math.min(currentPage.value, total)
+  return {
+    items: list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    page,
+    total,
+  }
+})
+
+function setInvoicesPage(page) {
+  const p = Number(page)
+  if (!Number.isFinite(p) || p < 1) return
+  currentPage.value = Math.max(1, Math.floor(p))
+}
 
 const STATUS_LABELS = {
   PENDIENTE: 'Pendiente',
@@ -162,6 +183,8 @@ export function useMyInvoices() {
     loaded,
     hasLoadedOnce,
     downloading,
+    pagedInvoices,
+    setInvoicesPage,
     reload,
     formatCurrency,
     paymentLabel,

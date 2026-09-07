@@ -159,12 +159,26 @@ async function loadEvents() {
 const typeFilter = ref('all') // 'all' | 'hotel' | 'restaurant' | 'event'
 const statusFilter = ref('all') // 'all' | 'active' | 'upcoming'
 
+/* ----------------------------------------------------------
+   PAGINACIÓN (10 por página)
+   ---------------------------------------------------------- */
+const PAGE_SIZE = 10
+const currentPage = ref(1)
+
+function setPage(page) {
+  const p = Number(page)
+  if (!Number.isFinite(p) || p < 1) return
+  currentPage.value = Math.max(1, Math.floor(p))
+}
+
 function setTypeFilter(value) {
   typeFilter.value = value
+  currentPage.value = 1
 }
 
 function setStatusFilter(value) {
   statusFilter.value = value
+  currentPage.value = 1
 }
 
 /* ----------------------------------------------------------
@@ -365,6 +379,23 @@ const filteredReservations = computed(() => {
 })
 
 /* ----------------------------------------------------------
+   VISTA POR PÁGINA (paginación)
+   ---------------------------------------------------------- */
+const pagedReservations = computed(() => {
+  const list = filteredReservations.value
+  const total = Math.max(1, Math.ceil(list.length / PAGE_SIZE))
+  const page = Math.min(currentPage.value, total)
+  return {
+    items: list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    page,
+    total,
+  }
+})
+
+const totalPages = computed(() => pagedReservations.value.total)
+const currentPageSafe = computed(() => pagedReservations.value.page)
+
+/* ----------------------------------------------------------
    RESUMEN / ESTADÍSTICAS
    ---------------------------------------------------------- */
 const totalCount = computed(() => reservations.value.length)
@@ -463,6 +494,10 @@ export function useMyReservations() {
     // Lista unificada
     reservations,
     filteredReservations,
+    pagedReservations,
+    currentPage: currentPageSafe,
+    totalPages,
+    setPage,
     totalCount,
     activeCount,
     upcomingCount,
