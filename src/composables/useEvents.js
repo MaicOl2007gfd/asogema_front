@@ -348,10 +348,19 @@ export function useEvents(emit) {
   function goToPayment() {
     const reserva = bookingResult.value
     if (reserva?.id) {
+      // El checkout calcula el total en local: sin montoReferencia queda en $0
+      // (ver usePaymentCheckout.js). Se pasa el anticipo devuelto por el back
+      // (precio_base completo) con fallback al estimado del salón.
+      const monto = Number(reserva.anticipo ?? anticipoMostrado.value)
+      if (!(monto > 0)) {
+        errors.value.general = 'No se pudo determinar el monto a pagar. Intenta de nuevo.'
+        return
+      }
       setCheckoutRequest({
         tipo: 'EVENTO',
         reserva_id: Number(reserva.id),
         origen: 'events',
+        montoReferencia: Math.round(monto),
       })
       if (emit) emit('navigate', 'checkout')
     }

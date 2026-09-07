@@ -518,6 +518,7 @@ const {
             </div>
 
             <div class="events-success-actions">
+              <span v-if="errors.general" class="events-form-error events-form-error-block">{{ errors.general }}</span>
               <button class="events-form-submit" @click="goToPayment">
                 Pagar Ahora
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
