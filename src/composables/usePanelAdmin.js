@@ -1010,25 +1010,12 @@ function toggleRoomFilter(estado) {
   roomFilterEstado.value = estado
 }
 
-async function checkInRoom(id) {
-  if (!confirm('¿Marcar esta habitación como check-in?')) return
-  try {
-    await api.patch(`/admin/rooms/${id}`, { disponible: false })
-    await fetchRooms()
-  } catch (e) {
-    roomsError.value = e?.response?.data?.message || 'Error al realizar check-in.'
-  }
-}
-
-async function checkOutRoom(id) {
-  if (!confirm('¿Marcar esta habitación como check-out?')) return
-  try {
-    await api.patch(`/admin/rooms/${id}`, { disponible: true })
-    await fetchRooms()
-  } catch (e) {
-    roomsError.value = e?.response?.data?.message || 'Error al realizar check-out.'
-  }
-}
+// NOTE: check-in/check-out por habitación se eliminó a propósito.
+// `disponible` no es una columna de `habitaciones`: el back lo calcula
+// por día desde `reservas_hotel` (GET /admin/rooms?fecha=). El intento
+// anterior (PATCH /admin/rooms/:id { disponible }) siempre fallaba con 400
+// porque `UpdateRoomDto` no admite ese campo (whitelist + forbidNonWhitelisted).
+// El check-in/out real debe operar sobre reservas, no sobre la habitación.
 
 function toggleRoomView() {
   roomView.value = roomView.value === 'activos' ? 'eliminados' : 'activos'
@@ -1671,7 +1658,7 @@ export function usePanelAdmin() {
     activeModule, contextMessage,
     loading, error, retry,
     calendarFilters, categoryLabels, filterColors, getFilterColor, calendarGrid, calendarTitle,
-    prevMonth, nextMonth,
+    prevMonth, nextMonth, todayCalendarMonth,
     todayReservations, todayReservationCount, todayConfirmedCount, todayPendingCount,
     incomePeriods, incomePeriodSelector, incomeChartData,
     topServices,
@@ -1700,7 +1687,7 @@ export function usePanelAdmin() {
     filteredReservations, paginatedReservations, reservationTotalPages,
     changingReservationId, reservationActionError,
     fetchAllReservations, changeReservationStatus, cancelAdminReservation,
-    rooms, roomTypes, roomsLoading, roomsError, roomView, visibleRooms, inactiveRoomsCount, toggleRoomView,
+    rooms, roomTypes, roomsLoading, roomsError, roomView, visibleRooms, filteredRooms, roomFilterEstado, inactiveRoomsCount, toggleRoomView, toggleRoomFilter,
     roomDateFilter, roomDateMin,
     showRoomForm, editingRoom, newRoom, roomFormError, roomFormSaving,
     fetchRooms, createRoom, updateRoom, deleteRoom, reactivateRoom, resetRoomForm, openEditRoom, onTipoChange,
