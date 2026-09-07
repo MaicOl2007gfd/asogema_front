@@ -256,8 +256,19 @@ function goHome() {
             <img :src="paymentData.qr_pedido" alt="QR del pedido" class="pr-qr-pedido-img" />
           </div>
 
-          <!-- Actions: solo cuando el pago ya terminó (confirmado o fallido) -->
-          <div v-if="status !== 'PENDING' && status !== 'PENDIENTE'" class="pr-actions">
+          <!-- Actions: pago confirmado -->
+          <div v-if="status === 'APPROVED' || status === 'PAGADO' || status === 'CONFIRMADO'" class="pr-actions">
+            <button class="pr-btn pr-btn--primary" @click="goHome">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              Listo
+            </button>
+          </div>
+
+          <!-- Actions: pago fallido -->
+          <div v-else-if="status !== 'PENDING' && status !== 'PENDIENTE'" class="pr-actions">
             <button class="pr-btn pr-btn--primary" @click="goToEvents">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
