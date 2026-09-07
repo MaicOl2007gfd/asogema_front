@@ -12,9 +12,9 @@
 
 /* ─────────────── HEADER ─────────────── */
 .cda-header {
-  background: rgba(255, 248, 240, 0.9);
+  background: #133215;
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(19, 50, 21, 0.1);
+  border-bottom: 1px solid rgba(243, 232, 211, 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -40,6 +40,7 @@
   height: 42px;
   width: 42px;
   object-fit: contain;
+  filter: brightness(0) invert(1);
 }
 
 .cda-brand-text {
@@ -51,14 +52,14 @@
 .cda-brand-name {
   font-size: 18px;
   font-weight: 800;
-  color: #133215;
+  color: #F3E8D3;
   font-family: 'Cormorant Garamond', Georgia, serif;
 }
 
 .cda-brand-sub {
   font-size: 12px;
   font-weight: 600;
-  color: #4a6b4a;
+  color: rgba(243, 232, 211, 0.6);
   letter-spacing: 0.3px;
 }
 
@@ -72,7 +73,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #133215;
+  background: #00cec9;
   color: #fff;
   display: flex;
   align-items: center;
@@ -91,18 +92,18 @@
 .cda-user-name {
   font-size: 14px;
   font-weight: 700;
-  color: #133215;
+  color: #F3E8D3;
 }
 
 .cda-user-role {
   font-size: 12px;
-  color: #7a9a7a;
+  color: rgba(243, 232, 211, 0.6);
 }
 
 .cda-logout {
   border: none;
   background: none;
-  color: #7a9a7a;
+  color: rgba(243, 232, 211, 0.7);
   cursor: pointer;
   padding: 8px;
   border-radius: 8px;
@@ -115,8 +116,8 @@
 }
 
 .cda-logout:hover {
-  background: rgba(176, 58, 46, 0.1);
-  color: #b03a2e;
+  background: rgba(214, 48, 49, 0.2);
+  color: #ff8a8a;
 }
 
 /* ─────────────── MAIN ─────────────── */
