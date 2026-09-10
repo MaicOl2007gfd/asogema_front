@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./public/imagenes/logo-codexium.jpg" alt="CODEXIUM" width="160" />
+  <img src="./public/imagenes/logo-codexium.png" alt="CODEXIUM" width="160" />
 </p>
 
 <h1 align="center">Asogema — Frontend</h1>
@@ -137,7 +137,7 @@ El despliegue a producción es automático mediante GitHub Actions (`.github/wor
 asogema_front/
 ├── public/
 │   ├── imagenes/
-│   │   └── logo-codexium.jpg     # Logo de CODEXIUM
+│   │   └── logo-codexium.png     # Logo de CODEXIUM
 │   ├── videos/
 │   └── favicon.svg
 ├── src/
